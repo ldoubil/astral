@@ -79,6 +79,7 @@ class ServerReorderSheet extends StatefulWidget {
               // 修改排序完成回调
               onReorder: (reorderedServers) {
                 aps.reorderServers(reorderedServers);
+                completer.complete(reorderedServers); // 添加缺失的Completer完成处理
                 Navigator.of(context).pop(reorderedServers);
               }
             ),
@@ -178,7 +179,7 @@ class _ServerReorderSheetState extends State<ServerReorderSheet> {
               itemBuilder: (context, index) {
                 final server = _servers[index];
                 return Padding(
-                  key: ValueKey(server.id), // 将key提升到Padding层级
+                  key: ValueKey(server.id), 
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: _ServerReorderItem(
                     server: server,
@@ -268,8 +269,8 @@ class _ServerReorderItemState extends State<_ServerReorderItem> {
             borderRadius: BorderRadius.circular(16),
             // 保持原有背景色，仅通过边框变化表示悬停状态
             color: (theme.brightness == Brightness.light)
-                ? colorScheme.surfaceVariant.withOpacity(0.95)
-                : colorScheme.surfaceVariant.withOpacity(0.15),
+                ? colorScheme.surfaceVariant.withOpacity(1.0)
+                : colorScheme.surfaceVariant.withOpacity(1.0), 
             border: Border.all(
               // 仅在悬停时显示边框
               color: _isHovered ? colorScheme.primary : Colors.transparent,

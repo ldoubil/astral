@@ -263,8 +263,8 @@ class _RoomReorderItemState extends State<_RoomReorderItem> {
             borderRadius: BorderRadius.circular(16),
             // 保持原有背景色，仅通过边框变化表示悬停状态
             color: (theme.brightness == Brightness.light)
-                ? colorScheme.surfaceVariant.withOpacity(0.95)
-                : colorScheme.surfaceVariant.withOpacity(0.15),
+                ? colorScheme.surfaceVariant.withOpacity(1.0)
+                : colorScheme.surfaceVariant.withOpacity(1.0), 
             border: Border.all(
               // 仅在悬停时显示边框
               color: _isHovered ? colorScheme.primary : Colors.transparent,
