@@ -19,36 +19,40 @@ jobs:
       - name: 🛠️ 检出代码仓库
         uses: actions/checkout@v4
 
-      # 安装 Rust (使用rust-toolchain.toml文件自动管理版本)
-      - name: 🦀 安装 Rust 工具链
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.89.0
-
-      # 确保环境变量正确设置
-      - name: 🎯 设置环境变量
+      # 安装 Rust
+      - name: 🦀 安装 Rust 1.89.0
         run: |
-          echo "RUSTUP_HOME=$env:USERPROFILE\.rustup" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          choco install rust --version 1.89.0 -y
+          echo "Rust 版本验证："
+          rustc --version
         shell: pwsh
 
-      # 使用PowerShell脚本确保Rust环境
-      - name: 🛠️ 确保正确的Rust环境
+      # 安装 Flutter
+      - name: 🐦 安装 Flutter
         run: |
-          .\scripts\setup_rust_env.ps1
-        shell: pwsh
-
-      # 安装Flutter
-      - name: 🐦 安装Flutter
-        run: |
-          echo "正在克隆Flutter稳定分支..."
+          echo "正在克隆 Flutter 稳定分支..."
           git clone https://github.com/flutter/flutter.git --branch 3.29.3 $env:GITHUB_WORKSPACE/flutter --depth 1
 
-          echo "正在将Flutter添加到PATH..."
+          echo "正在将 Flutter 添加到 PATH..."
           echo "$env:GITHUB_WORKSPACE/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-          echo "Flutter版本验证："
+          echo "Flutter 版本验证："
           & "$env:GITHUB_WORKSPACE/flutter/bin/flutter.bat" --version
+        shell: pwsh
+
+      # 安装构建工具
+      - name: 🛠️ 安装构建工具
+        run: |
+          choco install ninja cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          echo "CMake 版本验证："
+          cmake --version
+        shell: pwsh
+
+      # 设置环境变量
+      - name: ⚙️ 设置环境变量
+        run: |
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "RUST_BACKTRACE=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         shell: pwsh
 
       # 安装 Flutter 依赖
@@ -63,9 +67,7 @@ jobs:
       - name: 🛠️ 编译 Flutter Windows 应用
         run: |
           echo "正在编译 Flutter Windows Release 版本..."
-          # 验证使用的Rust版本
-          rustc --version
-          flutter build windows --release
+          flutter build windows --release --verbose
           echo "Flutter Windows Release 编译完成！"
         shell: pwsh
 
