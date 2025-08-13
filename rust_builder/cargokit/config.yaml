@@ -1,0 +1,25 @@
+# Cargokit configuration file
+#
+# This file is used to configure the Cargokit build process.
+# It should be placed in the `cargokit` directory of your Flutter plugin.
+
+# Specify the Rust toolchain to use for builds
+toolchain:
+  # The Rust version to use
+  version: "1.89.0"
+  
+  # Additional targets to install
+  targets:
+    - aarch64-linux-android
+    - armv7-linux-androideabi
+    - x86_64-linux-android
+    - i686-linux-android
+    - x86_64-unknown-linux-gnu
+    - x86_64-pc-windows-msvc
+    - aarch64-apple-darwin
+    - aarch64-apple-ios
+
+# Configuration for precompiled binaries
+precompiled_binaries:
+  # Whether to use precompiled binaries when available
+  use_precompiled: false
