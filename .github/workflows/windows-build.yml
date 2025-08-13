@@ -22,12 +22,43 @@ jobs:
       # 安装 Rust
       - name: 🦀 安装 Rust 1.89.0
         run: |
-          choco install rust --version 1.89.0 -y
-          echo "Rust 版本验证："
+          # 先清理可能存在的旧版本
+          if (Get-Command rustup -ErrorAction SilentlyContinue) {
+            Write-Host "卸载现有Rust安装..."
+            rustup self uninstall -y
+          }
+          
+          # 通过rustup安装指定版本的Rust
+          Write-Host "下载并安装Rust 1.89.0..."
+          curl.exe -sSf https://sh.rustup.rs -o rustup-init.exe
+          .\rustup-init.exe -y --default-toolchain 1.89.0 --profile minimal
+          Remove-Item .\rustup-init.exe
+          
+          # 将Rust添加到PATH并加载环境
+          $env:PATH = "$env:USERPROFILE\.cargo\bin;" + $env:PATH
+          echo "$env:USERPROFILE\.cargo\bin" >> $env:GITHUB_PATH
+          
+          # 加载rust环境
+          if (Test-Path "$env:USERPROFILE\.cargo\env.ps1") {
+            . "$env:USERPROFILE\.cargo\env.ps1"
+          }
+        shell: pwsh
+
+      # 验证 Rust 安装
+      - name: 🔍 验证 Rust 安装
+        run: |
+          # 确保使用正确的工具链
+          rustup default 1.89.0
+          
+          # 验证版本
+          Write-Host "Rust 版本："
           rustc --version
-          # 将 Rust 添加到 PATH
-          echo "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Cargo 版本："
+          cargo --version
+          
+          # 设置环境变量
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> $env:GITHUB_ENV
+          echo "RUST_BACKTRACE=1" >> $env:GITHUB_ENV
         shell: pwsh
 
       # 安装 Flutter
@@ -48,24 +79,6 @@ jobs:
         run: |
           choco install ninja cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
           echo "CMake 版本验证："
-          cmake --version
-        shell: pwsh
-
-      # 设置环境变量
-      - name: ⚙️ 设置环境变量
-        run: |
-          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "RUST_BACKTRACE=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        shell: pwsh
-
-      # 验证工具版本
-      - name: 🔍 验证工具版本
-        run: |
-          echo "Rust 版本："
-          rustc --version
-          echo "Cargo 版本："
-          cargo --version
-          echo "CMake 版本："
           cmake --version
         shell: pwsh
 
@@ -108,4 +121,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: astral-windows-x64-zip
-          path: ${{ github.workspace }}/astral-windows-x64-zip.zip
+          path: ${{ github.workspace }}/astral-windows-x64-zip.zip
