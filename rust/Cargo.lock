@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "easytier"
-version = "2.4.1"
+version = "2.4.2"
 dependencies = [
  "anyhow",
  "arc-swap",

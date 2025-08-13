@@ -7,7 +7,7 @@ import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适�
 import 'package:astral/screens/home_page.dart';
 import 'package:astral/screens/room_page.dart';
 import 'package:astral/screens/server_page.dart';
-import 'package:astral/screens/settings_page.dart';
+import 'package:astral/screens/settings_main_page.dart';
 import 'package:astral/screens/wfp_page.dart';
 import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
@@ -122,7 +122,7 @@ class _MainScreenState extends State<MainScreen>
       icon: Icons.settings_outlined, // 未选中时的图标
       activeIcon: Icons.settings, // 选中时的图标
       label: LocaleKeys.nav_settings.tr(), // 导航项标签
-      page: const SettingsPage(), // 对应的页面
+      page: const SettingsMainPage(), // 对应的页面
     ),
   ];
 
