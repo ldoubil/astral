@@ -1,4 +1,4 @@
-name: 📱 构建 Android-build-all
+name: 📲 Android 构建 universal APK
 
 on:
   workflow_dispatch:
@@ -19,11 +19,10 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        uses: actions-rs/toolchain@v1
+      - name: 🦀 设置 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
-          override: true
 
       - name: 📦 安装系统依赖
         run: |
@@ -52,8 +51,7 @@ jobs:
         with:
           ndk-version: '27.2.12479018'
           cmake-version: '3.18.1'
-
-
+          
       - name: 🐦 安装 Flutter
         run: |
           git clone https://github.com/flutter/flutter.git --branch 3.29.3 $HOME/flutter --depth 1
@@ -65,11 +63,7 @@ jobs:
       - name: 📚 安装 Flutter 依赖
         run: |
           flutter pub get
-
-      - name: 🦀 安装 cargo-ndk
-        run: |
-          cargo install cargo-ndk
-
+          
       - name: 🔐 设置签名配置
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
@@ -83,16 +77,19 @@ jobs:
           echo "检查 keystore 是否创建成功:"
           ls -la android/app/upload-keystore.jks
 
+      - name: 🐦 设置 Flutter
+        run: |
+          flutter --version
+
+      - name: 🦀 安装 cargo-ndk
+        run: |
+          cargo install cargo-ndk
+
       - name: 🛠️ 构建 universal APK
         run: |
-          # 清理之前的构建产物
-          flutter clean
-          cd rust && cargo clean && cd ..
-          
-          # 构建全架构 APK
           flutter build apk --release
 
-      - name: 📤 上传全架构 APK 到 Artifacts
+      - name: 📤 上传 universal APK 到 Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: astral-universal-apk

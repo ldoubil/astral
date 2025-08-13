@@ -2,7 +2,7 @@ name: astral
 description: 'astral'
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.1.80
+version: 2.1.60
 
 environment:
   sdk: ^3.7.2
