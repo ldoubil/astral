@@ -3,6 +3,10 @@ name = "rust_lib_astral"
 version = "0.1.0"
 edition = "2021"
 
+# 添加rust版本要求
+[package.metadata.docs.rs]
+rustc-version = "1.89.0"
+
 [lib]
 crate-type = ["cdylib", "staticlib"]
 
@@ -49,17 +53,7 @@ winapi = { version = "0.3.9", features = [
     "minwindef", 
     "ws2def", 
     "iptypes",
-    "ipifcons",
-    "heapapi",
-    "processthreadsapi",
-        "fileapi",
-    "winnt",
-    "handleapi",
-    "winbase",
-    "ntdef",
-    "winuser"
 ] }
-
 rand = "0.9.1"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]

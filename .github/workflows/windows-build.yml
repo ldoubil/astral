@@ -19,12 +19,23 @@ jobs:
       - name: 🛠️ 检出代码仓库
         uses: actions/checkout@v4
 
-      # 安装 Rust
-      - name: 🦀 安装 Rust 1.89.0
+      # 安装 Rust (使用rust-toolchain.toml文件自动管理版本)
+      - name: 🦀 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.89.0
+
+      # 确保环境变量正确设置
+      - name: 🎯 设置环境变量
         run: |
-          choco install rust --version 1.89.0 -y
-          echo "Rust 版本验证："
-          rustc --version
+          echo "RUSTUP_HOME=$env:USERPROFILE\.rustup" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+
+      # 使用PowerShell脚本确保Rust环境
+      - name: 🛠️ 确保正确的Rust环境
+        run: |
+          .\scripts\setup_rust_env.ps1
         shell: pwsh
 
       # 安装Flutter
@@ -52,6 +63,8 @@ jobs:
       - name: 🛠️ 编译 Flutter Windows 应用
         run: |
           echo "正在编译 Flutter Windows Release 版本..."
+          # 验证使用的Rust版本
+          rustc --version
           flutter build windows --release
           echo "Flutter Windows Release 编译完成！"
         shell: pwsh

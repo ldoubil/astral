@@ -19,15 +19,13 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        uses: actions-rs/toolchain@v1
+      - name: 🦀 设置 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
-          override: true
 
       - name: 📦 安装系统依赖
         run: |
-          sudo apt-get update
           sudo apt-get update
           sudo apt-get install -y build-essential libc6-dev
           sudo apt-get install -y libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
@@ -53,8 +51,7 @@ jobs:
         with:
           ndk-version: '27.2.12479018'
           cmake-version: '3.18.1'
-
-
+          
       - name: 🐦 安装 Flutter
         run: |
           git clone https://github.com/flutter/flutter.git --branch 3.29.3 $HOME/flutter --depth 1
@@ -66,10 +63,7 @@ jobs:
       - name: 📚 安装 Flutter 依赖
         run: |
           flutter pub get
-
-      - name: 🦀 安装 cargo-ndk
-        run: |
-          cargo install cargo-ndk
+          
       - name: 🔐 设置签名配置
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
@@ -87,9 +81,12 @@ jobs:
         run: |
           flutter --version
 
+      - name: 🦀 安装 cargo-ndk
+        run: |
+          cargo install cargo-ndk
+
       - name: 🛠️ 构建 x86_64 架构 APK
         run: |
-          # 构建 x86_64 架构 APK
           flutter build apk --release --target-platform android-x64
 
       - name: 📤 上传 x86_64 架构 APK 到 Artifacts

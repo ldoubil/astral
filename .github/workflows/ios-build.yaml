@@ -20,11 +20,10 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        uses: actions-rs/toolchain@v1
+      - name: 🦀 设置 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
-          override: true
           target: aarch64-apple-ios
           components: rust-src  # Add this line to ensure rust-src is available
 

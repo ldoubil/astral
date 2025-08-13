@@ -24,15 +24,12 @@ jobs:
         run: |
           choco install innosetup -y
           echo "Inno Setup 安装完成！"
-           # 安装Flutter
-           
-      # 安装 Rust
-      - name: 🦀 安装 Rust 1.89.0
-        run: |
-          choco install rust --version 1.89.0 -y
-          echo "Rust 版本验证："
-          rustc --version
-        shell: pwsh
+
+      # 安装 Rust (使用rust-toolchain.toml文件自动管理版本)
+      - name: 🦀 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.89.0
 
       - name: 🐦 安装Flutter
         run: |

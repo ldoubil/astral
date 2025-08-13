@@ -20,11 +20,22 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        uses: actions-rs/toolchain@v1
+      - name: 🦀 设置 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89.0
-          override: true
+
+      # 确保环境变量正确设置
+      - name: 🎯 设置环境变量
+        run: |
+          echo "RUSTUP_HOME=$HOME/.rustup" >> $GITHUB_ENV
+          echo "CARGO_HOME=$HOME/.cargo" >> $GITHUB_ENV
+
+      # 使用bash脚本确保Rust环境
+      - name: 🛠️ 确保正确的Rust环境
+        run: |
+          chmod +x ./scripts/setup_rust_env.sh
+          ./scripts/setup_rust_env.sh
 
       - name: 📦 安装系统依赖
         run: |
@@ -61,6 +72,8 @@ jobs:
 
       - name: 🛠️ 构建 Linux 应用
         run: |
+          # 验证使用的Rust版本
+          rustc --version
           flutter build linux --release
 
       - name: 📦 打包应用
