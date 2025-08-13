@@ -25,6 +25,9 @@ jobs:
           choco install rust --version 1.89.0 -y
           echo "Rust 版本验证："
           rustc --version
+          # 将 Rust 添加到 PATH
+          echo "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         shell: pwsh
 
       # 安装 Flutter
@@ -53,6 +56,17 @@ jobs:
         run: |
           echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "RUST_BACKTRACE=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+
+      # 验证工具版本
+      - name: 🔍 验证工具版本
+        run: |
+          echo "Rust 版本："
+          rustc --version
+          echo "Cargo 版本："
+          cargo --version
+          echo "CMake 版本："
+          cmake --version
         shell: pwsh
 
       # 安装 Flutter 依赖
