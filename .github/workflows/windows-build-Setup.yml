@@ -26,6 +26,14 @@ jobs:
           echo "Inno Setup 安装完成！"
            # 安装Flutter
            
+      # 安装 Rust
+      - name: 🦀 安装 Rust 1.89.0
+        run: |
+          choco install rust --version 1.89.0 -y
+          echo "Rust 版本验证："
+          rustc --version
+        shell: pwsh
+
       - name: 🐦 安装Flutter
         run: |
           echo "正在克隆Flutter稳定分支..."
