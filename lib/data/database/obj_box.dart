@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 
 // 全局数据库实例（对外暴露）
 late final Store store;
-late final Box<Note> noteBox;
 
 // 初始化数据库
 Future<void> initObjectBox({String? customDbDir}) async {
@@ -29,10 +28,6 @@ Future<void> initObjectBox({String? customDbDir}) async {
     dbPath = path.join(homeDir, '.local', 'share', 'astral', 'objectbox');
   }
 
-  // 初始化Store
-  store = await openStore(directory: dbPath);
-  
-  // 初始化Note对应的Box（数据表）
-  noteBox = store.box<Note>();
+
 }
     
