@@ -19,10 +19,10 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链
+      - name: 🦀 设置 Rust 工具链 1.89.0
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: 1.89.0
           override: true
 
       - name: 📦 安装系统依赖
@@ -32,10 +32,7 @@ jobs:
           sudo apt-get install -y libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           sudo apt-get install -y clang llvm libclang-dev
           sudo apt-get install -y libc-dev
-          sudo apt-get install -y libc6-dev-i386
           sudo apt-get install -y protobuf-compiler
-          # 安装 Android NDK 工具链
-          sudo apt-get install -y gcc-multilib g++-multilib
 
       - name: 🎯 配置 Rust 目标架构
         run: |
@@ -56,11 +53,6 @@ jobs:
           ndk-version: '27.2.12479018'
           cmake-version: '3.18.1'
 
-      - name: 🔧 配置 Android NDK 环境变量
-        run: |
-          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
-          echo "NDK_HOME=$ANDROID_NDK_ROOT" >> $GITHUB_ENV
 
       - name: 🐦 安装 Flutter
         run: |
@@ -77,12 +69,6 @@ jobs:
       - name: 🦀 安装 cargo-ndk
         run: |
           cargo install cargo-ndk
-          # 创建 Rust 工具链配置
-          cat > rust/rust-toolchain.toml << EOF
-          [toolchain]
-          channel = "stable"
-          targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android"]
-          EOF
 
       - name: 🔐 设置签名配置
         run: |
@@ -97,22 +83,8 @@ jobs:
           echo "检查 keystore 是否创建成功:"
           ls -la android/app/upload-keystore.jks
 
-      - name: 🐦 设置 Flutter
+      - name: 🛠️ 构建 universal APK
         run: |
-          flutter --version
-
-      - name: 🛠️ 构建全架构 APK (ALL)
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_ROOT }}
-          NDK_HOME: ${{ env.ANDROID_NDK_ROOT }}
-        run: |
-          # 配置 Android NDK 工具链
-          export PATH="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH"
-          
-          # 验证工具链
-          echo "检查 NDK 工具链:"
-          ls -la "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/" | head -10
-          
           # 清理之前的构建产物
           flutter clean
           cd rust && cargo clean && cd ..

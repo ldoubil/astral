@@ -19,6 +19,14 @@ jobs:
       - name: 🛠️ 检出代码仓库
         uses: actions/checkout@v4
 
+      # 安装 Rust
+      - name: 🦀 安装 Rust 1.89.0
+        run: |
+          choco install rust --version 1.89.0 -y
+          echo "Rust 版本验证："
+          rustc --version
+        shell: pwsh
+
       # 安装Flutter
       - name: 🐦 安装Flutter
         run: |
@@ -47,7 +55,6 @@ jobs:
           flutter build windows --release
           echo "Flutter Windows Release 编译完成！"
         shell: pwsh
-
 
       # 复制 DLL 文件到输出目录
       - name: 📂 复制 DLL 文件到 Release 目录
