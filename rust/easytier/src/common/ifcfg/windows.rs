@@ -35,7 +35,7 @@ fn format_win_error(error: u32) -> String {
             null_mut(),
             error,
             0,
-            buffer.as_mut_ptr(),
+            buffer.as_mut_ptr() as *mut u16,
             size,
             null_mut(),
         );
@@ -43,7 +43,9 @@ fn format_win_error(error: u32) -> String {
     let str_end = buffer.iter().position(|&b| b == 0).unwrap_or(buffer.len());
     format!(
         "{} (code: {})",
-        String::from_utf16_lossy(&buffer[..str_end]).trim(),
+        String::from_utf16_lossy(&buffer[..str_end])
+            .trim()
+            .to_string(),
         error
     )
 }

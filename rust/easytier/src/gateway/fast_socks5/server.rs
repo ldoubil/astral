@@ -455,16 +455,16 @@ impl<T: AsyncRead + AsyncWrite + Unpin, A: Authentication, C: AsyncTcpConnector>
 
             info!("User logged successfully.");
 
-            Ok(credentials)
+            return Ok(credentials);
         } else {
             self.inner
                 .write_all(&[1, consts::SOCKS5_AUTH_METHOD_NOT_ACCEPTABLE])
                 .await
                 .context("Can't reply with auth method not acceptable.")?;
 
-            Err(SocksError::AuthenticationRejected(
-                "Authentication, rejected.".to_string(),
-            ))
+            return Err(SocksError::AuthenticationRejected(format!(
+                "Authentication, rejected."
+            )));
         }
     }
 

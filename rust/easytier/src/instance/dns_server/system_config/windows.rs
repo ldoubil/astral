@@ -39,7 +39,7 @@ impl InterfaceControl {
                 if matches!(e.kind(), io::ErrorKind::NotFound) {
                     Ok(()) // 忽略不存在的值
                 } else {
-                    Err(e)
+                    Err(e.into())
                 }
             }
         }
@@ -106,7 +106,10 @@ impl InterfaceControl {
             .output()
             .expect("failed to execute process");
         if !output.status.success() {
-            return Err(io::Error::other("Failed to flush DNS cache"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to flush DNS cache",
+            ));
         }
         Ok(())
     }
@@ -119,7 +122,10 @@ impl InterfaceControl {
             .output()
             .expect("failed to execute process");
         if !output.status.success() {
-            return Err(io::Error::other("Failed to register DNS"));
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Failed to register DNS",
+            ));
         }
         Ok(())
     }

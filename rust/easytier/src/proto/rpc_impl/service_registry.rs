@@ -52,12 +52,6 @@ pub struct ServiceRegistry {
     table: DashMap<ServiceKey, ServiceEntry>,
 }
 
-impl Default for ServiceRegistry {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ServiceRegistry {
     pub fn new() -> Self {
         Self {

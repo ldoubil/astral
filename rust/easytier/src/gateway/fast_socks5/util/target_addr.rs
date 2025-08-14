@@ -72,7 +72,10 @@ impl TargetAddr {
     }
 
     pub fn is_ip(&self) -> bool {
-        matches!(self, TargetAddr::Ip(_))
+        match self {
+            TargetAddr::Ip(_) => true,
+            _ => false,
+        }
     }
 
     pub fn is_domain(&self) -> bool {
@@ -101,7 +104,7 @@ impl TargetAddr {
             }
             TargetAddr::Domain(ref domain, port) => {
                 debug!("TargetAddr::Domain");
-                if domain.len() > u8::MAX as usize {
+                if domain.len() > u8::max_value() as usize {
                     return Err(SocksError::ExceededMaxDomainLen(domain.len()).into());
                 }
                 buf.extend_from_slice(&[consts::SOCKS5_ADDR_TYPE_DOMAIN_NAME, domain.len() as u8]);
@@ -122,7 +125,8 @@ impl std::net::ToSocketAddrs for TargetAddr {
     fn to_socket_addrs(&self) -> io::Result<IntoIter<SocketAddr>> {
         match *self {
             TargetAddr::Ip(addr) => Ok(vec![addr].into_iter()),
-            TargetAddr::Domain(_, _) => Err(io::Error::other(
+            TargetAddr::Domain(_, _) => Err(io::Error::new(
+                io::ErrorKind::Other,
                 "Domain name has to be explicitly resolved, please use TargetAddr::resolve_dns().",
             )),
         }
@@ -145,7 +149,7 @@ pub trait ToTargetAddr {
     fn to_target_addr(&self) -> io::Result<TargetAddr>;
 }
 
-impl ToTargetAddr for (&str, u16) {
+impl<'a> ToTargetAddr for (&'a str, u16) {
     fn to_target_addr(&self) -> io::Result<TargetAddr> {
         // try to parse as an IP first
         if let Ok(addr) = self.0.parse::<Ipv4Addr>() {

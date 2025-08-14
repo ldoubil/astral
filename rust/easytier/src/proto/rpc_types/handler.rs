@@ -17,6 +17,7 @@ pub trait Handler: Clone + Send + Sync + 'static {
     type Descriptor: descriptor::ServiceDescriptor + Default;
 
     type Controller: super::controller::Controller;
+    ///
 
     /// Perform a raw call to the specified service and method.
     async fn call(

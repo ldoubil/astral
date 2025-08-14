@@ -258,7 +258,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn new(config: impl ConfigLoader + 'static) -> Self {
+    pub fn new(config: impl ConfigLoader + Send + Sync + 'static) -> Self {
         let global_ctx = Arc::new(GlobalCtx::new(config));
 
         tracing::info!(
@@ -304,10 +304,10 @@ impl Instance {
         #[cfg(feature = "socks5")]
         let socks5_server = Socks5Server::new(global_ctx.clone(), peer_manager.clone(), None);
 
-        let rpc_server = global_ctx.config.get_rpc_portal().map(|s| {
-            StandAloneServer::new(TcpTunnelListener::new(
+        let rpc_server = global_ctx.config.get_rpc_portal().and_then(|s| {
+            Some(StandAloneServer::new(TcpTunnelListener::new(
                 format!("tcp://{}", s).parse().unwrap(),
-            ))
+            )))
         });
 
         Instance {
@@ -470,7 +470,7 @@ impl Instance {
                     continue;
                 }
 
-                let last_ip = current_dhcp_ip;
+                let last_ip = current_dhcp_ip.clone();
                 tracing::debug!(
                     ?current_dhcp_ip,
                     ?candidate_ipv4_addr,
@@ -509,7 +509,11 @@ impl Instance {
                         Self::use_new_nic_ctx(
                             nic_ctx.clone(),
                             new_nic_ctx,
-                            Self::create_magic_dns_runner(peer_manager_c.clone(), ifname, ip),
+                            Self::create_magic_dns_runner(
+                                peer_manager_c.clone(),
+                                ifname,
+                                ip.clone(),
+                            ),
                         )
                         .await;
                     }
@@ -886,7 +890,7 @@ impl Instance {
             ) -> Result<GetStatsResponse, rpc_types::error::Error> {
                 let stats_manager = self.global_ctx.stats_manager();
                 let snapshots = stats_manager.get_all_metrics();
-
+                
                 let metrics = snapshots
                     .into_iter()
                     .map(|snapshot| {
@@ -894,7 +898,7 @@ impl Instance {
                         for label in snapshot.labels.labels() {
                             labels.insert(label.key.clone(), label.value.clone());
                         }
-
+                        
                         MetricSnapshot {
                             name: snapshot.name_str(),
                             value: snapshot.value,
@@ -902,7 +906,7 @@ impl Instance {
                         }
                     })
                     .collect();
-
+                
                 Ok(GetStatsResponse { metrics })
             }
 
@@ -913,7 +917,7 @@ impl Instance {
             ) -> Result<GetPrometheusStatsResponse, rpc_types::error::Error> {
                 let stats_manager = self.global_ctx.stats_manager();
                 let prometheus_text = stats_manager.export_prometheus();
-
+                
                 Ok(GetPrometheusStatsResponse { prometheus_text })
             }
         }

@@ -18,12 +18,6 @@ pub struct NetworkInstanceManager {
     stop_check_notifier: Arc<tokio::sync::Notify>,
 }
 
-impl Default for NetworkInstanceManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl NetworkInstanceManager {
     pub fn new() -> Self {
         NetworkInstanceManager {
@@ -71,9 +65,11 @@ impl NetworkInstanceManager {
                 let Some(instance_stop_notifier) = instance_stop_notifier else {
                     return;
                 };
-                let _t = instance_event_receiver
-                    .flatten()
-                    .map(|event| ScopedTask::from(handle_event(instance_id, event)));
+                let _t = if let Some(event) = instance_event_receiver.flatten() {
+                    Some(ScopedTask::from(handle_event(instance_id, event)))
+                } else {
+                    None
+                };
                 instance_stop_notifier.notified().await;
                 if let Some(instance) = instance_map.get(&instance_id) {
                     if let Some(e) = instance.get_latest_error_msg() {
@@ -128,14 +124,17 @@ impl NetworkInstanceManager {
         let mut ret = BTreeMap::new();
         for instance in self.instance_map.iter() {
             if let Some(info) = instance.get_running_info() {
-                ret.insert(*instance.key(), info);
+                ret.insert(instance.key().clone(), info);
             }
         }
         Ok(ret)
     }
 
     pub fn list_network_instance_ids(&self) -> Vec<uuid::Uuid> {
-        self.instance_map.iter().map(|item| *item.key()).collect()
+        self.instance_map
+            .iter()
+            .map(|item| item.key().clone())
+            .collect()
     }
 
     pub fn get_network_instance_name(&self, instance_id: &uuid::Uuid) -> Option<String> {
@@ -300,8 +299,8 @@ fn handle_event(
                             instance_id,
                             format!(
                                 "port forward added. local: {}, remote: {}, proto: {}",
-                                cfg.bind_addr.unwrap(),
-                                cfg.dst_addr.unwrap(),
+                                cfg.bind_addr.unwrap().to_string(),
+                                cfg.dst_addr.unwrap().to_string(),
                                 cfg.socket_type().as_str_name()
                             ),
                         );
@@ -348,8 +347,9 @@ mod tests {
         let instance_id1 = manager
             .run_network_instance(
                 TomlConfigLoader::new_from_str(cfg_str)
-                    .inspect(|c| {
+                    .map(|c| {
                         c.set_listeners(vec![format!("tcp://0.0.0.0:{}", port).parse().unwrap()]);
+                        c
                     })
                     .unwrap(),
                 ConfigSource::Cli,
@@ -426,8 +426,9 @@ mod tests {
         assert!(manager
             .run_network_instance(
                 TomlConfigLoader::new_from_str(cfg_str)
-                    .inspect(|c| {
+                    .map(|c| {
                         c.set_listeners(vec![format!("tcp://0.0.0.0:{}", port).parse().unwrap()]);
+                        c
                     })
                     .unwrap(),
                 ConfigSource::GUI,

@@ -114,7 +114,7 @@ impl Session {
                     }
                     Ok(resp) => {
                         tracing::debug!("heartbeat response: {:?}", resp);
-                        let _ = ctx_clone.notifier.send(resp);
+                        let _ = ctx_clone.notifier.send(resp.clone());
                         ctx_clone.resp.lock().await.replace(resp);
                     }
                 }

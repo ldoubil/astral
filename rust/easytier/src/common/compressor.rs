@@ -21,12 +21,6 @@ pub trait Compressor {
 
 pub struct DefaultCompressor {}
 
-impl Default for DefaultCompressor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl DefaultCompressor {
     pub fn new() -> Self {
         DefaultCompressor {}
@@ -201,11 +195,11 @@ pub mod tests {
             packet,
             packet.payload_len()
         );
-        assert!(packet.peer_manager_header().unwrap().is_compressed());
+        assert_eq!(packet.peer_manager_header().unwrap().is_compressed(), true);
 
         compressor.decompress(&mut packet).await.unwrap();
         assert_eq!(packet.payload(), text);
-        assert!(!packet.peer_manager_header().unwrap().is_compressed());
+        assert_eq!(packet.peer_manager_header().unwrap().is_compressed(), false);
     }
 
     #[tokio::test]
@@ -221,10 +215,10 @@ pub mod tests {
             .compress(&mut packet, CompressorAlgo::ZstdDefault)
             .await
             .unwrap();
-        assert!(!packet.peer_manager_header().unwrap().is_compressed());
+        assert_eq!(packet.peer_manager_header().unwrap().is_compressed(), false);
 
         compressor.decompress(&mut packet).await.unwrap();
         assert_eq!(packet.payload(), text);
-        assert!(!packet.peer_manager_header().unwrap().is_compressed());
+        assert_eq!(packet.peer_manager_header().unwrap().is_compressed(), false);
     }
 }

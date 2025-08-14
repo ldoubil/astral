@@ -140,8 +140,8 @@ pub fn get_machine_id() -> uuid::Uuid {
     )))]
     let gen_mid = None;
 
-    if let Some(mid) = gen_mid {
-        return mid;
+    if gen_mid.is_some() {
+        return gen_mid.unwrap();
     }
 
     let gen_mid = uuid::Uuid::new_v4();

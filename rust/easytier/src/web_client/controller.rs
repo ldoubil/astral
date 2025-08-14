@@ -1,8 +1,5 @@
 use crate::{
-    common::config::ConfigLoader,
-    instance_manager::NetworkInstanceManager,
-    launcher::ConfigSource,
-    proto::{
+    common::config::ConfigLoader, launcher::ConfigSource, instance_manager::NetworkInstanceManager, proto::{
         rpc_types::{self, controller::BaseController},
         web::{
             CollectNetworkInfoRequest, CollectNetworkInfoResponse, DeleteNetworkInstanceRequest,
@@ -11,7 +8,7 @@ use crate::{
             RetainNetworkInstanceResponse, RunNetworkInstanceRequest, RunNetworkInstanceResponse,
             ValidateConfigRequest, ValidateConfigResponse, WebClientService,
         },
-    },
+    }
 };
 
 pub struct Controller {
@@ -111,7 +108,7 @@ impl WebClientService for Controller {
         if !include_inst_ids.is_empty() {
             let mut to_remove = Vec::new();
             for (k, _) in ret.map.iter() {
-                if !include_inst_ids.contains(k) {
+                if !include_inst_ids.contains(&k) {
                     to_remove.push(k.clone());
                 }
             }

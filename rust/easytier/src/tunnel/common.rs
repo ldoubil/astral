@@ -145,7 +145,8 @@ where
                 return Poll::Ready(None);
             }
 
-            if let Some(packet) = Self::extract_one_packet(self_mut.buf, *self_mut.max_packet_size)
+            while let Some(packet) =
+                Self::extract_one_packet(self_mut.buf, *self_mut.max_packet_size)
             {
                 if let Err(TunnelError::InvalidPacket(msg)) = packet.as_ref() {
                     self_mut
@@ -156,7 +157,7 @@ where
             }
 
             reserve_buf(
-                self_mut.buf,
+                &mut self_mut.buf,
                 *self_mut.max_packet_size,
                 *self_mut.max_packet_size * 2,
             );
@@ -185,12 +186,12 @@ where
 }
 
 pub trait ZCPacketToBytes {
-    fn zcpacket_into_bytes(&self, zc_packet: ZCPacket) -> Result<Bytes, TunnelError>;
+    fn into_bytes(&self, zc_packet: ZCPacket) -> Result<Bytes, TunnelError>;
 }
 
 pub struct TcpZCPacketToBytes;
 impl ZCPacketToBytes for TcpZCPacketToBytes {
-    fn zcpacket_into_bytes(&self, item: ZCPacket) -> Result<Bytes, TunnelError> {
+    fn into_bytes(&self, item: ZCPacket) -> Result<Bytes, TunnelError> {
         let mut item = item.convert_type(ZCPacketType::TCP);
 
         let tcp_len = PEER_MANAGER_HEADER_SIZE + item.payload_len();
@@ -279,9 +280,7 @@ where
 
     fn start_send(self: Pin<&mut Self>, item: ZCPacket) -> Result<(), Self::Error> {
         let pinned = self.project();
-        pinned
-            .sending_bufs
-            .push(pinned.converter.zcpacket_into_bytes(item)?);
+        pinned.sending_bufs.push(pinned.converter.into_bytes(item)?);
 
         Ok(())
     }
@@ -462,13 +461,14 @@ pub mod tests {
                     continue;
                 };
                 tracing::debug!(?msg, "recv a msg, try echo back");
-                if send.send(msg).await.is_err() {
+                if let Err(_) = send.send(msg).await {
                     break;
                 }
             }
         } else {
             let Some(ret) = recv.next().await else {
-                panic!("recv error");
+                assert!(false, "recv error");
+                return;
             };
 
             if ret.is_err() {
@@ -597,7 +597,7 @@ pub mod tests {
                 let elapsed_sec = now.elapsed().as_secs();
                 if elapsed_sec > 0 {
                     bps_clone.store(
-                        count as u64 / now.elapsed().as_secs(),
+                        count as u64 / now.elapsed().as_secs() as u64,
                         std::sync::atomic::Ordering::Relaxed,
                     );
                 }
@@ -621,7 +621,7 @@ pub mod tests {
         while now.elapsed().as_secs() < 10 {
             // send.feed(item)
             let item = ZCPacket::new_with_payload(send_buf.as_ref());
-            send.feed(item).await.unwrap();
+            let _ = send.feed(item).await.unwrap();
         }
 
         send.close().await.unwrap();
@@ -649,7 +649,7 @@ pub mod tests {
             .init();
     }
 
-    pub async fn wait_for_condition<F, FRet>(mut condition: F, timeout: std::time::Duration)
+    pub async fn wait_for_condition<F, FRet>(mut condition: F, timeout: std::time::Duration) -> ()
     where
         F: FnMut() -> FRet + Send,
         FRet: Future<Output = bool>,

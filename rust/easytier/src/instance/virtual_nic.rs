@@ -68,10 +68,10 @@ impl Stream for TunStream {
     type Item = StreamItem;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<StreamItem>> {
-        let self_mut = self.project();
+        let mut self_mut = self.project();
         let mut g = ready!(self_mut.l.poll_lock(cx));
-        reserve_buf(self_mut.cur_buf, 2500, 4 * 1024);
-        if self_mut.cur_buf.is_empty() {
+        reserve_buf(&mut self_mut.cur_buf, 2500, 4 * 1024);
+        if self_mut.cur_buf.len() == 0 {
             unsafe {
                 self_mut.cur_buf.set_len(*self_mut.payload_offset);
             }
@@ -117,7 +117,10 @@ impl PacketProtocol {
         match self {
             PacketProtocol::IPv4 => Ok(libc::ETH_P_IP as u16),
             PacketProtocol::IPv6 => Ok(libc::ETH_P_IPV6 as u16),
-            PacketProtocol::Other(_) => Err(io::Error::other("neither an IPv4 nor IPv6 packet")),
+            PacketProtocol::Other(_) => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "neither an IPv4 nor IPv6 packet",
+            )),
         }
     }
 
@@ -172,7 +175,7 @@ impl TunZCPacketToBytes {
 }
 
 impl ZCPacketToBytes for TunZCPacketToBytes {
-    fn zcpacket_into_bytes(&self, zc_packet: ZCPacket) -> Result<Bytes, TunnelError> {
+    fn into_bytes(&self, zc_packet: ZCPacket) -> Result<Bytes, TunnelError> {
         let payload_offset = zc_packet.payload_offset();
         let mut inner = zc_packet.inner();
         // we have peer manager header, so payload offset must larger than 4
@@ -380,11 +383,11 @@ impl VirtualNic {
 
             let dev_name = self.global_ctx.get_flags().dev_name;
             if !dev_name.is_empty() {
-                config.tun_name(&dev_name);
+                config.tun_name(format!("{}", dev_name));
             }
         }
 
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos"))]
         config.platform_config(|config| {
             // disable packet information so we can process the header by ourselves, see tun2 impl for more details
             config.packet_information(false);
@@ -399,7 +402,7 @@ impl VirtualNic {
                 Err(e) => {
                     println!("Failed to add Easytier to firewall allowlist, Subnet proxy and KCP proxy may not work properly. error: {}", e);
                     println!("You can add firewall rules manually, or use --use-smoltcp to run with user-space TCP/IP stack.");
-                    println!();
+                    println!("");
                 }
             }
 
@@ -409,7 +412,7 @@ impl VirtualNic {
             }
 
             if !dev_name.is_empty() {
-                config.tun_name(&dev_name);
+                config.tun_name(format!("{}", dev_name));
             } else {
                 use rand::distributions::Distribution as _;
                 let c = crate::arch::windows::interface_count()?;
@@ -512,7 +515,9 @@ impl VirtualNic {
         {
             // set mtu by ourselves, rust-tun does not handle it correctly on windows
             let _g = self.global_ctx.net_ns.guard();
-            self.ifcfg.set_mtu(ifname.as_str(), mtu_in_config).await?;
+            self.ifcfg
+                .set_mtu(ifname.as_str(), mtu_in_config as u32)
+                .await?;
         }
 
         let has_packet_info = cfg!(target_os = "macos");
@@ -638,7 +643,7 @@ impl NicCtx {
     ) -> Self {
         NicCtx {
             global_ctx: global_ctx.clone(),
-            peer_mgr: Arc::downgrade(peer_manager),
+            peer_mgr: Arc::downgrade(&peer_manager),
             peer_packet_receiver,
             nic: Arc::new(Mutex::new(VirtualNic::new(global_ctx))),
             tasks: JoinSet::new(),

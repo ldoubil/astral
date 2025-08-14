@@ -1,7 +1,4 @@
-use std::{
-    net::{Ipv4Addr, Ipv6Addr},
-    sync::Arc,
-};
+use std::{net::{Ipv4Addr, Ipv6Addr}, sync::Arc};
 
 use dashmap::DashMap;
 
@@ -13,11 +10,16 @@ use crate::{
     },
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub enum NextHopPolicy {
-    #[default]
     LeastHop,
     LeastCost,
+}
+
+impl Default for NextHopPolicy {
+    fn default() -> Self {
+        NextHopPolicy::LeastHop
+    }
 }
 
 pub type ForeignNetworkRouteInfoMap =

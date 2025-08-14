@@ -1,8 +1,8 @@
 use std::{
-    hash::Hasher,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::{Arc, Mutex},
+    u64,
 };
 
 use anyhow::Context;
@@ -48,7 +48,7 @@ pub fn gen_default_flags() -> Flags {
         disable_quic_input: false,
         foreign_relay_bps_limit: u64::MAX,
         multi_thread_count: 2,
-        encryption_algorithm: "aes-gcm".to_string(),
+        encryption_algorithm: "".to_string(), // 空字符串表示使用默认的 AES-GCM
     }
 }
 
@@ -199,9 +199,6 @@ pub trait ConfigLoader: Send + Sync {
     fn get_udp_whitelist(&self) -> Vec<String>;
     fn set_udp_whitelist(&self, whitelist: Vec<String>);
 
-    fn get_stun_servers(&self) -> Vec<String>;
-    fn set_stun_servers(&self, servers: Vec<String>);
-
     fn dump(&self) -> String;
 }
 
@@ -213,7 +210,7 @@ pub trait LoggingConfigLoader {
 
 pub type NetworkSecretDigest = [u8; 32];
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default, Eq, Hash)]
 pub struct NetworkIdentity {
     pub network_name: String,
     pub network_secret: Option<String>,
@@ -221,53 +218,27 @@ pub struct NetworkIdentity {
     pub network_secret_digest: Option<NetworkSecretDigest>,
 }
 
-#[derive(Eq, PartialEq, Hash)]
-struct NetworkIdentityWithOnlyDigest {
-    network_name: String,
-    network_secret_digest: Option<NetworkSecretDigest>,
-}
-
-impl From<NetworkIdentity> for NetworkIdentityWithOnlyDigest {
-    fn from(identity: NetworkIdentity) -> Self {
-        if identity.network_secret_digest.is_some() {
-            Self {
-                network_name: identity.network_name,
-                network_secret_digest: identity.network_secret_digest,
-            }
-        } else if identity.network_secret.is_some() {
-            let mut network_secret_digest = [0u8; 32];
-            generate_digest_from_str(
-                &identity.network_name,
-                identity.network_secret.as_ref().unwrap(),
-                &mut network_secret_digest,
-            );
-            Self {
-                network_name: identity.network_name,
-                network_secret_digest: Some(network_secret_digest),
-            }
-        } else {
-            Self {
-                network_name: identity.network_name,
-                network_secret_digest: None,
-            }
-        }
-    }
-}
-
 impl PartialEq for NetworkIdentity {
     fn eq(&self, other: &Self) -> bool {
-        let self_with_digest = NetworkIdentityWithOnlyDigest::from(self.clone());
-        let other_with_digest = NetworkIdentityWithOnlyDigest::from(other.clone());
-        self_with_digest == other_with_digest
-    }
-}
+        if self.network_name != other.network_name {
+            return false;
+        }
 
-impl Eq for NetworkIdentity {}
+        if self.network_secret.is_some()
+            && other.network_secret.is_some()
+            && self.network_secret != other.network_secret
+        {
+            return false;
+        }
 
-impl std::hash::Hash for NetworkIdentity {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let self_with_digest = NetworkIdentityWithOnlyDigest::from(self.clone());
-        self_with_digest.hash(state);
+        if self.network_secret_digest.is_some()
+            && other.network_secret_digest.is_some()
+            && self.network_secret_digest != other.network_secret_digest
+        {
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -282,10 +253,8 @@ impl NetworkIdentity {
             network_secret_digest: Some(network_secret_digest),
         }
     }
-}
 
-impl Default for NetworkIdentity {
-    fn default() -> Self {
+    pub fn default() -> Self {
         Self::new("default".to_string(), "".to_string())
     }
 }
@@ -359,12 +328,12 @@ impl From<PortForwardConfigPb> for PortForwardConfig {
     }
 }
 
-impl From<PortForwardConfig> for PortForwardConfigPb {
-    fn from(val: PortForwardConfig) -> Self {
+impl Into<PortForwardConfigPb> for PortForwardConfig {
+    fn into(self) -> PortForwardConfigPb {
         PortForwardConfigPb {
-            bind_addr: Some(val.bind_addr.into()),
-            dst_addr: Some(val.dst_addr.into()),
-            socket_type: match val.proto.to_lowercase().as_str() {
+            bind_addr: Some(self.bind_addr.into()),
+            dst_addr: Some(self.dst_addr.into()),
+            socket_type: match self.proto.to_lowercase().as_str() {
                 "tcp" => SocketType::Tcp as i32,
                 "udp" => SocketType::Udp as i32,
                 _ => SocketType::Tcp as i32,
@@ -410,7 +379,6 @@ struct Config {
 
     tcp_whitelist: Option<Vec<String>>,
     udp_whitelist: Option<Vec<String>>,
-    stun_servers: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -525,7 +493,8 @@ impl ConfigLoader for TomlConfigLoader {
         locked_config
             .ipv4
             .as_ref()
-            .and_then(|s| s.parse().ok())
+            .map(|s| s.parse().ok())
+            .flatten()
             .map(|c: cidr::Ipv4Inet| {
                 if c.network_length() == 32 {
                     cidr::Ipv4Inet::new(c.address(), 24).unwrap()
@@ -536,16 +505,28 @@ impl ConfigLoader for TomlConfigLoader {
     }
 
     fn set_ipv4(&self, addr: Option<cidr::Ipv4Inet>) {
-        self.config.lock().unwrap().ipv4 = addr.map(|addr| addr.to_string());
+        self.config.lock().unwrap().ipv4 = if let Some(addr) = addr {
+            Some(addr.to_string())
+        } else {
+            None
+        };
     }
 
     fn get_ipv6(&self) -> Option<cidr::Ipv6Inet> {
         let locked_config = self.config.lock().unwrap();
-        locked_config.ipv6.as_ref().and_then(|s| s.parse().ok())
+        locked_config
+            .ipv6
+            .as_ref()
+            .map(|s| s.parse().ok())
+            .flatten()
     }
 
     fn set_ipv6(&self, addr: Option<cidr::Ipv6Inet>) {
-        self.config.lock().unwrap().ipv6 = addr.map(|addr| addr.to_string());
+        self.config.lock().unwrap().ipv6 = if let Some(addr) = addr {
+            Some(addr.to_string())
+        } else {
+            None
+        };
     }
 
     fn get_dhcp(&self) -> bool {
@@ -619,7 +600,7 @@ impl ConfigLoader for TomlConfigLoader {
             locked_config.instance_id = Some(id);
             id
         } else {
-            *locked_config.instance_id.as_ref().unwrap()
+            locked_config.instance_id.as_ref().unwrap().clone()
         }
     }
 
@@ -633,7 +614,7 @@ impl ConfigLoader for TomlConfigLoader {
             .unwrap()
             .network_identity
             .clone()
-            .unwrap_or_default()
+            .unwrap_or_else(NetworkIdentity::default)
     }
 
     fn set_network_identity(&self, identity: NetworkIdentity) {
@@ -790,19 +771,6 @@ impl ConfigLoader for TomlConfigLoader {
         self.config.lock().unwrap().udp_whitelist = Some(whitelist);
     }
 
-    fn get_stun_servers(&self) -> Vec<String> {
-        self.config
-            .lock()
-            .unwrap()
-            .stun_servers
-            .clone()
-            .unwrap_or_default()
-    }
-
-    fn set_stun_servers(&self, servers: Vec<String>) {
-        self.config.lock().unwrap().stun_servers = Some(servers);
-    }
-
     fn dump(&self) -> String {
         let default_flags_json = serde_json::to_string(&gen_default_flags()).unwrap();
         let default_flags_hashmap =
@@ -832,39 +800,6 @@ impl ConfigLoader for TomlConfigLoader {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-
-    #[test]
-    fn test_stun_servers_config() {
-        let config = TomlConfigLoader::default();
-        let stun_servers = config.get_stun_servers();
-        assert!(stun_servers.is_empty());
-
-        // Test setting custom stun servers
-        let custom_servers = vec!["txt:stun.easytier.cn".to_string()];
-        config.set_stun_servers(custom_servers.clone());
-
-        let retrieved_servers = config.get_stun_servers();
-        assert_eq!(retrieved_servers, custom_servers);
-    }
-
-    #[test]
-    fn test_stun_servers_toml_parsing() {
-        let config_str = r#"
-instance_name = "test"
-stun_servers = [
-    "stun.l.google.com:19302",
-    "stun1.l.google.com:19302",
-    "txt:stun.easytier.cn"
-]"#;
-
-        let config = TomlConfigLoader::new_from_str(config_str).unwrap();
-        let stun_servers = config.get_stun_servers();
-
-        assert_eq!(stun_servers.len(), 3);
-        assert_eq!(stun_servers[0], "stun.l.google.com:19302");
-        assert_eq!(stun_servers[1], "stun1.l.google.com:19302");
-        assert_eq!(stun_servers[2], "txt:stun.easytier.cn");
-    }
 
     #[tokio::test]
     async fn full_example_test() {

@@ -34,12 +34,13 @@ impl NetNSGuard {
             return;
         }
 
+        let ns_path: String;
         let name = name.unwrap();
-        let ns_path: String = if name == ROOT_NETNS_NAME {
-            "/proc/1/ns/net".to_string()
+        if name == ROOT_NETNS_NAME {
+            ns_path = "/proc/1/ns/net".to_string();
         } else {
-            format!("/var/run/netns/{}", name)
-        };
+            ns_path = format!("/var/run/netns/{}", name);
+        }
 
         let ns = std::fs::File::open(ns_path).unwrap();
         tracing::info!(

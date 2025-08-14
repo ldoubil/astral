@@ -1,5 +1,3 @@
-#![allow(clippy::module_inception)]
-
 use prost::DecodeError;
 
 use super::rpc_types;

@@ -60,13 +60,14 @@ impl<K: PartialOrd, T> Ord for MinScored<K, T> {
     }
 }
 
-pub type DijkstraResult<K, NodeId> = (HashMap<NodeId, K>, HashMap<NodeId, (NodeId, usize)>);
-
 pub fn dijkstra_with_first_hop<G, F, K>(
     graph: G,
     start: G::NodeId,
     mut edge_cost: F,
-) -> DijkstraResult<K, G::NodeId>
+) -> (
+    HashMap<G::NodeId, K>,
+    HashMap<G::NodeId, (G::NodeId, usize)>,
+)
 where
     G: IntoEdges + Visitable,
     G::NodeId: Eq + Hash + Clone,
@@ -78,43 +79,43 @@ where
     let mut first_hop = HashMap::new();
     let mut visit_next = BinaryHeap::new();
     let zero_score = K::default();
-    scores.insert(start, zero_score);
-    visit_next.push(MinScored(zero_score, start));
-    first_hop.insert(start, (start, 0));
+    scores.insert(start.clone(), zero_score);
+    visit_next.push(MinScored(zero_score, start.clone()));
+    first_hop.insert(start.clone(), (start.clone(), 0));
 
     while let Some(MinScored(node_score, node)) = visit_next.pop() {
         if visited.is_visited(&node) {
             continue;
         }
-        for edge in graph.edges(node) {
+        for edge in graph.edges(node.clone()) {
             let next = edge.target();
             if visited.is_visited(&next) {
                 continue;
             }
             let next_score = node_score + edge_cost(edge);
-            match scores.entry(next) {
+            match scores.entry(next.clone()) {
                 Occupied(mut ent) => {
                     if next_score < *ent.get() {
                         *ent.get_mut() = next_score;
-                        visit_next.push(MinScored(next_score, next));
+                        visit_next.push(MinScored(next_score, next.clone()));
                         // 继承前驱的 first_hop，或自己就是第一跳
                         let hop = if node == start {
-                            (next, 0)
+                            (next.clone(), 0)
                         } else {
-                            first_hop[&node]
+                            first_hop[&node].clone()
                         };
-                        first_hop.insert(next, (hop.0, hop.1 + 1));
+                        first_hop.insert(next.clone(), (hop.0, hop.1 + 1));
                     }
                 }
                 Vacant(ent) => {
                     ent.insert(next_score);
-                    visit_next.push(MinScored(next_score, next));
+                    visit_next.push(MinScored(next_score, next.clone()));
                     let hop = if node == start {
-                        (next, 0)
+                        (next.clone(), 0)
                     } else {
-                        first_hop[&node]
+                        first_hop[&node].clone()
                     };
-                    first_hop.insert(next, (hop.0, hop.1 + 1));
+                    first_hop.insert(next.clone(), (hop.0, hop.1 + 1));
                 }
             }
         }
@@ -137,9 +138,9 @@ mod tests {
         let c = graph.add_node("c");
         let d = graph.add_node("d");
 
-        graph.extend_with_edges([(a, b, 1)]);
-        graph.extend_with_edges([(b, c, 1)]);
-        graph.extend_with_edges([(c, d, 2)]);
+        graph.extend_with_edges(&[(a, b, 1)]);
+        graph.extend_with_edges(&[(b, c, 1)]);
+        graph.extend_with_edges(&[(c, d, 2)]);
 
         let (scores, first_hop) = dijkstra_with_first_hop(&graph, a, |edge| *edge.weight());
 
@@ -161,7 +162,7 @@ mod tests {
         let d = graph.add_node("d");
         let e = graph.add_node("e");
 
-        graph.extend_with_edges([(a, b, 1), (a, c, 2), (b, d, 1), (c, d, 3), (d, e, 1)]);
+        graph.extend_with_edges(&[(a, b, 1), (a, c, 2), (b, d, 1), (c, d, 3), (d, e, 1)]);
 
         let (scores, first_hop) = dijkstra_with_first_hop(&graph, a, |edge| *edge.weight());
 

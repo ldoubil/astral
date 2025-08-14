@@ -68,7 +68,7 @@ fn new_syn_packet(conn_id: u32, magic: u64) -> ZCPacket {
             header.conn_id.set(conn_id);
             header.len.set(8);
         },
-        Some(&magic.to_le_bytes()),
+        Some(&mut magic.to_le_bytes()),
     )
 }
 
@@ -79,7 +79,7 @@ fn new_sack_packet(conn_id: u32, magic: u64) -> ZCPacket {
             header.conn_id.set(conn_id);
             header.len.set(8);
         },
-        Some(&magic.to_le_bytes()),
+        Some(&mut magic.to_le_bytes()),
     )
 }
 
@@ -94,7 +94,7 @@ pub fn new_hole_punch_packet(tid: u32, buf_len: u16) -> ZCPacket {
             header.conn_id.set(tid);
             header.len.set(buf_len);
         },
-        Some(&buf),
+        Some(&mut buf),
     )
 }
 
@@ -116,7 +116,7 @@ pub fn new_v6_hole_punch_packet(dst: &SocketAddrV6) -> ZCPacket {
 }
 
 fn extrace_dst_addr_from_hole_punch_packet(buf: &[u8]) -> Option<SocketAddrV6> {
-    let body = V6HolePunchPacket::ref_from_prefix(buf)?;
+    let body = V6HolePunchPacket::ref_from_prefix(&buf[..])?;
     let ip = Ipv6Addr::from(body.dst_ipv6);
     Some(SocketAddrV6::new(ip, body.dst_port.get(), 0, 0))
 }
@@ -173,7 +173,9 @@ async fn respond_stun_packet(
         // we discard the prefix, make sure our implementation is not compatible with other stun client
         u32_to_tid(tid_to_u32(&tid)),
     );
-    resp_msg.add_attribute(Attribute::XorMappedAddress(XorMappedAddress::new(addr)));
+    resp_msg.add_attribute(Attribute::XorMappedAddress(XorMappedAddress::new(
+        addr.clone(),
+    )));
 
     let mut encoder = MessageEncoder::new();
     let rsp_buf = encoder
@@ -187,7 +189,7 @@ async fn respond_stun_packet(
 
     if !change_req {
         socket
-            .send_to(&rsp_buf, addr)
+            .send_to(&rsp_buf, addr.clone())
             .await
             .with_context(|| "send stun response error")?;
     } else {
@@ -197,7 +199,7 @@ async fn respond_stun_packet(
         } else {
             UdpSocket::bind("[::]:0").await?
         };
-        socket.send_to(&rsp_buf, addr).await?;
+        socket.send_to(&rsp_buf, addr.clone()).await?;
     }
 
     tracing::debug!(?addr, ?req_msg, ?change_req, "udp respond stun packet done");
@@ -239,7 +241,9 @@ async fn forward_from_ring_to_udp(
 ) -> Option<TunnelError> {
     tracing::debug!("udp forward from ring to udp");
     loop {
-        let buf = ring_recv.next().await?;
+        let Some(buf) = ring_recv.next().await else {
+            return None;
+        };
         let packet = match buf {
             Ok(v) => v,
             Err(e) => {
@@ -267,7 +271,7 @@ async fn forward_from_ring_to_udp(
 
 async fn udp_recv_from_socket_forward_task<F>(socket: Arc<UdpSocket>, allow_stun: bool, mut f: F)
 where
-    F: FnMut(ZCPacket, SocketAddr),
+    F: FnMut(ZCPacket, SocketAddr) -> (),
 {
     let mut buf = BytesMut::new();
     loop {
@@ -351,8 +355,10 @@ impl UdpConnection {
             if let Err(e) = self.ring_sender.try_send(zc_packet) {
                 tracing::trace!(?e, "ring sender full, drop lossy packet");
             }
-        } else if let Err(e) = self.ring_sender.force_send(zc_packet) {
-            tracing::trace!(?e, "ring sender full, drop non-lossy packet");
+        } else {
+            if let Err(e) = self.ring_sender.force_send(zc_packet) {
+                tracing::trace!(?e, "ring sender full, drop non-lossy packet");
+            }
         }
 
         Ok(())
@@ -383,7 +389,7 @@ impl UdpTunnelListenerData {
         }
     }
 
-    async fn handle_new_connect(self, remote_addr: SocketAddr, zc_packet: ZCPacket) {
+    async fn handle_new_connect(self: Self, remote_addr: SocketAddr, zc_packet: ZCPacket) {
         let udp_payload = zc_packet.udp_payload();
         if udp_payload.len() != 8 {
             tracing::warn!(
@@ -476,6 +482,7 @@ impl UdpTunnelListenerData {
                 tracing::error!(?e, "udp send hole punch packet error");
             }
             tracing::debug!(?dst_addr, "udp forward packet send hole punch packet");
+            return;
         } else if header.msg_type != UdpPacketType::HolePunch as u8 {
             let Some(mut conn) = self.sock_map.get_mut(&addr) else {
                 tracing::trace!(?header, "udp forward packet error, connection not found");
@@ -489,7 +496,7 @@ impl UdpTunnelListenerData {
         }
     }
 
-    async fn do_forward_task(self) {
+    async fn do_forward_task(self: Self) {
         let socket = self.socket.as_ref().unwrap().clone();
         udp_recv_from_socket_forward_task(socket, true, |zc_packet, addr| {
             self.do_forward_one_packet_to_conn(zc_packet, addr);
@@ -580,7 +587,7 @@ impl TunnelListener for UdpTunnelListener {
 
     async fn accept(&mut self) -> Result<Box<dyn super::Tunnel>, super::TunnelError> {
         tracing::info!("start udp accept: {:?}", self.addr);
-        if let Some(conn) = self.conn_recv.recv().await {
+        while let Some(conn) = self.conn_recv.recv().await {
             return Ok(conn);
         }
         return Err(super::TunnelError::InternalError(
@@ -732,6 +739,7 @@ impl UdpTunnelConnector {
                 tokio::select! {
                     _ = close_event_recv.recv() => {
                         tracing::debug!("connector udp close event");
+                        return;
                     }
                     _ = udp_recv_from_socket_forward_task(socket_clone,false, |zc_packet, addr| {
                         tracing::trace!(?addr, "connector udp forward task done");
@@ -740,6 +748,7 @@ impl UdpTunnelConnector {
                         }
                     }) => {
                         tracing::debug!("connector udp forward task done");
+                        return;
                     }
                 }
             }
@@ -1014,9 +1023,9 @@ mod tests {
         let bind_dev = get_interface_name_by_ip(&IpAddr::V4(ips[0].into()));
 
         for ip in ips {
-            println!("bind to ip: {}, {:?}", ip, bind_dev);
+            println!("bind to ip: {:?}, {:?}", ip, bind_dev);
             let addr = check_scheme_and_get_socket_addr::<SocketAddr>(
-                &format!("udp://{}:11111", ip).parse().unwrap(),
+                &format!("udp://{}:11111", ip.to_string()).parse().unwrap(),
                 "udp",
                 IpVersion::Both,
             )

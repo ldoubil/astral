@@ -227,7 +227,7 @@ impl TunnelFilter for PacketRecorderTunnelFilter {
     fn after_received(&self, data: StreamItem) -> Option<StreamItem> {
         match data {
             Ok(v) => {
-                self.sent.lock().unwrap().push(v.clone());
+                self.sent.lock().unwrap().push(v.clone().into());
                 Some(Ok(v))
             }
             Err(e) => Some(Err(e)),
@@ -239,12 +239,6 @@ impl TunnelFilter for PacketRecorderTunnelFilter {
             self.received.lock().unwrap().clone(),
             self.sent.lock().unwrap().clone(),
         )
-    }
-}
-
-impl Default for PacketRecorderTunnelFilter {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -281,12 +275,6 @@ impl TunnelFilter for StatsRecorderTunnelFilter {
 
     fn filter_output(&self) -> Self::FilterOutput {
         self.throughput.clone()
-    }
-}
-
-impl Default for StatsRecorderTunnelFilter {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

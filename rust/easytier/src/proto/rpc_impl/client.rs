@@ -18,9 +18,7 @@ use crate::defer;
 use crate::proto::common::{
     CompressionAlgoPb, RpcCompressionInfo, RpcDescriptor, RpcPacket, RpcRequest, RpcResponse,
 };
-use crate::proto::rpc_impl::packet::{
-    build_rpc_packet, compress_packet, decompress_packet, BuildRpcPacketArgs,
-};
+use crate::proto::rpc_impl::packet::{build_rpc_packet, compress_packet, decompress_packet};
 use crate::proto::rpc_types::controller::Controller;
 use crate::proto::rpc_types::descriptor::MethodDescriptor;
 use crate::proto::rpc_types::{
@@ -55,15 +53,6 @@ struct InflightRequest {
     start_time: std::time::Instant,
 }
 
-impl std::fmt::Debug for InflightRequest {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("InflightRequest")
-            .field("sender", &self.sender)
-            .field("start_time", &self.start_time)
-            .finish()
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct PeerInfo {
     pub peer_id: PeerId,
@@ -83,12 +72,6 @@ pub struct Client {
     stats_manager: Option<Arc<StatsManager>>,
 }
 
-impl Default for Client {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Client {
     pub fn new() -> Self {
         let (ring_a, ring_b) = create_ring_tunnel_pair();
@@ -103,9 +86,15 @@ impl Client {
     }
 
     pub fn new_with_stats_manager(stats_manager: Arc<StatsManager>) -> Self {
-        let mut ret = Self::new();
-        ret.stats_manager = Some(stats_manager);
-        ret
+        let (ring_a, ring_b) = create_ring_tunnel_pair();
+        Self {
+            mpsc: Mutex::new(MpscTunnel::new(ring_a, None)),
+            transport: Mutex::new(MpscTunnel::new(ring_b, None)),
+            inflight_requests: Arc::new(DashMap::new()),
+            peer_info: Arc::new(DashMap::new()),
+            tasks: Mutex::new(JoinSet::new()),
+            stats_manager: Some(stats_manager),
+        }
     }
 
     pub fn get_transport_sink(&self) -> MpscTunnelSender {
@@ -162,11 +151,7 @@ impl Client {
                 };
 
                 let Some(mut inflight_request) = inflight_requests.get_mut(&key) else {
-                    tracing::warn!(
-                        ?key,
-                        ?inflight_requests,
-                        "No inflight request found for key"
-                    );
+                    tracing::warn!(?key, "No inflight request found for key");
                     continue;
                 };
 
@@ -291,19 +276,19 @@ impl Client {
                 .await
                 .unwrap();
 
-                let packets = build_rpc_packet(BuildRpcPacketArgs {
-                    from_peer: self.from_peer_id,
-                    to_peer: self.to_peer_id,
+                let packets = build_rpc_packet(
+                    self.from_peer_id,
+                    self.to_peer_id,
                     rpc_desc,
                     transaction_id,
-                    is_req: true,
-                    content: &buf,
-                    trace_id: ctrl.trace_id(),
-                    compression_info: RpcCompressionInfo {
+                    true,
+                    &buf,
+                    ctrl.trace_id(),
+                    RpcCompressionInfo {
                         algo: c_algo.into(),
                         accepted_algo: CompressionAlgoPb::Zstd.into(),
                     },
-                });
+                );
 
                 let timeout_dur = std::time::Duration::from_millis(ctrl.timeout_ms() as u64);
                 let mut rpc_packet = timeout(timeout_dur, self.do_rpc(packets, &mut rx)).await??;
@@ -313,7 +298,7 @@ impl Client {
                         self.to_peer_id,
                         PeerInfo {
                             peer_id: self.to_peer_id,
-                            compression_info,
+                            compression_info: compression_info.clone(),
                             last_active: Some(std::time::Instant::now()),
                         },
                     );

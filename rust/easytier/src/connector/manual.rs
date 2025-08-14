@@ -131,7 +131,7 @@ impl ManualConnectorManager {
             .data
             .connectors
             .iter()
-            .map(|x| x.key().clone())
+            .map(|x| x.key().clone().into())
             .collect();
 
         let dead_urls: BTreeSet<String> = Self::collect_dead_conns(self.data.clone())
@@ -155,8 +155,12 @@ impl ManualConnectorManager {
             );
         }
 
-        let reconnecting_urls: BTreeSet<String> =
-            self.data.reconnecting.iter().map(|x| x.clone()).collect();
+        let reconnecting_urls: BTreeSet<String> = self
+            .data
+            .reconnecting
+            .iter()
+            .map(|x| x.clone().into())
+            .collect();
 
         for conn_url in reconnecting_urls {
             ret.insert(
@@ -278,7 +282,7 @@ impl ManualConnectorManager {
         let remove_later = DashSet::new();
         for it in data.removed_conn_urls.iter() {
             let url = it.key();
-            if data.connectors.remove(url).is_some() {
+            if let Some(_) = data.connectors.remove(url) {
                 tracing::warn!("connector: {}, removed", url);
                 continue;
             } else if data.reconnecting.contains(url) {
@@ -297,7 +301,11 @@ impl ManualConnectorManager {
 
     async fn collect_dead_conns(data: Arc<ConnectorManagerData>) -> BTreeSet<String> {
         Self::handle_remove_connector(data.clone());
-        let all_urls: BTreeSet<String> = data.connectors.iter().map(|x| x.key().clone()).collect();
+        let all_urls: BTreeSet<String> = data
+            .connectors
+            .iter()
+            .map(|x| x.key().clone().into())
+            .collect();
         let mut ret = BTreeSet::new();
         for url in all_urls.iter() {
             if !data.alive_conn_urls.contains(url) {
@@ -392,28 +400,21 @@ impl ManualConnectorManager {
             .await;
             tracing::info!("reconnect: {} done, ret: {:?}", dead_url, ret);
 
-            match ret {
-                Ok(Ok(_)) => {
-                    // 外层和内层都成功：解包并跳出
-                    reconn_ret = ret.unwrap();
-                    break;
+            if ret.is_ok() && ret.as_ref().unwrap().is_ok() {
+                reconn_ret = ret.unwrap();
+                break;
+            } else {
+                if ret.is_err() {
+                    reconn_ret = Err(ret.unwrap_err().into());
+                } else if ret.as_ref().unwrap().is_err() {
+                    reconn_ret = Err(ret.unwrap().unwrap_err());
                 }
-                Ok(Err(e)) => {
-                    // 外层成功，内层失败
-                    reconn_ret = Err(e);
-                }
-                Err(e) => {
-                    // 外层失败
-                    reconn_ret = Err(e.into());
-                }
+                data.global_ctx.issue_event(GlobalCtxEvent::ConnectError(
+                    dead_url.clone(),
+                    format!("{:?}", ip_version),
+                    format!("{:?}", reconn_ret),
+                ));
             }
-
-            // 发送事件（只有在未 break 时才执行）
-            data.global_ctx.issue_event(GlobalCtxEvent::ConnectError(
-                dead_url.clone(),
-                format!("{:?}", ip_version),
-                format!("{:?}", reconn_ret),
-            ));
         }
 
         reconn_ret

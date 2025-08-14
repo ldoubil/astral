@@ -17,17 +17,11 @@ pub struct ChannelDevice {
     caps: DeviceCapabilities,
 }
 
-pub type ChannelDeviceNewRet = (
-    ChannelDevice,
-    Sender<io::Result<Vec<u8>>>,
-    Receiver<Vec<u8>>,
-);
-
 impl ChannelDevice {
     /// Make a new `ChannelDevice` with the given `recv` and `send` channels.
     ///
     /// The `caps` is used to determine the device capabilities. `DeviceCapabilities::max_transmission_unit` must be set.
-    pub fn new(caps: DeviceCapabilities) -> ChannelDeviceNewRet {
+    pub fn new(caps: DeviceCapabilities) -> (Self, Sender<io::Result<Vec<u8>>>, Receiver<Vec<u8>>) {
         let (tx1, rx1) = channel(1000);
         let (tx2, rx2) = channel(1000);
         (
@@ -51,7 +45,7 @@ impl Stream for ChannelDevice {
 }
 
 fn map_err(e: PollSendError<Vec<u8>>) -> io::Error {
-    io::Error::other(e)
+    io::Error::new(io::ErrorKind::Other, e)
 }
 
 impl Sink<Vec<u8>> for ChannelDevice {

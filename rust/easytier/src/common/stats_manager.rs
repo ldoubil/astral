@@ -277,12 +277,6 @@ pub struct UnsafeCounter {
     value: UnsafeCell<u64>,
 }
 
-impl Default for UnsafeCounter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl UnsafeCounter {
     pub fn new() -> Self {
         Self {
@@ -402,15 +396,14 @@ impl MetricKey {
     fn new(name: MetricName, labels: LabelSet) -> Self {
         Self { name, labels }
     }
-}
 
-impl fmt::Display for MetricKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    /// Generate a string representation for this metric key
+    fn to_string(&self) -> String {
         let label_str = self.labels.to_key();
         if label_str.is_empty() {
-            f.write_str(self.name.to_string().as_str())
+            self.name.to_string()
         } else {
-            f.write_str(format!("{}[{}]", self.name, label_str).as_str())
+            format!("{}[{}]", self.name, label_str)
         }
     }
 }
