@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:astral/state/theme_settings_state.dart';
 import 'package:astral/utils/net_astral_udp.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/main_screen.dart';
@@ -22,7 +23,6 @@ class _KevinAppState extends State<KevinApp> {
     super.initState();
     getIpv4AndIpV6Addresses();
     // 初始化链接服务
-      
   }
 
   @override
@@ -53,7 +53,9 @@ class _KevinAppState extends State<KevinApp> {
       },
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: _aps.themeColor.watch(context), // 设置当前主题颜色,
+        colorSchemeSeed: ThemeSettingsState().themeColor.watch(
+          context,
+        ), // 设置当前主题颜色,
         brightness: Brightness.light,
       ).copyWith(
         textTheme: Typography.material2021().black.apply(fontFamily: 'MiSans'),
@@ -63,7 +65,7 @@ class _KevinAppState extends State<KevinApp> {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: _aps.themeColor.watch(context),
+        colorSchemeSeed: ThemeSettingsState().themeColor.watch(context),
         brightness: Brightness.dark,
       ).copyWith(
         textTheme: Typography.material2021().white.apply(fontFamily: 'MiSans'),
