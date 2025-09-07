@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
+import 'package:astral/state/base_state.dart';
+import 'package:astral/state/theme_settings_state.dart';
 import 'package:astral/widgets/theme_selector.dart';
 import 'package:astral/widgets/windows_controls.dart';
 import 'package:astral/generated/locale_keys.g.dart';
@@ -44,7 +46,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
           foregroundColor: colorScheme.onPrimaryContainer,
           toolbarHeight: 32, // 在小窗口模式下降低高度
           title: Text(
-            Aps().appName.watch(context),
+            BaseState().appName.watch(context),
             style: TextStyle(
               fontSize: 14, // 在小窗口模式下使用更小的字体
               fontWeight: FontWeight.bold,
@@ -53,7 +55,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
           actions: [
             IconButton(
               icon: Icon(
-                switch (Aps().themeMode.watch(context)) {
+                switch (ThemeSettingsState().themeMode.watch(context)) {
                   ThemeMode.light => Icons.wb_sunny,
                   ThemeMode.dark => Icons.nightlight_round,
                   ThemeMode.system => Icons.auto_mode,
@@ -61,121 +63,120 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 16, // 在小窗口模式下使用更小的图标
               ),
               onPressed: () {
-                final currentMode = Aps().themeMode.value;
+                final currentMode = ThemeSettingsState().themeMode.value;
                 final newMode = switch (currentMode) {
                   ThemeMode.light => ThemeMode.dark,
                   ThemeMode.dark => ThemeMode.system,
                   ThemeMode.system => ThemeMode.light,
                 };
-                Aps().updateThemeMode(newMode);
+                ThemeSettingsState().themeMode.value = newMode;
               },
               padding: const EdgeInsets.all(4), // 减小内边距
             ),
             PopupMenuButton<Locale>(
-              icon: Icon(
-                Icons.language,
-                size: 16,
-              ),
+              icon: Icon(Icons.language, size: 16),
               tooltip: LocaleKeys.language.tr(),
               onSelected: (Locale locale) {
-                String langCode = locale.countryCode != null 
-                    ? '${locale.languageCode}_${locale.countryCode}'
-                    : locale.languageCode;
-                Aps().updateLanguage(langCode);
+                String langCode =
+                    locale.countryCode != null
+                        ? '${locale.languageCode}_${locale.countryCode}'
+                        : locale.languageCode;
+                ThemeSettingsState().currentLanguage.value = langCode;
                 context.setLocale(locale);
               },
-              itemBuilder: (BuildContext context) => [
-                PopupMenuItem(
-                  value: const Locale('zh'),
-                  child: Row(
-                    children: [
-                      Text('🇨🇳'),
-                      SizedBox(width: 8),
-                      Text('简体中文'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('zh', 'TW'),
-                  child: Row(
-                    children: [
-                      Text('🇹🇼'),
-                      SizedBox(width: 8),
-                      Text('繁體中文'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('en'),
-                  child: Row(
-                    children: [
-                      Text('🇺🇸'),
-                      SizedBox(width: 8),
-                      Text('English'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ja'),
-                  child: Row(
-                    children: [
-                      Text('🇯🇵'),
-                      SizedBox(width: 8),
-                      Text('日本語'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ko'),
-                  child: Row(
-                    children: [
-                      Text('🇰🇷'),
-                      SizedBox(width: 8),
-                      Text('한국어'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ru'),
-                  child: Row(
-                    children: [
-                      Text('🇷🇺'),
-                      SizedBox(width: 8),
-                      Text('Русский'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('fr'),
-                  child: Row(
-                    children: [
-                      Text('🇫🇷'),
-                      SizedBox(width: 8),
-                      Text('Français'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('de'),
-                  child: Row(
-                    children: [
-                      Text('🇩🇪'),
-                      SizedBox(width: 8),
-                      Text('Deutsch'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('es'),
-                  child: Row(
-                    children: [
-                      Text('🇪🇸'),
-                      SizedBox(width: 8),
-                      Text('Español'),
-                    ],
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (BuildContext context) => [
+                    PopupMenuItem(
+                      value: const Locale('zh'),
+                      child: Row(
+                        children: [
+                          Text('🇨🇳'),
+                          SizedBox(width: 8),
+                          Text('简体中文'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('zh', 'TW'),
+                      child: Row(
+                        children: [
+                          Text('🇹🇼'),
+                          SizedBox(width: 8),
+                          Text('繁體中文'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('en'),
+                      child: Row(
+                        children: [
+                          Text('🇺🇸'),
+                          SizedBox(width: 8),
+                          Text('English'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ja'),
+                      child: Row(
+                        children: [
+                          Text('🇯🇵'),
+                          SizedBox(width: 8),
+                          Text('日本語'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ko'),
+                      child: Row(
+                        children: [
+                          Text('🇰🇷'),
+                          SizedBox(width: 8),
+                          Text('한국어'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ru'),
+                      child: Row(
+                        children: [
+                          Text('🇷🇺'),
+                          SizedBox(width: 8),
+                          Text('Русский'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('fr'),
+                      child: Row(
+                        children: [
+                          Text('🇫🇷'),
+                          SizedBox(width: 8),
+                          Text('Français'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('de'),
+                      child: Row(
+                        children: [
+                          Text('🇩🇪'),
+                          SizedBox(width: 8),
+                          Text('Deutsch'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('es'),
+                      child: Row(
+                        children: [
+                          Text('🇪🇸'),
+                          SizedBox(width: 8),
+                          Text('Español'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
           ],
         ),
@@ -203,7 +204,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ).createShader(bounds),
             child: Text(
-              Aps().appName.watch(context),
+              BaseState().appName.watch(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -221,7 +222,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
             IconButton(
               icon: Icon(
                 // 根据当前主题模式选择对应图标
-                switch (Aps().themeMode.watch(context)) {
+                switch (ThemeSettingsState().themeMode.watch(context)) {
                   ThemeMode.light => Icons.wb_sunny,
                   ThemeMode.dark => Icons.nightlight_round,
                   ThemeMode.system => Icons.auto_mode,
@@ -229,15 +230,17 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 20,
               ),
               onPressed: () {
-                final currentMode = Aps().themeMode.value;
+                final currentMode = ThemeSettingsState().themeMode.value;
                 final newMode = switch (currentMode) {
                   ThemeMode.light => ThemeMode.dark,
                   ThemeMode.dark => ThemeMode.system,
                   ThemeMode.system => ThemeMode.light,
                 };
-                Aps().updateThemeMode(newMode);
+                ThemeSettingsState().themeMode.value = newMode;
               },
-              tooltip: getThemeModeText(Aps().themeMode.watch(context)),
+              tooltip: getThemeModeText(
+                ThemeSettingsState().themeMode.watch(context),
+              ),
               padding: const EdgeInsets.all(8),
             ),
 
@@ -251,104 +254,106 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.language, size: 20),
               tooltip: LocaleKeys.language.tr(),
               onSelected: (Locale locale) {
-                String langCode = locale.countryCode != null 
-                    ? '${locale.languageCode}_${locale.countryCode}'
-                    : locale.languageCode;
-                Aps().updateLanguage(langCode);
+                String langCode =
+                    locale.countryCode != null
+                        ? '${locale.languageCode}_${locale.countryCode}'
+                        : locale.languageCode;
+                ThemeSettingsState().currentLanguage.value = langCode;
                 context.setLocale(locale);
               },
-              itemBuilder: (BuildContext context) => [
-                PopupMenuItem(
-                  value: const Locale('zh'),
-                  child: Row(
-                    children: [
-                      Text('🇨🇳'),
-                      SizedBox(width: 8),
-                      Text('简体中文'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('zh', 'TW'),
-                  child: Row(
-                    children: [
-                      Text('🇹🇼'),
-                      SizedBox(width: 8),
-                      Text('繁體中文'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('en'),
-                  child: Row(
-                    children: [
-                      Text('🇺🇸'),
-                      SizedBox(width: 8),
-                      Text('English'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ja'),
-                  child: Row(
-                    children: [
-                      Text('🇯🇵'),
-                      SizedBox(width: 8),
-                      Text('日本語'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ko'),
-                  child: Row(
-                    children: [
-                      Text('🇰🇷'),
-                      SizedBox(width: 8),
-                      Text('한국어'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('ru'),
-                  child: Row(
-                    children: [
-                      Text('🇷🇺'),
-                      SizedBox(width: 8),
-                      Text('Русский'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('fr'),
-                  child: Row(
-                    children: [
-                      Text('🇫🇷'),
-                      SizedBox(width: 8),
-                      Text('Français'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('de'),
-                  child: Row(
-                    children: [
-                      Text('🇩🇪'),
-                      SizedBox(width: 8),
-                      Text('Deutsch'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: const Locale('es'),
-                  child: Row(
-                    children: [
-                      Text('🇪🇸'),
-                      SizedBox(width: 8),
-                      Text('Español'),
-                    ],
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (BuildContext context) => [
+                    PopupMenuItem(
+                      value: const Locale('zh'),
+                      child: Row(
+                        children: [
+                          Text('🇨🇳'),
+                          SizedBox(width: 8),
+                          Text('简体中文'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('zh', 'TW'),
+                      child: Row(
+                        children: [
+                          Text('🇹🇼'),
+                          SizedBox(width: 8),
+                          Text('繁體中文'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('en'),
+                      child: Row(
+                        children: [
+                          Text('🇺🇸'),
+                          SizedBox(width: 8),
+                          Text('English'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ja'),
+                      child: Row(
+                        children: [
+                          Text('🇯🇵'),
+                          SizedBox(width: 8),
+                          Text('日本語'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ko'),
+                      child: Row(
+                        children: [
+                          Text('🇰🇷'),
+                          SizedBox(width: 8),
+                          Text('한국어'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('ru'),
+                      child: Row(
+                        children: [
+                          Text('🇷🇺'),
+                          SizedBox(width: 8),
+                          Text('Русский'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('fr'),
+                      child: Row(
+                        children: [
+                          Text('🇫🇷'),
+                          SizedBox(width: 8),
+                          Text('Français'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('de'),
+                      child: Row(
+                        children: [
+                          Text('🇩🇪'),
+                          SizedBox(width: 8),
+                          Text('Deutsch'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: const Locale('es'),
+                      child: Row(
+                        children: [
+                          Text('🇪🇸'),
+                          SizedBox(width: 8),
+                          Text('Español'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
             if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
               const WindowControls(),

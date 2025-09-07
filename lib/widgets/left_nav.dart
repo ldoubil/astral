@@ -1,5 +1,6 @@
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/k/navigtion.dart';
+import 'package:astral/state/base_state.dart';
 import 'package:flutter/material.dart';
 
 class LeftNav extends StatelessWidget {
@@ -18,18 +19,18 @@ class LeftNav extends StatelessWidget {
       ColorScheme colorScheme,
       dynamic item,
     ) {
-      final isSelected = Aps().selectedIndex.watch(context) == index;
+      final isSelected = BaseState().selectedIndex.watch(context) == index;
       return MouseRegion(
-        onEnter: (_) => Aps().hoveredIndex.set(index),
-        onExit: (_) => Aps().hoveredIndex.set(null),
+        onEnter: (_) => BaseState().hoveredIndex.set(index),
+        onExit: (_) => BaseState().hoveredIndex.set(null),
         child: Container(
           height: 64,
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              if (Aps().selectedIndex.watch(context) != index) {
-                Aps().selectedIndex.set(index);
+              if (BaseState().selectedIndex.watch(context) != index) {
+                BaseState().selectedIndex.set(index);
               }
             },
             child: Center(
@@ -83,8 +84,8 @@ class LeftNav extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
               tween: Tween<double>(
-                begin: 4.0 + (Aps().selectedIndex.watch(context) * 72.0),
-                end: 4.0 + (Aps().selectedIndex.watch(context) * 72.0),
+                begin: 4.0 + (BaseState().selectedIndex.watch(context) * 72.0),
+                end: 4.0 + (BaseState().selectedIndex.watch(context) * 72.0),
               ),
               builder: (context, value, child) {
                 return Positioned(
@@ -101,44 +102,44 @@ class LeftNav extends StatelessWidget {
                 );
               },
             ), //
-          // 鼠标悬停指示器
-          if (Aps().hoveredIndex.watch(context) != null &&
-              Aps().hoveredIndex.watch(context) !=
-                  Aps().selectedIndex.watch(context))
-            Positioned(
-              top: 4.0 + (Aps().hoveredIndex.watch(context)! * 72.0),
-              left: 8,
-              right: 8,
-              height: 64,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.5,
+            // 鼠标悬停指示器
+            if (BaseState().hoveredIndex.watch(context) != null &&
+                BaseState().hoveredIndex.watch(context) !=
+                    BaseState().selectedIndex.watch(context))
+              Positioned(
+                top: 4.0 + (BaseState().hoveredIndex.watch(context)! * 72.0),
+                left: 8,
+                right: 8,
+                height: 64,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
+            // 导航项列表
+            Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return buildNavItem(
+                        item.icon,
+                        item.label,
+                        index,
+                        colorScheme,
+                        item,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          // 导航项列表
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return buildNavItem(
-                      item.icon,
-                      item.label,
-                      index,
-                      colorScheme,
-                      item,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
           ],
         ),
       ),

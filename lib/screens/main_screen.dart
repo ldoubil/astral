@@ -1,6 +1,7 @@
 // 导入所需的包
 import 'dart:io';
 
+import 'package:astral/state/base_state.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
@@ -36,7 +37,7 @@ class _MainScreenState extends State<MainScreen>
     // 在第一帧渲染完成后获取屏幕宽度并更新分割宽度
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final screenWidth = MediaQuery.of(context).size.width;
-      Aps().updateScreenSplitWidth(screenWidth);
+      BaseState().updateScreenSplitWidth(screenWidth);
     });
 
     // 在初始化时进行更新检查
@@ -83,7 +84,7 @@ class _MainScreenState extends State<MainScreen>
     );
 
     // 更新分割宽度
-    Aps().updateScreenSplitWidth(screenWidth);
+    BaseState().updateScreenSplitWidth(screenWidth);
 
     // 强制刷新UI以适应新的尺寸
     if (mounted) {
@@ -143,7 +144,7 @@ class _MainScreenState extends State<MainScreen>
       body: Row(
         children: [
           // 根据是否为桌面端决定是否显示左侧导航
-          if (Aps().isDesktop.watch(context) && !isSmallWindow)
+          if (BaseState().isDesktop.watch(context) && !isSmallWindow)
             LeftNav(items: navigationItems, colorScheme: colorScheme),
           // 主要内容区域
           Expanded(
@@ -157,7 +158,8 @@ class _MainScreenState extends State<MainScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      navigationItems[Aps().selectedIndex.watch(context)].label,
+                      navigationItems[BaseState().selectedIndex.watch(context)]
+                          .label,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -168,7 +170,9 @@ class _MainScreenState extends State<MainScreen>
                 // 主内容区域
                 Expanded(
                   child: IndexedStack(
-                    index: Aps().selectedIndex.watch(context), // 当前选中的页面索引
+                    index: BaseState().selectedIndex.watch(
+                      context,
+                    ), // 当前选中的页面索引
                     children: _pages, // 页面列表
                   ),
                 ),
@@ -179,7 +183,7 @@ class _MainScreenState extends State<MainScreen>
       ),
       // 底部导航栏：在非桌面端或小窗口模式下显示
       bottomNavigationBar:
-          (Aps().isDesktop.watch(context) && !isSmallWindow)
+          (BaseState().isDesktop.watch(context) && !isSmallWindow)
               ? null
               : BottomNav(
                 navigationItems: navigationItems,

@@ -50,7 +50,6 @@ class Aps {
   }
 
   Aps._internal() {
-    _initThemeSettings();
     updateNetConfig();
     initMisc();
     loadStartupSettings();
@@ -72,16 +71,6 @@ class Aps {
   }
 
   bool get mounted => true; // 添加mounted属性模拟
-
-  // 初始化主题设置
-  Future<void> _initThemeSettings() async {
-    final database = AppDatabase();
-    themeMode.value = await database.themeSettings.getThemeMode();
-    themeColor.value = Color(await database.themeSettings.getThemeColor());
-    // 初始化语言设置，默认为中文
-
-    currentLanguage.value = 'zh';
-  }
 
   // 杂项初始化
   // 在initMisc方法中修改房间加载逻辑
@@ -322,60 +311,10 @@ class Aps {
   }
 
   /// **********************************************************************************************************
-  /// 主题颜色
-  final Signal<Color> themeColor = signal(Colors.blue);
-  // 更新主题颜色
-  Future<void> updateThemeColor(Color color) async {
-    themeColor.value = color;
-    await AppDatabase().themeSettings.updateThemeColor(color.toARGB32());
-  }
 
-  /// **********************************************************************************************************
-  /// 主题模式
-  final Signal<ThemeMode> themeMode = signal(ThemeMode.system); // 初始化为跟随系统
-  // 更新主题模式
-  Future<void> updateThemeMode(ThemeMode mode) async {
-    themeMode.value = mode;
-    await AppDatabase().themeSettings.updateThemeMode(mode);
-  }
 
-  /// **********************************************************************************************************
-  /// 语言设置
-  final Signal<String> currentLanguage = signal('zh'); // 初始化为中文
-  // 更新语言设置
-  Future<void> updateLanguage(String languageCode) async {
-    currentLanguage.value = languageCode;
-  }
 
-  /// **********************************************************************************************************
 
-  /// 软件名
-  final Signal<String> appName = signal('Astral Game'); // 初始化为Astral Game
-
-  /// **********************************************************************************************************
-
-  /// 获取屏幕分割宽度 区分手机和桌面
-  final Signal<double> screenSplitWidth = signal(480); // 初始化为480
-  //更新屏幕分割宽度
-  void updateScreenSplitWidth(double width) {
-    screenSplitWidth.value = width;
-    // 判断是否为桌面
-    isDesktop.value = width > 480;
-  }
-
-  /// **********************************************************************************************************
-
-  /// 是否为桌面
-  final Signal<bool> isDesktop = signal(false); // 初始化为false
-  /// **********************************************************************************************************
-
-  // 添加鼠标悬停状态跟踪
-  final Signal<int?> hoveredIndex = signal(null);
-
-  /// **********************************************************************************************************
-
-  // 构建导航项
-  final Signal<int> selectedIndex = Signal(0);
 
   /// 网络配置
   final Signal<String> netns = signal(''); // 网络命名空间

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:astral/state/base_state.dart';
 import 'package:astral/utils/net_astral_udp.dart';
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/src/rust/api/firewall.dart';
@@ -30,9 +31,9 @@ class _ConnectButtonState extends State<ConnectButton>
   Timer? _connectionTimer;
   Timer? _timeoutTimer;
   int _connectionDuration = 0; // 连接持续时间（秒）
-  
+
   // 添加通知插件（仅安卓平台）
-  final FlutterLocalNotificationsPlugin? _notificationsPlugin = 
+  final FlutterLocalNotificationsPlugin? _notificationsPlugin =
       Platform.isAndroid ? FlutterLocalNotificationsPlugin() : null;
   static const int _notificationId = 1001;
 
@@ -90,7 +91,7 @@ class _ConnectButtonState extends State<ConnectButton>
     if (Platform.isAndroid) {
       // 初始化通知
       _initializeNotifications();
-      
+
       // 监听VPN服务启动事件
       vpnPlugin?.onVpnServiceStarted.listen((data) {
         setTunFd(fd: data['fd']);
@@ -124,13 +125,13 @@ class _ConnectButtonState extends State<ConnectButton>
   // 初始化通知
   Future<void> _initializeNotifications() async {
     if (_notificationsPlugin == null) return;
-    
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
+
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
-    
+
     await _notificationsPlugin!.initialize(initializationSettings);
   }
 
@@ -144,19 +145,20 @@ class _ConnectButtonState extends State<ConnectButton>
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-      'astral_connection',
-      'Astral 连接状态',
-      channelDescription: '显示 Astral VPN 连接状态和信息',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      showWhen: false,
-      icon: '@mipmap/ic_launcher',
-    );
+          'astral_connection',
+          'Astral 连接状态',
+          channelDescription: '显示 Astral VPN 连接状态和信息',
+          importance: Importance.low,
+          priority: Priority.low,
+          ongoing: true,
+          autoCancel: false,
+          showWhen: false,
+          icon: '@mipmap/ic_launcher',
+        );
 
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidNotificationDetails);
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+    );
 
     await _notificationsPlugin!.show(
       _notificationId,
@@ -177,7 +179,7 @@ class _ConnectButtonState extends State<ConnectButton>
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
     final secs = seconds % 60;
-    
+
     if (hours > 0) {
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
     } else {
@@ -208,7 +210,7 @@ class _ConnectButtonState extends State<ConnectButton>
               label: LocaleKeys.go_add.tr(),
               onPressed: () {
                 // 跳转到服务器页面（索引为2）
-                Aps().selectedIndex.set(2);
+                BaseState().selectedIndex.set(2);
               },
             ),
             behavior: SnackBarBehavior.floating,
@@ -458,7 +460,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
       Aps().updateIpv4(_extractIpv4Address(data));
       Aps().netStatus.value = await getNetworkStatus();
-      
+
       // 在安卓平台更新通知
       if (Platform.isAndroid && Aps().Connec_state.value == CoState.connected) {
         await _showConnectionNotification(
