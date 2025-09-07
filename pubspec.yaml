@@ -2,7 +2,7 @@ name: astral
 description: 'astral'
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.1.110
+version: 2.1.111
 
 environment:
   sdk: ^3.7.2
@@ -17,7 +17,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   rust_lib_astral:
     path: rust_builder
-  flutter_rust_bridge: 2.11.1
+  flutter_rust_bridge: 2.10.0
   signals_flutter: ^6.0.2
   isar_flutter_libs:
     hosted: https://pub.isar-community.dev
