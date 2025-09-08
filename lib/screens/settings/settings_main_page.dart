@@ -12,6 +12,8 @@ import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
+import 'package:astral/screens/settings/server/custom_server_page.dart';
+import 'package:astral/screens/settings/server/public_server_page.dart';
 
 class SettingsMainPage extends StatelessWidget {
   const SettingsMainPage({super.key});
@@ -80,6 +82,28 @@ class SettingsMainPage extends StatelessWidget {
             title: '高级网络设置',
             subtitle: '协议、加密等高级选项',
             onTap: () => _navigateToPage(context, const NetworkSettingsPage()),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 服务器配置分组
+          _buildSectionHeader(context, '服务器配置'),
+          const SizedBox(height: 8),
+
+          _buildSettingsCard(
+            context,
+            icon: Icons.dns,
+            title: '自定义服务器',
+            subtitle: '添加和管理自定义服务器',
+            onTap: () => _navigateToPage(context, const CustomServerPage()),
+          ),
+
+          _buildSettingsCard(
+            context,
+            icon: Icons.public,
+            title: '公共服务器',
+            subtitle: '选择和连接公共服务器',
+            onTap: () => _navigateToPage(context, const PublicServerPage()),
           ),
 
           const SizedBox(height: 24),

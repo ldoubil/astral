@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:astral/utils/net/ping_util.dart';
-
 import 'package:astral/utils/random_name.dart';
 import 'package:astral/k/models/net_config.dart';
 import 'package:astral/k/models/room.dart';
@@ -311,10 +310,6 @@ class Aps {
   }
 
   /// **********************************************************************************************************
-
-
-
-
 
   /// 网络配置
   final Signal<String> netns = signal(''); // 网络命名空间

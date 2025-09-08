@@ -12,6 +12,7 @@ class BaseState {
   }
 
   final currentPage = signal('home');
+
   /// **********************************************************************************************************
 
   /// 是否为桌面
@@ -24,7 +25,6 @@ class BaseState {
   /// 软件名
   final Signal<String> appName = signal('Astral Game'); // 初始化为Astral Game
 
-
   /// 获取屏幕分割宽度 区分手机和桌面
   final Signal<double> screenSplitWidth = signal(480); // 初始化为480
   //更新屏幕分割宽度
@@ -33,6 +33,7 @@ class BaseState {
     // 判断是否为桌面
     isDesktop.value = width > 480;
   }
+
   // 构建导航项
   final Signal<int> selectedIndex = Signal(0);
 
@@ -40,9 +41,5 @@ class BaseState {
     init();
   }
 
-  void init() async {
-   
-  }
-
-
+  void init() async {}
 }
