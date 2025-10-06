@@ -1,9 +1,7 @@
 import '../../../data/models/server_node.dart';
-import '../../../data/models/server_api_response.dart';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:intl/intl.dart';
 import '../../../services/server_api_service.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class PublicServerPage extends StatefulWidget {
   const PublicServerPage({super.key});
@@ -73,16 +71,48 @@ class _PublicServerPageState extends State<PublicServerPage> {
                     ? _buildErrorWidget()
                     : _publicServers.isEmpty
                     ? _buildEmptyWidget()
-                    : RefreshIndicator(
-                      onRefresh: _loadServers,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _publicServers.length,
-                        itemBuilder: (context, index) {
-                          final server = _publicServers[index];
-                          return _buildServerCard(server);
-                        },
-                      ),
+                    : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        int crossAxisCount = 1;
+                        if (width >= 1200) {
+                          crossAxisCount = 3;
+                        } else if (width >= 800) {
+                          crossAxisCount = 2;
+                        }
+
+                        final padding = const EdgeInsets.all(16);
+                        if (crossAxisCount == 1) {
+                          // 窄屏（手机）使用列表
+                          return RefreshIndicator(
+                            onRefresh: _loadServers,
+                            child: ListView.builder(
+                              padding: padding,
+                              itemCount: _publicServers.length,
+                              itemBuilder: (context, index) {
+                                final server = _publicServers[index];
+                                return _buildServerCard(server);
+                              },
+                            ),
+                          );
+                        }
+
+                        // 宽屏（桌面）使用瀑布流网格，适配不等高卡片
+                        return RefreshIndicator(
+                          onRefresh: _loadServers,
+                          child: MasonryGridView.count(
+                            padding: padding,
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            itemCount: _publicServers.length,
+                            itemBuilder: (context, index) {
+                              final server = _publicServers[index];
+                              return _buildServerCard(server);
+                            },
+                          ),
+                        );
+                      },
                     ),
           ),
         ],
@@ -92,60 +122,65 @@ class _PublicServerPageState extends State<PublicServerPage> {
 
   Widget _buildServerCard(ServerNode server) {
     final isHealthy = server.isHealthy;
+    final cs = Theme.of(context).colorScheme;
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: () {
           // TODO: 添加服务器详情或连接功能
         },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 服务器名称和状态行
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      server.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-                  // 负载显示
-                  _buildLoadIndicator(server),
-                ],
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.dns_outlined, color: cs.primary),
+                title: Text(
+                  server.name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                subtitle: Text(
+                  '${server.host}:${server.port}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                trailing: Icon(
+                  isHealthy ? Icons.cloud_done : Icons.cloud_off,
+                  color: isHealthy ? cs.primary : cs.error,
+                ),
               ),
-              // 服务器描述（仅在有内容时显示）
+
               if (server.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   server.description,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  ),
                 ),
               ],
+
               const SizedBox(height: 12),
-              // 服务器地址信息
-              Row(
+              _buildLoadIndicator(server),
+
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  Icon(Icons.dns_outlined, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${server.host}:${server.port}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                  Chip(
+                    avatar: const Icon(Icons.info_outline, size: 16),
+                    label: Text('内核版本 ${server.version}'),
+                  ),
+                  Chip(
+                    avatar: Icon(
+                      server.allowRelay ? Icons.swap_horiz : Icons.block,
+                      size: 16,
                     ),
+                    label: Text(server.allowRelay ? '可中继' : '不可中继'),
                   ),
                 ],
               ),
@@ -205,291 +240,23 @@ class _PublicServerPageState extends State<PublicServerPage> {
 
   // 构建负载指示器
   Widget _buildLoadIndicator(ServerNode server) {
-    final loadPercentage =
-        server.maxConnections > 0
-            ? (server.currentConnections / server.maxConnections * 100).clamp(
-              0,
-              100,
-            )
-            : 0.0;
+    final total = server.maxConnections > 0 ? server.maxConnections : 0;
+    final current = server.currentConnections.clamp(0, total);
+    final ratio = total > 0 ? current / total : 0.0;
 
-    // 根据负载百分比确定颜色
-    Color loadColor;
-    if (loadPercentage < 50) {
-      loadColor = Colors.green;
-    } else if (loadPercentage < 80) {
-      loadColor = Colors.orange;
-    } else {
-      loadColor = Colors.red;
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 判断是否为移动设备（宽度小于600px）
-        final isMobile = constraints.maxWidth < 600;
-        
-        if (isMobile) {
-          // 移动设备：垂直布局
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 负载显示行
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: loadColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: loadColor.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people_outline, size: 14, color: loadColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${server.currentConnections}/${server.maxConnections}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: loadColor,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: loadPercentage / 100,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: loadColor,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${loadPercentage.toInt()}%',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: loadColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              // 版本和中继信息行
-              Row(
-                children: [
-                  // 版本信息
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.blue.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 12,
-                            color: Colors.blue[700],
-                          ),
-                          const SizedBox(width: 3),
-                          Flexible(
-                            child: Text(
-                              server.version,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.blue[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  // 中继状态
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: server.allowRelay 
-                          ? Colors.green.withOpacity(0.1) 
-                          : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: server.allowRelay 
-                            ? Colors.green.withOpacity(0.3) 
-                            : Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          server.allowRelay ? Icons.swap_horiz : Icons.block,
-                          size: 12,
-                          color: server.allowRelay ? Colors.green[700] : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          server.allowRelay ? '可中继' : '不可中继',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: server.allowRelay ? Colors.green[700] : Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        } else {
-          // 桌面设备：水平布局
-          return Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              // 负载显示
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: loadColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: loadColor.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people_outline, size: 12, color: loadColor),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${server.currentConnections}/${server.maxConnections}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: loadColor,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 30,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: loadPercentage / 100,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: loadColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${loadPercentage.toInt()}%',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: loadColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 版本信息
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.info_outline, size: 10, color: Colors.blue[700]),
-                    const SizedBox(width: 2),
-                    Text(
-                      server.version,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 中转状态
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                decoration: BoxDecoration(
-                  color:
-                      server.allowRelay
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color:
-                        server.allowRelay
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      server.allowRelay ? Icons.swap_horiz : Icons.block,
-                      size: 10,
-                      color: server.allowRelay ? Colors.green[700] : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      server.allowRelay ? '可中转' : '不可中转',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color:
-                            server.allowRelay ? Colors.green[700] : Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        }
-      },
+    return Row(
+      children: [
+        const Icon(Icons.people_outline, size: 16),
+        const SizedBox(width: 6),
+        Text('$current/$total', style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(width: 12),
+        Expanded(child: LinearProgressIndicator(value: ratio)),
+        const SizedBox(width: 12),
+        Text(
+          '${(ratio * 100).round()}%',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 

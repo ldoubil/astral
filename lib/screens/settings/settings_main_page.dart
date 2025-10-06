@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:astral/screens/settings/server/custom_server_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
@@ -12,7 +13,6 @@ import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
-import 'package:astral/screens/settings/server/custom_server_page.dart';
 import 'package:astral/screens/settings/server/public_server_page.dart';
 
 class SettingsMainPage extends StatelessWidget {
@@ -89,20 +89,20 @@ class SettingsMainPage extends StatelessWidget {
           // 服务器配置分组
           _buildSectionHeader(context, '服务器配置'),
           const SizedBox(height: 8),
-
+          // CustomServerPage
           _buildSettingsCard(
             context,
-            icon: Icons.dns,
-            title: '自定义服务器',
-            subtitle: '添加和管理自定义服务器',
+            icon: Icons.public,
+            title: '自定义服务器列表',
+            subtitle: '管理自定义服务器',
             onTap: () => _navigateToPage(context, const CustomServerPage()),
           ),
 
           _buildSettingsCard(
             context,
             icon: Icons.public,
-            title: '公共服务器',
-            subtitle: '选择和连接公共服务器',
+            title: '公共服务器列表',
+            subtitle: '管理公共服务器',
             onTap: () => _navigateToPage(context, const PublicServerPage()),
           ),
 

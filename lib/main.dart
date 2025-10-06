@@ -16,18 +16,18 @@ import 'package:astral/src/rust/frb_generated.dart';
 import 'package:astral/app.dart';
 import 'package:astral/app_wrapper.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/data/database/db_base.dart';
+import 'package:astral/data/storage/file_storage.dart';
 
 void main() async {
   await RustLib.init();
   // initApp();
-  
+
   // 确保在任何UI组件初始化之前先初始化数据库和适配器
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 首先初始化Hive数据库和适配器（这必须在ThemeSettingsState使用之前完成）
-  await DBbase.instance.initialize();
-  
+
+  // 初始化文件存储（新的持久化方案）
+  await FileStorage().init();
+
   // Linux 下检测是否为 root 权限
   if (!kIsWeb && Platform.isLinux) {
     final env = Platform.environment;
@@ -46,7 +46,7 @@ void main() async {
       }
     });
   }
-  
+
   await EasyLocalization.ensureInitialized();
   await AppDatabase().init();
   AppInfoUtil.init();
