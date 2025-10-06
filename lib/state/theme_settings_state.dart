@@ -1,51 +1,51 @@
-import 'package:astral/state/persistent_signal.dart';
+import 'package:astral/state/typed_persistent_signal.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-/// 主题设置状态管理类 - 优化版本
-/// 管理应用程序的主题、语言等设置
+/// 主题设置状态管理类 - 类型化版本
+/// 管理应用程序的主题、语言等设置，使用类型化存储系统
 class ThemeSettingsState {
   static final ThemeSettingsState _instance = ThemeSettingsState._internal();
   factory ThemeSettingsState() => _instance;
 
-  /// 主题颜色 - 使用自动持久化
-  final PersistentSignal<Color> themeColor = PersistentSignal(
+  /// 主题颜色 - 使用类型化自动持久化
+  final TypedPersistentSignal<Color> themeColor = TypedPersistentSignal(
     'themeColor',
     Colors.deepOrangeAccent,
   );
 
-  /// 主题模式 - 使用自动持久化
-  final PersistentSignal<ThemeMode> themeMode = PersistentSignal(
+  /// 主题模式 - 使用类型化自动持久化
+  final TypedPersistentSignal<ThemeMode> themeMode = TypedPersistentSignal(
     'themeMode',
     ThemeMode.system,
   );
 
-  /// 当前语言 - 使用自动持久化
-  final PersistentSignal<String> currentLanguage = PersistentSignal(
+  /// 当前语言 - 使用类型化自动持久化
+  final TypedPersistentSignal<String> currentLanguage = TypedPersistentSignal(
     'currentLanguage',
     'zh',
   );
 
   /// 是否启用动画效果
-  final PersistentSignal<bool> enableAnimations = PersistentSignal(
+  final TypedPersistentSignal<bool> enableAnimations = TypedPersistentSignal(
     'enableAnimations',
     true,
   );
 
   /// 字体大小缩放比例
-  final PersistentSignal<double> fontScale = PersistentSignal(
+  final TypedPersistentSignal<double> fontScale = TypedPersistentSignal(
     'fontScale',
     1.0,
   );
 
   /// 是否使用系统字体
-  final PersistentSignal<bool> useSystemFont = PersistentSignal(
+  final TypedPersistentSignal<bool> useSystemFont = TypedPersistentSignal(
     'useSystemFont',
     true,
   );
 
   /// 是否启用高对比度模式
-  final PersistentSignal<bool> highContrast = PersistentSignal(
+  final TypedPersistentSignal<bool> highContrast = TypedPersistentSignal(
     'highContrast',
     false,
   );

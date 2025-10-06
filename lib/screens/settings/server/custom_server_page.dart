@@ -41,7 +41,7 @@ class _CustomServerPageState extends State<CustomServerPage> {
             onPressed: () async {
               final result = await showAddServerDialog(context);
               if (result != null) {
-                await _serverListState.addServer(result);
+                _serverListState.addServer(result);
               }
             },
           ),
@@ -127,7 +127,7 @@ class _CustomServerPageState extends State<CustomServerPage> {
         onTap: () async {
           final result = await showAddServerDialog(context, initial: server);
           if (result != null) {
-            await _serverListState.updateServer(result);
+            _serverListState.updateServer(result);
           }
         },
         child: Padding(
@@ -152,14 +152,14 @@ class _CustomServerPageState extends State<CustomServerPage> {
                       server.url,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    if (server.description != null && server.description!.isNotEmpty)
+                    if (server.description != null &&
+                        server.description!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           server.description!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ),
                   ],
@@ -172,32 +172,38 @@ class _CustomServerPageState extends State<CustomServerPage> {
                         initial: server,
                       );
                       if (result != null) {
-                        await _serverListState.updateServer(result);
+                        _serverListState.updateServer(result);
                       }
                     } else if (value == 'delete') {
-                      final confirmed = await _showDeleteConfirmDialog(server.name);
+                      final confirmed = await _showDeleteConfirmDialog(
+                        server.name,
+                      );
                       if (confirmed == true) {
-                        await _serverListState.removeServer(server.id);
+                        _serverListState.removeServer(server.id.toString());
                       }
                     } else if (value == 'toggle') {
                       final updatedServer = server.copyWith(
                         enable: !server.enable,
                         updatedAt: DateTime.now(),
                       );
-                      await _serverListState.updateServer(updatedServer);
+                      _serverListState.updateServer(updatedServer);
                     }
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Text(server.enable ? '禁用' : '启用'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text('删除', style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('编辑')),
+                        PopupMenuItem(
+                          value: 'toggle',
+                          child: Text(server.enable ? '禁用' : '启用'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text(
+                            '删除',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -219,15 +225,13 @@ class _CustomServerPageState extends State<CustomServerPage> {
                       size: 16,
                     ),
                     label: Text(server.enable ? '启用' : '禁用'),
-                    backgroundColor: server.enable 
-                        ? Colors.green[50] 
-                        : Colors.grey[100],
+                    backgroundColor:
+                        server.enable ? Colors.green[50] : Colors.grey[100],
                   ),
-                  if (server.createdAt != null)
-                    Chip(
-                      avatar: const Icon(Icons.access_time, size: 16),
-                      label: Text(_formatDate(server.createdAt!)),
-                    ),
+                  Chip(
+                    avatar: const Icon(Icons.access_time, size: 16),
+                    label: Text(_formatDate(server.createdAt)),
+                  ),
                 ],
               ),
             ],
@@ -328,30 +332,29 @@ class _CustomServerPageState extends State<CustomServerPage> {
   Future<bool?> _showDeleteConfirmDialog(String serverName) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除服务器 "$serverName" 吗？此操作不可撤销。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('确认删除'),
+            content: Text('确定要删除服务器 "$serverName" 吗？此操作不可撤销。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('删除'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
     );
   }
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays}天前';
     } else if (difference.inHours > 0) {

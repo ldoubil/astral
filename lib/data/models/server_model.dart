@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../storage/typed_storage.dart';
 
 /// 连接协议类型（单选）
 enum ProtocolType {
@@ -16,7 +17,7 @@ enum ProtocolType {
 
 /// 服务器配置模型
 /// 用于存储和管理服务器连接信息，兼容原有的ServerDb结构
-class ServerModel {
+class ServerModel implements Serializable {
   /// 服务器ID
   final int id;
   
