@@ -14,7 +14,10 @@ import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import 'package:astral/screens/settings/server/public_server_page.dart';
+=======
+>>>>>>> parent of cfbe876 (1)
 =======
 >>>>>>> parent of cfbe876 (1)
 
@@ -90,6 +93,7 @@ class SettingsMainPage extends StatelessWidget {
           const SizedBox(height: 24),
 
 <<<<<<< HEAD
+<<<<<<< HEAD
           // 服务器配置分组
           _buildSectionHeader(context, '服务器配置'),
           const SizedBox(height: 8),
@@ -112,6 +116,8 @@ class SettingsMainPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
+=======
+>>>>>>> parent of cfbe876 (1)
 =======
 >>>>>>> parent of cfbe876 (1)
           // 通用设置分组
