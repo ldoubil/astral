@@ -9,9 +9,13 @@ class BaseState {
 
   /// 当前页面
   final currentPage = signal('home');
+<<<<<<< HEAD
 
   /// 是否为桌面设备
   final Signal<bool> isDesktop = signal(false);
+=======
+  /// **********************************************************************************************************
+>>>>>>> parent of cfbe876 (1)
 
   /// 鼠标悬停状态跟踪
   final Signal<int?> hoveredIndex = signal(null);
@@ -19,16 +23,31 @@ class BaseState {
   /// 应用程序名称
   final Signal<String> appName = signal('Astral Game');
 
+<<<<<<< HEAD
   /// 屏幕分割宽度 - 用于区分手机和桌面
   final Signal<double> screenSplitWidth = signal(480.0);
 
   /// 当前选中的导航项索引
   final Signal<int> selectedIndex = signal(0);
+=======
+
+  /// 获取屏幕分割宽度 区分手机和桌面
+  final Signal<double> screenSplitWidth = signal(480); // 初始化为480
+  //更新屏幕分割宽度
+  void updateScreenSplitWidth(double width) {
+    screenSplitWidth.value = width;
+    // 判断是否为桌面
+    isDesktop.value = width > 480;
+  }
+  // 构建导航项
+  final Signal<int> selectedIndex = Signal(0);
+>>>>>>> parent of cfbe876 (1)
 
   BaseState._internal() {
     _init();
   }
 
+<<<<<<< HEAD
   /// 初始化状态
   void _init() {
     // 监听屏幕宽度变化，自动更新设备类型
@@ -64,4 +83,11 @@ class BaseState {
     selectedIndex.value = 0;
     screenSplitWidth.value = 480.0;
   }
+=======
+  void init() async {
+   
+  }
+
+
+>>>>>>> parent of cfbe876 (1)
 }
