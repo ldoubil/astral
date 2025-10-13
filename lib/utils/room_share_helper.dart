@@ -1,10 +1,10 @@
-import 'package:astral/state/base_state.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:astral/utils/e_d_room.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 
 /// 房间分享助手类
 /// 提供完整的房间分享功能，包括链接生成、分享、导入等
@@ -464,7 +464,7 @@ $roomSummary
       // 这样可以避免在应用初始化过程中出现问题
       await Future.microtask(() async {
         // 跳转到房间页面
-        BaseState().selectedIndex.set(1);
+        AppState().baseState.selectedIndex.set(1);
 
         // 延迟一点时间确保页面已经切换
         await Future.delayed(const Duration(milliseconds: 100));

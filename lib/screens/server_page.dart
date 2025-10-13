@@ -1,12 +1,11 @@
 import 'package:astral/utils/show_server_dialog.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/widgets/server_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:isar/isar.dart';
 import 'package:astral/widgets/server_reorder_sheet.dart';
 import 'package:astral/widgets/public_servers_dialog.dart'; // 新增公共服务器对话框导入
 import 'dart:async'; // 添加Timer导入
@@ -382,7 +381,7 @@ class _ServerPageState extends State<ServerPage>
   // 添加公共服务器
   void _addPublicServer(String name, String url) {
     final server = ServerMod(
-      id: Isar.autoIncrement,
+      id: 1,
       enable: false,
       name: name,
       url: url,

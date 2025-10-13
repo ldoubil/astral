@@ -12,7 +12,6 @@ import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:astral/k/database/app_data.dart';
 import 'package:uuid/uuid.dart';
 export 'package:signals_flutter/signals_flutter.dart';
 import 'package:astral/k/models/wfp_model.dart';

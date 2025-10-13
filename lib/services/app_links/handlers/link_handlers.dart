@@ -1,6 +1,6 @@
 import 'package:astral/utils/e_d_room.dart';
 import 'package:astral/utils/room_share_helper.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

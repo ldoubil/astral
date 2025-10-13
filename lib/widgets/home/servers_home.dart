@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';

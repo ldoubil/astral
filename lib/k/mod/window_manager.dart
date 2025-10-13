@@ -1,9 +1,9 @@
-import 'package:astral/state/base_state.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/reg.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 
 class WindowManagerUtils {
   static Future<void> initializeWindow() async {
@@ -15,7 +15,7 @@ class WindowManagerUtils {
       // 创建响应式效果，用于监听和更新窗口标题
       effect(() {
         // 设置窗口标题为当前应用名称
-        windowManager.setTitle(BaseState().appName.value);
+        windowManager.setTitle(AppState().baseState.appName.value);
       });
       // 定义窗口选项配置
       final windowOptions = WindowOptions(
@@ -25,7 +25,7 @@ class WindowManagerUtils {
         // 设置窗口居中显示
         center: true,
         // 设置窗口标题
-        title: BaseState().appName.value,
+        title: AppState().baseState.appName.value,
         // 设置标题栏样式为隐藏
         titleBarStyle: TitleBarStyle.hidden,
         // 设置窗口背景为透明

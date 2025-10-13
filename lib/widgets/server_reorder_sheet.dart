@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:astral/k/models/server_mod.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'dart:async'; // 添加对dart:async的导入以使用Completer
 
 // 新增服务器排序弹窗组件

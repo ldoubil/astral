@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/net_config.dart';
 import 'package:flutter/material.dart';
 

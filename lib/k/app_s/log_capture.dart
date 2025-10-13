@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'aps.dart';
+import 'aps.dart1';
 
 /// 日志捕获管理器 - 单例类
 class LogCapture {

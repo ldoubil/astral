@@ -7,7 +7,7 @@ import 'package:astral/widgets/room_card.dart';
 import 'package:astral/widgets/room_reorder_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/room.dart';
 import 'package:uuid/uuid.dart';
 

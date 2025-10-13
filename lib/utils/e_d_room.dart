@@ -81,9 +81,9 @@ Room? decryptRoomFromJWT(String token) {
     final JWT jwt = JWT.verify(token, SecretKey(jwtSecret));
 
     // 检查JWT是否过期
-    if (jwt.payload['exp'] != null) {
+    if ((jwt.payload as Map<String, dynamic>)['exp'] != null) {
       final expiry = DateTime.fromMillisecondsSinceEpoch(
-        jwt.payload['exp'] * 1000,
+        (jwt.payload as Map<String, dynamic>)['exp'] * 1000,
       );
       if (DateTime.now().isAfter(expiry)) {
         throw Exception('分享码已过期');
@@ -95,7 +95,7 @@ Room? decryptRoomFromJWT(String token) {
       throw Exception('无效的分享码来源');
     }
 
-    final String encryptedString = jwt.payload['data'] as String;
+    final String encryptedString = (jwt.payload as Map<String, dynamic>)['data'] as String;
     if (encryptedString.isEmpty) {
       throw Exception('分享码数据为空');
     }

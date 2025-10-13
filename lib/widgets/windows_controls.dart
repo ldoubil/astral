@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:window_manager/window_manager.dart';

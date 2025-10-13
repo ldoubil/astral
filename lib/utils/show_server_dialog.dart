@@ -1,7 +1,6 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 
 // 显示添加服务器对话框
 Future<void> showAddServerDialog(BuildContext context) async {
@@ -88,7 +87,7 @@ class _ServerDialogState extends State<ServerDialog> {
   void _saveServer() {
     if (_formKey.currentState!.validate()) {
       final server = ServerMod(
-        id: widget.server?.id ?? Isar.autoIncrement,
+        id: widget.server?.id ,
         enable: widget.server?.enable ?? false,
         name: _nameController.text,
         url: _urlController.text,

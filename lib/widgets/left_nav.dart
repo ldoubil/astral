@@ -1,6 +1,6 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/navigtion.dart';
-import 'package:astral/state/base_state.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 
 class LeftNav extends StatelessWidget {
@@ -19,18 +19,18 @@ class LeftNav extends StatelessWidget {
       ColorScheme colorScheme,
       dynamic item,
     ) {
-      final isSelected = BaseState().selectedIndex.watch(context) == index;
+      final isSelected = AppState().baseState.selectedIndex.watch(context) == index;
       return MouseRegion(
-        onEnter: (_) => BaseState().hoveredIndex.set(index),
-        onExit: (_) => BaseState().hoveredIndex.set(null),
+        onEnter: (_) => AppState().baseState.hoveredIndex.set(index),
+        onExit: (_) => AppState().baseState.hoveredIndex.set(null),
         child: Container(
           height: 64,
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              if (BaseState().selectedIndex.watch(context) != index) {
-                BaseState().selectedIndex.set(index);
+              if (AppState().baseState.selectedIndex.watch(context) != index) {
+                AppState().baseState.selectedIndex.set(index);
               }
             },
             child: Center(
@@ -84,8 +84,8 @@ class LeftNav extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
               tween: Tween<double>(
-                begin: 4.0 + (BaseState().selectedIndex.watch(context) * 72.0),
-                end: 4.0 + (BaseState().selectedIndex.watch(context) * 72.0),
+                begin: 4.0 + (AppState().baseState.selectedIndex.watch(context) * 72.0),
+                end: 4.0 + (AppState().baseState.selectedIndex.watch(context) * 72.0),
               ),
               builder: (context, value, child) {
                 return Positioned(
@@ -103,11 +103,11 @@ class LeftNav extends StatelessWidget {
               },
             ), //
             // 鼠标悬停指示器
-            if (BaseState().hoveredIndex.watch(context) != null &&
-                BaseState().hoveredIndex.watch(context) !=
-                    BaseState().selectedIndex.watch(context))
+            if (AppState().baseState.hoveredIndex.watch(context) != null &&
+                AppState().baseState.hoveredIndex.watch(context) !=
+                    AppState().baseState.selectedIndex.watch(context))
               Positioned(
-                top: 4.0 + (BaseState().hoveredIndex.watch(context)! * 72.0),
+                top: 4.0 + (AppState().baseState.hoveredIndex.watch(context)! * 72.0),
                 left: 8,
                 right: 8,
                 height: 64,

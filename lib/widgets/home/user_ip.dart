@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/widgets/home_box.dart';
 import 'package:astral/widgets/canvas_jump.dart';
 import 'package:astral/k/models/room.dart';

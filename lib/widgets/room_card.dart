@@ -1,5 +1,5 @@
 // 修改RoomCard类，接收 Room 对象和分类名称列表
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/room.dart';
 import 'package:astral/widgets/home/connect_button.dart';
 import 'package:flutter/material.dart';

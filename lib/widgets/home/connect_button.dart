@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:astral/state/base_state.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/net_astral_udp.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -210,7 +210,7 @@ class _ConnectButtonState extends State<ConnectButton>
               label: LocaleKeys.go_add.tr(),
               onPressed: () {
                 // 跳转到服务器页面（索引为2）
-                BaseState().selectedIndex.set(2);
+                AppState().baseState.selectedIndex.set(2);
               },
             ),
             behavior: SnackBarBehavior.floating,

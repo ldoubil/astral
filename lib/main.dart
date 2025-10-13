@@ -6,7 +6,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/utils/reg.dart'; // 添加这行导入
 import 'package:astral/k/app_s/log_capture.dart';
-import 'package:astral/k/database/app_data.dart';
 import 'package:astral/k/mod/window_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:easy_localization_loader/easy_localization_loader.dart';
@@ -16,7 +15,6 @@ import 'package:astral/src/rust/frb_generated.dart';
 import 'package:astral/app.dart';
 import 'package:astral/app_wrapper.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/data/storage/file_storage.dart';
 
 void main() async {
   await RustLib.init();
@@ -24,9 +22,6 @@ void main() async {
 
   // 确保在任何UI组件初始化之前先初始化数据库和适配器
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 初始化文件存储（新的持久化方案）
-  await FileStorage().init();
 
   // Linux 下检测是否为 root 权限
   if (!kIsWeb && Platform.isLinux) {
@@ -48,7 +43,6 @@ void main() async {
   }
 
   await EasyLocalization.ensureInitialized();
-  await AppDatabase().init();
   AppInfoUtil.init();
 
   await LogCapture().startCapture();

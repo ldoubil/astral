@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 
 // 房间设置弹窗组件
 class RoomSettingsSheet extends StatefulWidget {

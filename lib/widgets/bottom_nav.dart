@@ -1,7 +1,7 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/k/navigtion.dart';
-import 'package:astral/state/base_state.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 
 class BottomNav extends StatelessWidget {
@@ -43,9 +43,9 @@ class BottomNav extends StatelessWidget {
                 ),
               )
               .toList(),
-      currentIndex: BaseState().selectedIndex.watch(context),
+      currentIndex: AppState().baseState.selectedIndex.watch(context),
       onTap: (index) {
-        BaseState().selectedIndex.set(index);
+        AppState().baseState.selectedIndex.set(index);
       },
     );
   }
