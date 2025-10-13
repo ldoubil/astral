@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:astral/models/net_node.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/app_settings.dart'; // 导入需要注册的模型
 
@@ -10,12 +10,15 @@ class HiveInitializer {
       await Hive.initFlutter();
 
       // 注册所有Hive适配器（新增模型时，在此添加适配器）
-      Hive.registerAdapter(ThemeModeAdapter());
       Hive.registerAdapter(AppSettingsAdapter());
+      Hive.registerAdapter(NetNodeAdapter());
+      Hive.registerAdapter(ConnectionManagerAdapter());
+      Hive.registerAdapter(ConnectionInfoAdapter());
+
 
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
-      await Hive.openBox<AppSettings>('app_settings_box'); // 存储AppSettings
-      await Hive.openBox<dynamic>('user_data_box');        // 存储用户基础数据（String/int/List等）
+      await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings
+      await Hive.openBox<dynamic>('BasicData');        // 存储用户基础数据（String/int/List等）
 
       print('Hive初始化成功');
     } catch (e) {
@@ -30,3 +33,4 @@ class HiveInitializer {
     print('Hive已关闭');
   }
 }
+

@@ -6,7 +6,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_localization
   gtk
-  isar_flutter_libs
   open_file_linux
   screen_retriever_linux
   tray_manager
