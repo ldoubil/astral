@@ -1,6 +1,6 @@
 import 'package:astral/state/child/base_state.dart';
 import 'package:astral/state/child/theme_state.dart';
-
+enum CoState { idle, connecting, connected }
 /// 应用状态管理类
 /// 在基础状态之上提供单例与对外接口
 class AppState {

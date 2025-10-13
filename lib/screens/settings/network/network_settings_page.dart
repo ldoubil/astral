@@ -1,7 +1,8 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class NetworkSettingsPage extends StatelessWidget {
   const NetworkSettingsPage({super.key});
@@ -31,9 +32,9 @@ class NetworkSettingsPage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: DropdownButton<String>(
                         value:
-                            Aps().defaultProtocol.watch(context).isEmpty
+                            AppState().baseState.defaultProtocol.watch(context).isEmpty
                                 ? 'tcp'
-                                : Aps().defaultProtocol.watch(context),
+                                : AppState().baseState.defaultProtocol.watch(context),
                         items: const [
                           DropdownMenuItem(
                             value: 'tcp',
@@ -63,7 +64,7 @@ class NetworkSettingsPage extends StatelessWidget {
                         icon: const Icon(Icons.arrow_drop_down),
                         onChanged: (value) {
                           if (value != null) {
-                            Aps().updateDefaultProtocol(value);
+                            // Aps().updateDefaultProtocol(value);
                           }
                         },
                       ),
@@ -77,36 +78,36 @@ class NetworkSettingsPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_encryption.tr()),
                   subtitle: Text(LocaleKeys.auto_set_mtu.tr()),
-                  value: Aps().enableEncryption.watch(context),
+                  value: AppState().baseState.enableEncryption.watch(context),
                   onChanged: (value) {
-                    Aps().updateEnableEncryption(value);
+                    // AppState().baseState.updateEnableEncryption(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.latency_first.tr()),
                   subtitle: Text(LocaleKeys.latency_first_desc.tr()),
-                  value: Aps().latencyFirst.watch(context),
+                  value: AppState().baseState.latencyFirst.watch(context),
                   onChanged: (value) {
-                    Aps().updateLatencyFirst(value);
+                    // AppState().baseState.updateLatencyFirst(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.magic_dns.tr()),
                   subtitle: Text(LocaleKeys.magic_dns_desc.tr()),
-                  value: Aps().accept_dns.watch(context),
+                  value: AppState().baseState.accept_dns.watch(context),
                   onChanged: (value) {
-                    Aps().updateAcceptDns(value);
+                    // AppState().baseState.updateAcceptDns(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.tun_device.tr()),
                   subtitle: Text(LocaleKeys.tun_device_desc.tr()),
-                  value: Aps().noTun.watch(context),
+                  value: AppState().baseState.noTun.watch(context),
                   onChanged: (value) {
-                    Aps().updateNoTun(value);
+                    // AppState().baseState.updateNoTun(value);
                   },
                 ),
               ],
@@ -152,27 +153,27 @@ class NetworkSettingsPage extends StatelessWidget {
                     ],
                   ),
                   subtitle: Text(LocaleKeys.smoltcp_stack_desc.tr()),
-                  value: Aps().useSmoltcp.watch(context),
+                  value: AppState().baseState.useSmoltcp.watch(context),
                   onChanged: (value) {
-                    Aps().updateUseSmoltcp(value);
+                    // AppState().baseState.updateUseSmoltcp(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.disable_p2p.tr()),
                   subtitle: Text(LocaleKeys.disable_p2p_desc.tr()),
-                  value: Aps().disableP2p.watch(context),
+                  value: AppState().baseState.disableP2p.watch(context),
                   onChanged: (value) {
-                    Aps().updateDisableP2p(value);
+                    // AppState().baseState.updateDisableP2p(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.relay_peer_rpc.tr()),
                   subtitle: Text(LocaleKeys.relay_peer_rpc_desc.tr()),
-                  value: Aps().relayAllPeerRpc.watch(context),
+                  value: AppState().baseState.relayAllPeerRpc.watch(context),
                   onChanged: (value) {
-                    Aps().updateRelayAllPeerRpc(value);
+                    // AppState().baseState.updateRelayAllPeerRpc(value);
                   },
                 ),
 
@@ -181,18 +182,18 @@ class NetworkSettingsPage extends StatelessWidget {
                   subtitle: Text(
                     LocaleKeys.disable_udp_hole_punching_desc.tr(),
                   ),
-                  value: Aps().disableUdpHolePunching.watch(context),
+                  value: AppState().baseState.disableUdpHolePunching.watch(context),
                   onChanged: (value) {
-                    Aps().updateDisableUdpHolePunching(value);
+                    // AppState().baseState.updateDisableUdpHolePunching(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_multi_thread.tr()),
                   subtitle: Text(LocaleKeys.enable_multi_thread_desc.tr()),
-                  value: Aps().multiThread.watch(context),
+                  value: AppState().baseState.multiThread.watch(context),
                   onChanged: (value) {
-                    Aps().updateMultiThread(value);
+                    // AppState().baseState.updateMultiThread(value);
                   },
                 ),
 
@@ -207,7 +208,7 @@ class NetworkSettingsPage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: DropdownButton<int>(
-                        value: Aps().dataCompressAlgo.watch(context),
+                        value: AppState().baseState.dataCompressAlgo.watch(context),
                         items: [
                           DropdownMenuItem(
                             value: 1,
@@ -228,7 +229,7 @@ class NetworkSettingsPage extends StatelessWidget {
                         icon: const Icon(Icons.arrow_drop_down),
                         onChanged: (value) {
                           if (value != null) {
-                            Aps().updateDataCompressAlgo(value);
+                            // Aps().updateDataCompressAlgo(value);
                           }
                         },
                       ),
@@ -239,63 +240,63 @@ class NetworkSettingsPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.bind_device.tr()),
                   subtitle: Text(LocaleKeys.bind_device_desc.tr()),
-                  value: Aps().bindDevice.watch(context),
+                  value: AppState().baseState.bindDevice.watch(context),
                   onChanged: (value) {
-                    Aps().updateBindDevice(value);
+                    // AppState().baseState.updateBindDevice(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_kcp_proxy.tr()),
                   subtitle: Text(LocaleKeys.enable_kcp_proxy_desc.tr()),
-                  value: Aps().enableKcpProxy.watch(context),
+                  value: AppState().baseState.enableKcpProxy.watch(context),
                   onChanged: (value) {
-                    Aps().updateEnableKcpProxy(value);
+                    // AppState().baseState.updateEnableKcpProxy(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.kcp_input.tr()),
                   subtitle: Text(LocaleKeys.kcp_input_desc.tr()),
-                  value: Aps().disableKcpInput.watch(context),
+                  value: AppState().baseState.disableKcpInput.watch(context),
                   onChanged: (value) {
-                    Aps().updateDisableKcpInput(value);
+                    // AppState().baseState.updateDisableKcpInput(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.disable_relay_kcp.tr()),
                   subtitle: Text(LocaleKeys.disable_relay_kcp_desc.tr()),
-                  value: Aps().disableRelayKcp.watch(context),
+                  value: AppState().baseState.disableRelayKcp.watch(context),
                   onChanged: (value) {
-                    Aps().updateDisableRelayKcp(value);
+                    // AppState().baseState.updateDisableRelayKcp(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.private_mode.tr()),
                   subtitle: Text(LocaleKeys.private_mode_desc.tr()),
-                  value: Aps().privateMode.watch(context),
+                  value: AppState().baseState.privateMode.watch(context),
                   onChanged: (value) {
-                    Aps().updatePrivateMode(value);
+                    // AppState().baseState.updatePrivateMode(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_quic_proxy.tr()),
                   subtitle: Text(LocaleKeys.enable_quic_proxy_desc.tr()),
-                  value: Aps().enableQuicProxy.watch(context),
+                  value: AppState().baseState.enableQuicProxy.watch(context),
                   onChanged: (value) {
-                    Aps().updateEnableQuicProxy(value);
+                    // AppState().baseState.updateEnableQuicProxy(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.disable_quic_input.tr()),
                   subtitle: Text(LocaleKeys.disable_quic_input_desc.tr()),
-                  value: Aps().disableQuicInput.watch(context),
+                  value: AppState().baseState.disableQuicInput.watch(context),
                   onChanged: (value) {
-                    Aps().updateDisableQuicInput(value);
+                    // AppState().baseState.updateDisableQuicInput(value);
                   },
                 ),
               ],

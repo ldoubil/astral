@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:astral/state/app_state.dart';
+import 'package:astral/state/child/base_state.dart';
 import 'package:astral/utils/net_astral_udp.dart';
-import 'package:astral/k/app_s/aps.dart1';
-import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:vpn_service_plugin/vpn_service_plugin.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
@@ -72,7 +72,7 @@ class _ConnectButtonState extends State<ConnectButton>
         ipv4Addr: ipv4Addr,
         mtu: mtu,
         routes:
-            Aps().customVpn.value
+            AppState().baseState.customVpn.value
                 .where((route) => _isValidCIDR(route))
                 .toList(),
         disallowedApplications: disallowedApplications,
@@ -105,7 +105,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
     // 添加自动连接逻辑
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (Aps().startupAutoConnect.watch(context)) {
+      if (AppState().baseState.startupAutoConnect.watch(context)) {
         _startConnection();
       }
     });
@@ -192,14 +192,14 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 然后模拟一个10秒的网络连接过程，最后切换到已连接(connected)状态
   Future<void> _startConnection() async {
     // 如果当前状态不是空闲状态，则直接返回，防止重复触发连接操作
-    if (Aps().Connec_state.value != CoState.idle) return;
+    if (AppState().baseState.Connec_state.value != CoState.idle) return;
 
-    final rom = Aps().selectroom.value;
+    final rom = AppState().baseState.selectroom.value;
     if (rom == null) return;
 
     // 检查服务器列表是否为空
     final enabledServers =
-        Aps().servers.value.where((server) => server.enable).toList();
+        AppState().baseState.servers.value.where((server) => server.enable).toList();
     if (enabledServers.isEmpty) {
       // 显示提示信息
       if (mounted) {
@@ -228,13 +228,13 @@ class _ConnectButtonState extends State<ConnectButton>
       await _beginConnectionProcess();
     } catch (e) {
       // 发生错误时重置状态
-      Aps().Connec_state.value = CoState.idle;
+      AppState().baseState.Connec_state.value = CoState.idle; 
       rethrow;
     }
   }
 
   Future<void> _initializeServer(dynamic rom) async {
-    final aps = Aps();
+    final aps = AppState().baseState;
     if (Platform.isAndroid) {
       vpnPlugin?.prepareVpn();
     }
@@ -309,20 +309,20 @@ class _ConnectButtonState extends State<ConnectButton>
             return urls;
           }).toList(),
       onurl:
-          Aps().listenList.value.where((url) => !url.contains('[::]')).toList(),
+          AppState().baseState.listenList.value.where((url) => !url.contains('[::]')).toList(),
       flag: _buildFlags(aps),
     );
   }
 
-  FlagsC _buildFlags(Aps aps) => FlagsC(
+  FlagsC _buildFlags(BaseState aps) => FlagsC(
     defaultProtocol: aps.defaultProtocol.value,
-    devName: aps.devName.value,
+    devName: aps.dev_name.value,
     enableEncryption: aps.enableEncryption.value,
-    enableIpv6: aps.enableIpv6.value,
+    enableIpv6: true,
     mtu: aps.enableEncryption.value ? 1360 : 1380,
     multiThread: aps.multiThread.value,
     latencyFirst: aps.latencyFirst.value,
-    enableExitNode: aps.enableExitNode.value,
+    enableExitNode: true,
     noTun: aps.noTun.value,
     useSmoltcp: aps.useSmoltcp.value,
     // relayNetworkWhitelist: aps.relayNetworkWhitelist.value,
@@ -335,7 +335,7 @@ class _ConnectButtonState extends State<ConnectButton>
     enableKcpProxy: aps.enableKcpProxy.value,
     disableKcpInput: aps.disableKcpInput.value,
     disableRelayKcp: aps.disableRelayKcp.value,
-    proxyForwardBySystem: aps.proxyForwardBySystem.value,
+    proxyForwardBySystem: true,
     acceptDns: aps.accept_dns.value,
     privateMode: aps.privateMode.value,
     enableQuicProxy: aps.enableQuicProxy.value,
@@ -343,7 +343,7 @@ class _ConnectButtonState extends State<ConnectButton>
   );
 
   Future<void> _beginConnectionProcess() async {
-    Aps().Connec_state.value = CoState.connecting;
+    AppState().baseState.Connec_state.value = CoState.connecting;
     setState(() {
       _progress = 0.0;
     });
@@ -366,7 +366,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
   void _setupConnectionTimeout() {
     _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
-      if (Aps().Connec_state.value == CoState.connecting) {
+      if (AppState().baseState.Connec_state.value == CoState.connecting) {
         debugPrint("连接超时");
         if (Platform.isAndroid) {
           _cancelNotification();
@@ -378,7 +378,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
   void _startConnectionStatusCheck() {
     Timer.periodic(const Duration(seconds: 1), (timer) async {
-      if (Aps().Connec_state.value != CoState.connecting) {
+      if (AppState().baseState.Connec_state.value != CoState.connecting) {
         timer.cancel();
         return;
       }
@@ -398,8 +398,8 @@ class _ConnectButtonState extends State<ConnectButton>
     final data = jsonDecode(runningInfo);
 
     final ipv4Address = _extractIpv4Address(data);
-    if (ipv4Address != "0.0.0.0" && Aps().ipv4.value != ipv4Address) {
-      Aps().updateIpv4(ipv4Address);
+    if (ipv4Address != "0.0.0.0" && AppState().baseState.ipv4.value != ipv4Address) {
+      // AppState().baseState.updateIpv4(ipv4Address);
     }
     return ipv4Address != "0.0.0.0";
   }
@@ -419,19 +419,19 @@ class _ConnectButtonState extends State<ConnectButton>
       _progress = 100;
       _connectionDuration = 0;
     });
-    Aps().Connec_state.value = CoState.connected;
-    Aps().isConnecting.value = true;
+    AppState().baseState.Connec_state.value = CoState.connected;
+    AppState().baseState.isConnecting.value = true;
     if (Platform.isAndroid) {
-      _startVpn(ipv4Addr: Aps().ipv4.value, mtu: Aps().mtu.value);
+      _startVpn(ipv4Addr: AppState().baseState.ipv4.value, mtu: AppState().baseState.mtu.value);
       // 显示连接成功通知
       await _showConnectionNotification(
         status: '已连接',
-        ip: Aps().ipv4.value.isNotEmpty ? Aps().ipv4.value : '获取中...',
+        ip: AppState().baseState.ipv4.value.isNotEmpty ? AppState().baseState.ipv4.value : '获取中...',
         duration: _formatDuration(_connectionDuration),
       );
     }
     if (Platform.isWindows) {
-      if (Aps().autoSetMTU.value) {
+      if (AppState().baseState.autoSetMTU.value) {
         setInterfaceMetric(interfaceName: "astral", metric: 0);
       }
     }
@@ -458,14 +458,14 @@ class _ConnectButtonState extends State<ConnectButton>
       final runningInfo = await getRunningInfo();
       final data = jsonDecode(runningInfo);
 
-      Aps().updateIpv4(_extractIpv4Address(data));
-      Aps().netStatus.value = await getNetworkStatus();
+      // AppState().baseState.updateIpv4(_extractIpv4Address(data));
+      AppState().baseState.netStatus.value = await getNetworkStatus();
 
       // 在安卓平台更新通知
-      if (Platform.isAndroid && Aps().Connec_state.value == CoState.connected) {
+      if (Platform.isAndroid && AppState().baseState.Connec_state.value == CoState.connected) {
         await _showConnectionNotification(
           status: '已连接',
-          ip: Aps().ipv4.value.isNotEmpty ? Aps().ipv4.value : '获取中...',
+          ip: AppState().baseState.ipv4.value.isNotEmpty ? AppState().baseState.ipv4.value : '获取中...',
           duration: _formatDuration(_connectionDuration),
         );
       }
@@ -479,7 +479,7 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 该方法负责将按钮状态从已连接(connected)切换回空闲(idle)状态，
   /// 实现断开连接的功能
   void _disconnect() {
-    Aps().isConnecting.value = false;
+    AppState().baseState.isConnecting.value = false;
     if (Platform.isAndroid) {
       vpnPlugin?.stopVpn();
       // 取消通知
@@ -489,16 +489,16 @@ class _ConnectButtonState extends State<ConnectButton>
     _connectionTimer?.cancel();
     _connectionTimer = null;
     closeServer();
-    Aps().Connec_state.value = CoState.idle;
+    AppState().baseState.Connec_state.value = CoState.idle;
   }
 
   /// 切换连接状态的方法
   /// 根据当前的连接状态来决定是开始连接还是断开连接
   void _toggleConnection() {
-    if (Aps().Connec_state.value == CoState.idle) {
+    if (AppState().baseState.Connec_state.value == CoState.idle) {
       // 如果当前是空闲状态，则开始连接
       _startConnection();
-    } else if (Aps().Connec_state.value == CoState.connected) {
+    } else if (AppState().baseState.Connec_state.value == CoState.connected) {
       // 如果当前是已连接状态，则断开连接
       debugPrint("断开连接");
       _disconnect();
@@ -586,13 +586,13 @@ class _ConnectButtonState extends State<ConnectButton>
             child: AnimatedSlide(
               duration: const Duration(milliseconds: 300),
               offset:
-                  Aps().Connec_state.watch(context) == CoState.connecting
+                  AppState().baseState.Connec_state.watch(context) == CoState.connecting
                       ? Offset.zero
                       : const Offset(0, 1.0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity:
-                    Aps().Connec_state.watch(context) == CoState.connecting
+                    AppState().baseState.Connec_state.watch(context) == CoState.connecting
                         ? 1.0
                         : 0.0,
                 child: Container(
@@ -605,7 +605,7 @@ class _ConnectButtonState extends State<ConnectButton>
                   ),
                   child: TweenAnimationBuilder<double>(
                     key: ValueKey(
-                      'progress_${Aps().Connec_state.watch(context) == CoState.connecting}',
+                      'progress_${AppState().baseState.Connec_state.watch(context) == CoState.connecting}',
                     ),
                     tween: Tween<double>(begin: 0.0, end: 1.0),
                     duration: Duration(
@@ -644,17 +644,17 @@ class _ConnectButtonState extends State<ConnectButton>
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutCubic,
               width:
-                  Aps().Connec_state.watch(context) != CoState.idle ? 180 : 100,
+                  AppState().baseState.Connec_state.watch(context) != CoState.idle ? 180 : 100,
               height: 60,
               child: FloatingActionButton.extended(
                 onPressed:
-                    Aps().Connec_state.watch(context) == CoState.connecting
+                    AppState().baseState.Connec_state.watch(context) == CoState.connecting
                         ? null
                         : _toggleConnection,
                 heroTag: "connect_button",
                 extendedPadding: const EdgeInsets.symmetric(horizontal: 2),
                 splashColor:
-                    Aps().Connec_state.watch(context) != CoState.idle
+                    AppState().baseState.Connec_state.watch(context) != CoState.idle
                         ? colorScheme.onTertiary.withAlpha(51)
                         : colorScheme.onPrimary.withAlpha(51),
                 icon: AnimatedSwitcher(
@@ -670,20 +670,20 @@ class _ConnectButtonState extends State<ConnectButton>
                       child: ScaleTransition(scale: animation, child: child),
                     );
                   },
-                  child: _getButtonIcon(Aps().Connec_state.watch(context)),
+                  child: _getButtonIcon(AppState().baseState.Connec_state.watch(context)),
                 ),
                 label: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   switchInCurve: Curves.easeOutQuad,
                   switchOutCurve: Curves.easeInQuad,
-                  child: _getButtonLabel(Aps().Connec_state.watch(context)),
+                  child: _getButtonLabel(AppState().baseState.Connec_state.watch(context)),
                 ),
                 backgroundColor: _getButtonColor(
-                  Aps().Connec_state.watch(context),
+                  AppState().baseState.Connec_state.watch(context),
                   colorScheme,
                 ),
                 foregroundColor: _getButtonForegroundColor(
-                  Aps().Connec_state.watch(context),
+                  AppState().baseState.Connec_state.watch(context),
                   colorScheme,
                 ),
               ),

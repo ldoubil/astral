@@ -1,10 +1,7 @@
-import 'package:isar/isar.dart';
-part 'server_mod.g.dart';
 
-@collection
 class ServerMod {
+  int id = 1;
   /// 主键自增
-  Id id = Isar.autoIncrement;
   String name = ""; // 服务器名
   String url = ""; // 服务器地址
   // 是否启用
@@ -34,7 +31,6 @@ class ServerMod {
 
   //构造
   ServerMod({
-    this.id = Isar.autoIncrement,
     this.enable = false,
     required this.name,
     required this.url,

@@ -1,6 +1,7 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class LogsPage extends StatefulWidget {
   const LogsPage({super.key});
@@ -19,7 +20,7 @@ class _LogsPageState extends State<LogsPage> {
   }
 
   void _copyAllLogs() {
-    final logs = Aps().logs.value;
+    final logs = AppState().baseState.logs.value;
     if (logs.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('暂无日志可复制')),
@@ -86,7 +87,7 @@ class _LogsPageState extends State<LogsPage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Aps().logs.value = [];
+                        AppState().baseState.logs.value = [];
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('日志已清空')),
@@ -103,7 +104,7 @@ class _LogsPageState extends State<LogsPage> {
       ),
       body: Builder(
         builder: (context) {
-          final logs = Aps().logs.watch(context);
+          final logs = AppState().baseState.logs.watch(context);
           
           if (logs.isEmpty) {
             return const Center(

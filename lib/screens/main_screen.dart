@@ -1,7 +1,6 @@
 // 导入所需的包
 import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/up.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/home_page.dart';
 import 'package:astral/screens/room_page.dart';
@@ -14,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:astral/k/navigtion.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 主屏幕Widget，使用StatefulWidget以管理状态
 class MainScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class _MainScreenState extends State<MainScreen>
 
     // 在初始化时进行更新检查
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (Aps().autoCheckUpdate.value || Aps().beta.value) {
+      if (AppState().baseState.autoCheckUpdate.value || AppState().baseState.beta.value) {
         final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
         if (mounted) {
           Future.delayed(const Duration(milliseconds: 1000), () {

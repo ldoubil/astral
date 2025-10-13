@@ -1,8 +1,9 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/utils/up.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class UpdateSettingsPage extends StatelessWidget {
   const UpdateSettingsPage({super.key});
@@ -38,19 +39,19 @@ class UpdateSettingsPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.join_beta.tr()),
                   subtitle: Text(LocaleKeys.join_beta_desc.tr()),
-                  value: Aps().beta.watch(context),
+                  value: AppState().baseState.beta.watch(context),
                   onChanged: (value) {
-                    Aps().setBeta(value);
+                    // AppState().baseState.b(value);
                   },
                 ),
 
-                if (!Aps().beta.watch(context))
+                if (!AppState().baseState.beta.watch(context))
                   SwitchListTile(
                     title: Text(LocaleKeys.auto_update.tr()),
                     subtitle: Text(LocaleKeys.auto_update_desc.tr()),
-                    value: Aps().autoCheckUpdate.watch(context),
+                    value: AppState().baseState.autoCheckUpdate.watch(context),
                     onChanged: (value) {
-                      Aps().setAutoCheckUpdate(value);
+                      // AppState().baseState.setAutoCheckUpdate(value);
                     },
                   ),
               ],
@@ -79,9 +80,9 @@ class UpdateSettingsPage extends StatelessWidget {
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.link),
                     ),
-                    initialValue: Aps().downloadAccelerate.watch(context),
+                    initialValue: AppState().baseState.downloadAccelerate.watch(context),
                     onChanged: (value) {
-                      Aps().setDownloadAccelerate(value);
+                      // AppState().baseState.setDownloadAccelerate(value);
                     },
                   ),
                 ),
@@ -180,7 +181,7 @@ class UpdateSettingsPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('构建时间: 2024-01-01'),
                 const SizedBox(height: 8),
-                Text('更新通道: ${Aps().beta.value ? "Beta" : "Stable"}'),
+                Text('更新通道: ${AppState().baseState.beta.value ? "Beta" : "Stable"}'),
               ],
             ),
             actions: [

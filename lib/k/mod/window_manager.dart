@@ -1,9 +1,9 @@
 import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/reg.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart1';
 
 class WindowManagerUtils {
   static Future<void> initializeWindow() async {
@@ -37,7 +37,7 @@ class WindowManagerUtils {
       // 等待窗口准备就绪并显示
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
         // 如果 startupMinimize 为 true，则最小化窗口
-        if (Aps().startupMinimize.value) {
+        if (AppState().baseState.startupMinimize.value) {
           await windowManager.hide();
         } else {
           await windowManager.show();
@@ -45,7 +45,7 @@ class WindowManagerUtils {
         }
       });
 
-      if (Aps().startup.value) {
+      if (AppState().baseState.startup.value) {
         handleStartupSetting(true);
       }
     }

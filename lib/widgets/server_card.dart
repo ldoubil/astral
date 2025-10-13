@@ -1,6 +1,6 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class ServerCard extends StatefulWidget {
   final ServerMod server;
@@ -20,11 +20,7 @@ class ServerCard extends StatefulWidget {
 
 class _ServerCardState extends State<ServerCard> {
   late final Signal<bool> _hoveredSignal = signal(false);
-  late final Computed<int?> _pingSignal = computed(() {
-    final pingMap = Aps().pingResults.value;
-    final url = widget.server.url;
-    return pingMap.containsKey(url) ? pingMap[url] : null;
-  });
+
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +69,6 @@ class _ServerCardState extends State<ServerCard> {
                         Switch(
                           value: server.enable,
                           onChanged: (value) {
-                            Aps().setServerEnable(server, value);
                             setState(() {}); // 强制刷新
                           },
                           activeColor: colorScheme.primary,
@@ -96,59 +91,7 @@ class _ServerCardState extends State<ServerCard> {
                 // 服务器地址行
                 Row(
                   children: [
-                    // Ping结果显示逻辑
-                    if (_pingSignal.value == null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '超时',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      )
-                    else if (_pingSignal.value == -1)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '超时',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        margin: EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: _getPingColor(_pingSignal.value),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${_pingSignal.value}ms',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    // 链接图标和服务器地址文本
+                    
                     Icon(Icons.link, size: 16, color: colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(

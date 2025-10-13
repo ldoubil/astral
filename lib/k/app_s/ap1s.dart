@@ -14,9 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:uuid/uuid.dart';
 export 'package:signals_flutter/signals_flutter.dart';
-import 'package:astral/k/models/wfp_model.dart';
 
-enum CoState { idle, connecting, connected }
+// enum CoState { idle, connecting, connected }
 
 class NetAstral {
   // peer_id
@@ -43,7 +42,7 @@ class Aps {
   static Aps? _instance;
 
   // 工厂构造函数，用于获取单例实例
-  factory Aps() {
+  factory Ap2s() {
     _instance ??= Aps._internal();
     return _instance!;
   }
@@ -167,7 +166,6 @@ class Aps {
 
   // 日志内容
   final Signal<List<String>> logs = signal([]);
-  // 开机自启动
   final Signal<KVNetworkStatus?> netStatus = signal(null); // 网络状态
   /// 更新玩家名称
   Future<void> updatePlayerName(String name) async {

@@ -1,7 +1,8 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 将列表项卡片抽取为独立的StatefulWidget
 class AllUserCard extends StatefulWidget {
@@ -41,7 +42,7 @@ class _AllUserCardState extends State<AllUserCard> {
     final connectionType = _mapConnectionType(
       player.cost,
       player.ipv4,
-      Aps().ipv4.watch(context), // Assuming Aps().ipv4 provides the local IP
+      AppState().baseState.ipv4.watch(context), // Assuming Aps().ipv4 provides the local IP
     );
     final connectionTypeColor = _getConnectionTypeColor(
       connectionType,
@@ -617,7 +618,7 @@ class _AllUserCardState extends State<AllUserCard> {
                 _mapConnectionType(
                   widget.player.cost,
                   widget.player.ipv4,
-                  Aps().ipv4.watch(context),
+                  AppState().baseState.ipv4.watch(context),
                 ),
               ),
             ),

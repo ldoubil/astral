@@ -1,8 +1,5 @@
 import 'dart:io';
-import 'package:isar/isar.dart';
-part 'net_config.g.dart';
 
-@embedded
 class ConnectionInfo {
   late String bindAddr;
   late String dstAddr;
@@ -14,7 +11,6 @@ class ConnectionInfo {
   }
 }
 
-@embedded
 class ConnectionManager {
   late String name; // 分组名称
   late List<ConnectionInfo> connections;
@@ -26,10 +22,8 @@ class ConnectionManager {
   }
 }
 
-@collection
 class NetConfig {
   /// 主键ID，固定为1因为只需要一个实例
-  Id id = 1;
 
   String netns = ''; // 网络命名空间
 

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:astral/screens/settings/server/custom_server_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
@@ -13,10 +12,7 @@ import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
-<<<<<<< HEAD
 import 'package:astral/screens/settings/server/public_server_page.dart';
-=======
->>>>>>> parent of cfbe876 (1)
 
 class SettingsMainPage extends StatelessWidget {
   const SettingsMainPage({super.key});
@@ -89,7 +85,6 @@ class SettingsMainPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-<<<<<<< HEAD
           // 服务器配置分组
           _buildSectionHeader(context, '服务器配置'),
           const SizedBox(height: 8),
@@ -99,7 +94,7 @@ class SettingsMainPage extends StatelessWidget {
             icon: Icons.public,
             title: '自定义服务器列表',
             subtitle: '管理自定义服务器',
-            onTap: () => _navigateToPage(context, const CustomServerPage()),
+            onTap: () => {},
           ),
 
           _buildSettingsCard(
@@ -112,8 +107,6 @@ class SettingsMainPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-=======
->>>>>>> parent of cfbe876 (1)
           // 通用设置分组
           _buildSectionHeader(context, '通用设置'),
           const SizedBox(height: 8),

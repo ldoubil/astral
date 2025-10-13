@@ -1,4 +1,3 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/net_config.dart';
 import 'package:flutter/material.dart';
 
@@ -45,7 +44,7 @@ Future<void> addConnectionManager(BuildContext context) async {
   );
 
   if (result != null) {
-    await Aps().addConnection(result);
+    // await Aps().addConnection(result);
   }
 }
 
@@ -245,7 +244,7 @@ Future<void> editConnectionManager(
   );
 
   if (result != null) {
-    await Aps().updateConnection(index, result);
+    // await Aps().updateConnection(index, result);
   }
 }
 
@@ -274,6 +273,6 @@ Future<void> deleteConnectionManager(
   );
 
   if (confirm == true) {
-    await Aps().removeConnection(index);
+    // await Aps().removeConnection(index);
   }
 }

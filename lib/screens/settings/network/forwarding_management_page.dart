@@ -1,8 +1,9 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/utils/route_fun.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class ForwardingManagementPage extends StatelessWidget {
   const ForwardingManagementPage({super.key});
@@ -19,7 +20,7 @@ class ForwardingManagementPage extends StatelessWidget {
         children: [
           Builder(
             builder: (context) {
-              final connections = Aps().connections.watch(context);
+              final connections = AppState().baseState.connections.watch(context);
               return Column(
                 children: [
                   ...List.generate(connections.length, (index) {
@@ -30,7 +31,7 @@ class ForwardingManagementPage extends StatelessWidget {
                         leading: Switch(
                           value: manager.enabled,
                           onChanged: (value) async {
-                            await Aps().updateConnectionEnabled(index, value);
+                            // await Aps().updateConnectionEnabled(index, value);
                           },
                         ),
                         title: Text(

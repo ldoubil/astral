@@ -1,104 +1,209 @@
-# 通用序列化使用指南
+# Astral 项目使用示例
 
-## 概述
+## 持久化 Signal 功能
 
-现在的持久化扩展支持通用的对象序列化，您可以轻松地为任何模型添加序列化支持，而无需修改核心的持久化逻辑。
+### 概述
 
-## 如何为新模型添加序列化支持
+本项目新增了持久化 Signal 功能，允许您轻松地将应用状态持久化存储到本地，实现应用重启后数据的自动恢复。
 
-### 1. 实现 Serializable 接口
+### 核心特性
 
-让您的模型类实现 `Serializable` 接口：
+1. **自动加载和保存**：数据会在应用启动时自动加载，在值变化时自动保存
+2. **类型安全**：支持 String、int、double、bool 及其 List 类型
+3. **简单易用**：与普通 Signal 使用方式几乎相同
+4. **灵活配置**：支持自动保存和手动保存两种模式
+
+### 快速开始
+
+#### 1. 初始化 Hive
+
+在 `main.dart` 中确保 Hive 已初始化：
 
 ```dart
-import 'package:astral/data/database/serializable.dart';
+import 'package:astral/core/hive_initializer.dart';
 
-class YourModel implements Serializable {
-  final int id;
-  final String name;
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   
-  YourModel({required this.id, required this.name});
+  // 初始化 Hive
+  await HiveInitializer.init();
+  
+  runApp(MyApp());
+}
+```
+
+#### 2. 创建持久化 Signal
+
+```dart
+import 'package:astral/core/persistent_signal.dart';
+
+class MyState {
+  // 自动保存模式（推荐）
+  late final PersistentSignal<String> userName;
+  late final PersistentSignal<int> userScore;
+  late final PersistentSignal<bool> isDarkMode;
+  late final PersistentSignal<List<String>> favoriteItems;
+  
+  MyState() {
+    // 初始化持久化信号
+    userName = persistentSignal('user_name', '默认用户名');
+    userScore = persistentSignal('user_score', 0);
+    isDarkMode = persistentSignal('dark_mode', false);
+    favoriteItems = persistentSignal('favorite_items', <String>[]);
+  }
+}
+```
+
+#### 3. 在 Widget 中使用
+
+```dart
+class MyWidget extends StatelessWidget {
+  final MyState state = MyState();
   
   @override
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-    };
-  }
-  
-  factory YourModel.fromMap(Map<String, dynamic> map) {
-    return YourModel(
-      id: map['id'] ?? 0,
-      name: map['name'] ?? '',
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 显示用户名（自动响应变化）
+        Watch(state.userName, () => Text('用户名: ${state.userName.value}')),
+        
+        // 修改用户名的按钮
+        ElevatedButton(
+          onPressed: () => state.userName.value = '新用户名',
+          child: Text('修改用户名'),
+        ),
+        
+        // 深色模式开关
+        Switch(
+          value: Watch(state.isDarkMode, () => state.isDarkMode.value),
+          onChanged: (value) => state.isDarkMode.value = value,
+        ),
+      ],
     );
   }
 }
 ```
 
-### 2. 创建工厂类
+### 高级用法
 
-为您的模型创建一个工厂类：
+#### 手动保存模式
 
 ```dart
-class YourModelFactory implements SerializableFactory<YourModel> {
-  @override
-  YourModel fromMap(Map<String, dynamic> map) {
-    return YourModel.fromMap(map);
+// 创建不自动保存的信号
+final manualSignal = persistentSignal('manual_key', 'default', autoSave: false);
+
+// 修改值（不会自动保存）
+manualSignal.value = 'new value';
+
+// 手动保存
+await manualSignal.save();
+```
+
+#### 数据管理操作
+
+```dart
+// 重置为默认值
+signal.reset();
+
+// 重新从存储加载
+signal.reload();
+
+// 删除存储的数据
+await signal.delete();
+
+// 获取信号的元信息
+print('存储键: ${signal.key}');
+print('默认值: ${signal.defaultValue}');
+print('自动保存: ${signal.autoSave}');
+```
+
+#### 批量操作
+
+```dart
+class AppState {
+  final userName = persistentSignal('user_name', '');
+  final userAge = persistentSignal('user_age', 18);
+  final settings = persistentSignal('settings', <String>[]);
+  
+  // 保存所有数据
+  Future<void> saveAll() async {
+    await Future.wait([
+      userName.save(),
+      userAge.save(),
+      settings.save(),
+    ]);
   }
   
-  @override
-  String get typeName => 'YourModel';
+  // 重置所有数据
+  void resetAll() {
+    userName.reset();
+    userAge.reset();
+    settings.reset();
+  }
+  
+  // 重新加载所有数据
+  void reloadAll() {
+    userName.reload();
+    userAge.reload();
+    settings.reload();
+  }
 }
 ```
 
-### 3. 注册工厂
+### 支持的数据类型
 
-在 `lib/data/database/serialization_init.dart` 中注册您的工厂：
+- `String` - 字符串
+- `int` - 整数
+- `double` - 浮点数
+- `bool` - 布尔值
+- `List<String>` - 字符串列表
+- `List<int>` - 整数列表
+- `List<double>` - 浮点数列表
+- `List<bool>` - 布尔值列表
 
-```dart
-void initializeSerialization() {
-  final registry = SerializationRegistry();
-  
-  // 现有的注册
-  registry.register<ServerDb>(ServerDbFactory());
-  
-  // 添加您的模型注册
-  registry.register<YourModel>(YourModelFactory());
-}
-```
+### 在 BaseState 中的集成
 
-### 4. 使用持久化
-
-现在您可以直接使用持久化扩展：
+项目的 `BaseState` 类已经集成了持久化功能：
 
 ```dart
-// 创建信号
-final yourModelList = signal<List<YourModel>>([]);
+import 'package:astral/state/app_state.dart';
 
-// 添加持久化
-yourModelList.persistWith(
-  key: 'your_model_list',
-  version: 'v1',
-);
+// 获取应用状态
+final appState = AppState();
 
-// 正常使用，数据会自动持久化和恢复
-yourModelList.value = [
-  YourModel(id: 1, name: '示例1'),
-  YourModel(id: 2, name: '示例2'),
-];
+// 使用持久化的应用名称
+print('应用名称: ${appState.baseState.appName.value}');
+
+// 修改应用名称（会自动保存）
+appState.baseState.appName.value = '新的应用名称';
+
+// 重置所有基础状态
+appState.baseState.resetToDefaults();
 ```
 
-## 优势
+### 最佳实践
 
-1. **通用性**: 一次实现，所有模型都可以使用
-2. **类型安全**: 编译时检查类型正确性
-3. **易于扩展**: 添加新模型只需要实现接口和注册工厂
-4. **错误处理**: 内置错误处理和调试信息
-5. **向后兼容**: 不影响现有的持久化功能
+1. **合理命名存储键**：使用有意义的键名，避免冲突
+2. **适度使用持久化**：不是所有状态都需要持久化，临时状态使用普通 Signal
+3. **错误处理**：在关键操作中添加 try-catch 处理
+4. **性能考虑**：避免频繁修改大型列表数据
 
-## 注意事项
+### 示例项目
 
-- 确保在应用启动时调用 `initializeSerialization()` 
-- 工厂的 `typeName` 必须与类名一致
-- `toMap()` 和 `fromMap()` 方法必须能够正确序列化/反序列化所有字段
+查看 `lib/core/persistent_signal_example.dart` 文件获取完整的使用示例，包括：
+
+- 用户信息管理
+- 应用设置持久化
+- 列表数据操作
+- 错误处理演示
+
+### 故障排除
+
+1. **初始化错误**：确保在使用前调用了 `HiveInitializer.init()`
+2. **类型错误**：检查是否使用了支持的数据类型
+3. **保存失败**：检查存储权限和磁盘空间
+4. **数据丢失**：确认是否正确设置了存储键名
+
+---
+
+更多详细信息请参考源码注释和示例文件。

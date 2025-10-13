@@ -63,9 +63,6 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
-
-  objectbox_generator: ^4.3.0
-
 flutter:
   uses-material-design: true
   assets:

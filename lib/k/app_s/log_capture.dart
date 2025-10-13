@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/foundation.dart';
-import 'aps.dart1';
 
 /// 日志捕获管理器 - 单例类
 class LogCapture {
@@ -104,14 +104,14 @@ class LogCapture {
   
   /// 清空日志
   void clearLogs() {
-    final currentLogs = List<String>.from(Aps().logs.value);
+    final currentLogs = List<String>.from(AppState().baseState.logs.value);
     currentLogs.clear();
-    Aps().logs.value = currentLogs;
+    AppState().baseState.logs.value = currentLogs;
   }
   
   /// 获取最近的日志条目
   List<String> getRecentLogs(int count) {
-    final currentLogs = Aps().logs.value;
+    final currentLogs = AppState().baseState.logs.value;
     if (currentLogs.length <= count) {
       return List<String>.from(currentLogs);
     }
@@ -120,7 +120,7 @@ class LogCapture {
   
   /// 根据关键词过滤日志
   List<String> filterLogs(String keyword) {
-    final currentLogs = Aps().logs.value;
+    final currentLogs = AppState().baseState.logs.value;
     return currentLogs.where((log) => 
       log.toLowerCase().contains(keyword.toLowerCase())
     ).toList();
@@ -128,7 +128,7 @@ class LogCapture {
   
   /// 根据日志类型过滤
   List<String> filterLogsByType(String type) {
-    final currentLogs = Aps().logs.value;
+    final currentLogs = AppState().baseState.logs.value;
     return currentLogs.where((log) => 
       log.contains('[$type]')
     ).toList();
@@ -136,7 +136,7 @@ class LogCapture {
   
   /// 内部方法：添加日志到信号
   void _addLogToSignal(String logEntry) {
-    final currentLogs = List<String>.from(Aps().logs.value);
+    final currentLogs = List<String>.from(AppState().baseState.logs.value);
     currentLogs.add(logEntry);
       debugPrint('ERROR: $logEntry');
     
@@ -145,18 +145,18 @@ class LogCapture {
       currentLogs.removeRange(0, currentLogs.length - 1000);
     }
     
-    Aps().logs.value = currentLogs;
+    AppState().baseState.logs.value = currentLogs;
   }
   
   /// 获取捕获状态
   bool get isCapturing => _isCapturing;
   
   /// 获取日志总数
-  int get logCount => Aps().logs.value.length;
+  int get logCount => AppState().baseState.logs.value.length;
   
   /// 导出日志为字符串
   String exportLogsAsString() {
-    return Aps().logs.value.join('\n');
+    return AppState().baseState.logs.value.join('\n');
   }
   
   /// 获取UDP Socket信息

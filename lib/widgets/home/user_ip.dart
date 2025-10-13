@@ -1,4 +1,5 @@
-import 'package:astral/k/app_s/aps.dart1';
+
+import 'package:astral/state/app_state.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:astral/widgets/canvas_jump.dart';
 import 'package:astral/k/models/room.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class UserIpBox extends StatefulWidget {
   const UserIpBox({super.key});
@@ -22,7 +24,7 @@ class _UserIpBoxState extends State<UserIpBox> {
   final FocusNode _usernameControllerFocusNode = FocusNode();
   final FocusNode _virtualIPFocusNode = FocusNode();
 
-  final Aps _aps = Aps();
+  final AppState _appState = AppState();
   bool _isValidIP = true;
 
   bool _isValidIPv4(String ip) {
@@ -71,10 +73,10 @@ class _UserIpBoxState extends State<UserIpBox> {
       effect(() {
         // 只在控件没有焦点时才更新，避免与用户输入冲突
         if (!_usernameControllerFocusNode.hasFocus) {
-          _usernameController.text = _aps.PlayerName.value; // 监听玩家名变化
+          _usernameController.text = _appState.baseState.PlayerName.value; // 监听玩家名变化
         }
         if (!_virtualIPFocusNode.hasFocus) {
-          final newIP = _aps.ipv4.value;
+          final newIP = _appState.baseState.ipv4.value;
           _virtualIPController.text = newIP; // 监听IP地址变化
           // 同时更新验证状态
           setState(() {
@@ -82,7 +84,7 @@ class _UserIpBoxState extends State<UserIpBox> {
           });
         }
         // 房间选择器不是文本输入框，可以直接更新
-        _roomController.text = _aps.selectroom.value?.name ?? ''; // 监听房间选择变化
+        _roomController.text = _appState.baseState.selectroom.value?.name ?? ''; // 监听房间选择变化
       });
 
       // 初始化验证状态
@@ -121,7 +123,7 @@ class _UserIpBoxState extends State<UserIpBox> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
               ),
               const Spacer(),
-              if (Aps().Connec_state.watch(context) != CoState.idle)
+              if (_appState.baseState.Connec_state.watch(context) != CoState.idle)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -148,12 +150,12 @@ class _UserIpBoxState extends State<UserIpBox> {
             controller: _usernameController,
             focusNode: _usernameControllerFocusNode,
             enabled:
-                (Aps().Connec_state.watch(context) != CoState.idle)
+                (AppState().baseState.Connec_state.watch(context) != CoState.idle)
                     ? false
                     : true,
             onChanged: (value) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _aps.updatePlayerName(value);
+                // _appState.baseState.updatePlayerName(value);
               });
             },
             decoration: InputDecoration(
@@ -172,12 +174,12 @@ class _UserIpBoxState extends State<UserIpBox> {
           const SizedBox(height: 14),
           InkWell(
             onTap:
-                Aps().Connec_state.watch(context) != CoState.connected
+                (AppState().baseState.Connec_state.watch(context) != CoState.connected)
                     ? () => CanvasJump.show(
                       context,
-                      rooms: _aps.rooms.watch(context).cast<Room>(),
+                      rooms: _appState.baseState.rooms.watch(context).cast<Room>(),
                       onSelect: (Room room) {
-                        _aps.setRoom(room);
+                        // _appState.baseState.setRoom(room);
                       },
                     )
                     : null,
@@ -189,19 +191,19 @@ class _UserIpBoxState extends State<UserIpBox> {
                   horizontal: 12,
                 ),
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                enabled: Aps().Connec_state.watch(context) == CoState.idle,
+                enabled: AppState().baseState.Connec_state.watch(context) == CoState.idle,
                 border: const OutlineInputBorder(),
                 prefixIcon: Icon(Icons.apartment, color: colorScheme.primary),
                 suffixIcon: Icon(Icons.menu, color: colorScheme.primary),
               ),
               child: IgnorePointer(
                 ignoring:
-                    Aps().Connec_state.watch(context) == CoState.connected,
+                    AppState().baseState.Connec_state.watch(context) == CoState.connected,
                 child: Text(
-                  Aps().selectroom.watch(context)?.name ?? LocaleKeys.select_room_hint.tr(),
+                  AppState().baseState.selectroom.watch(context)?.name ?? LocaleKeys.select_room_hint.tr(),
                   style: TextStyle(
                     color:
-                        Aps().Connec_state.watch(context) != CoState.connected
+                        AppState().baseState.Connec_state.watch(context) != CoState.connected
                             ? Theme.of(context).textTheme.bodyLarge?.color
                             : Theme.of(context).disabledColor,
                   ),
@@ -221,12 +223,12 @@ class _UserIpBoxState extends State<UserIpBox> {
                     controller: _virtualIPController,
                     focusNode: _virtualIPFocusNode,
                     enabled:
-                        !_aps.dhcp.watch(context) &&
-                        (Aps().Connec_state.watch(context) == CoState.idle),
+                        !AppState().baseState.dhcp.watch(context) &&
+                        (AppState().baseState.Connec_state.watch(context) == CoState.idle),
                     onChanged: (value) {
-                      if (!_aps.dhcp.watch(context)) {
+                      if (!AppState().baseState.dhcp.watch(context)) {
                         // 实时更新IPv4值并立即验证
-                        _aps.updateIpv4(value);
+                        // _appState.baseState.updateIpv4(value);
                         setState(() {
                           _isValidIP = _isValidIPv4(value);
                         });
@@ -244,7 +246,7 @@ class _UserIpBoxState extends State<UserIpBox> {
                         horizontal: 12,
                       ),
                       errorText:
-                          (!_aps.dhcp.watch(context) && !_isValidIP)
+                          (!_appState.baseState.dhcp.watch(context) && !_isValidIP)
                               ? LocaleKeys.invalid_ipv4_error.tr()
                               : null,
                     ),
@@ -255,15 +257,15 @@ class _UserIpBoxState extends State<UserIpBox> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Switch(
-                      value: _aps.dhcp.watch(context),
+                      value: _appState.baseState.dhcp.watch(context),
                       onChanged: (value) {
-                        if (Aps().Connec_state.watch(context) == CoState.idle) {
-                          _aps.updateDhcp(value);
+                        if (AppState().baseState.Connec_state.watch(context) == CoState.idle) {
+                          // _appState.baseState.updateDhcp(value);
                         }
                       },
                     ),
                     Text(
-                      _aps.dhcp.watch(context) ? LocaleKeys.automatic.tr() : LocaleKeys.manual.tr(),
+                      _appState.baseState.dhcp.watch(context) ? LocaleKeys.automatic.tr() : LocaleKeys.manual.tr(),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],
@@ -272,7 +274,7 @@ class _UserIpBoxState extends State<UserIpBox> {
             ),
           ),
 
-          if (_aps.dhcp.watch(context))
+          if (_appState.baseState.dhcp.watch(context))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(LocaleKeys.auto_assign_ip_notice.tr(), style: const TextStyle(fontSize: 12)),

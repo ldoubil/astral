@@ -1,6 +1,6 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/k/models/server_mod.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'dart:async'; // 添加对dart:async的导入以使用Completer
 
 // 新增服务器排序弹窗组件
@@ -34,7 +34,7 @@ class ServerReorderSheet extends StatefulWidget {
   State<ServerReorderSheet> createState() => _ServerReorderSheetState();
 
   static Future<List<ServerMod>?> show(BuildContext context, List<ServerMod> servers) async {
-    final aps = Aps();
+    final appState = AppState();
     final completer = Completer<List<ServerMod>?>();
     
     if (MediaQuery.of(context).size.width > 600) {
@@ -76,7 +76,7 @@ class ServerReorderSheet extends StatefulWidget {
               servers: List.from(servers),
               // 修改排序完成回调
               onReorder: (reorderedServers) {
-                aps.reorderServers(reorderedServers);
+                // appState.reorderServers(reorderedServers);
                 completer.complete(reorderedServers); // 添加缺失的Completer完成处理
                 Navigator.of(context).pop(reorderedServers);
               }

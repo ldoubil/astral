@@ -1,10 +1,11 @@
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/screens/logs_page.dart';
 import 'package:astral/utils/up.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -34,7 +35,7 @@ class AboutPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Version ${Aps().latestVersion.watch(context)}',
+                  'Version ${AppState().baseState.latestVersion.watch(context)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),

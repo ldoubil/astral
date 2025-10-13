@@ -1,4 +1,3 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:flutter/material.dart';
 
@@ -87,7 +86,6 @@ class _ServerDialogState extends State<ServerDialog> {
   void _saveServer() {
     if (_formKey.currentState!.validate()) {
       final server = ServerMod(
-        id: widget.server?.id ,
         enable: widget.server?.enable ?? false,
         name: _nameController.text,
         url: _urlController.text,
@@ -105,10 +103,10 @@ class _ServerDialogState extends State<ServerDialog> {
 
       if (widget.server == null) {
         // 添加新服务器
-        Aps().addServer(server);
+        // Aps().addServer(server);
       } else {
         // 更新现有服务器
-        Aps().updateServer(server);
+        // Aps().updateServer(server);
       }
       Navigator.of(context).pop();
     }

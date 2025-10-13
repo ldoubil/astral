@@ -1,5 +1,6 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 房间设置弹窗组件
 class RoomSettingsSheet extends StatefulWidget {
@@ -138,16 +139,16 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('显示模式', [
                 _buildOptionButton(
                   '简约',
-                  Aps().userListSimple.watch(context),
+                  AppState().baseState.userListSimple.watch(context),
                   () {
-                    Aps().setUserListSimple(true);
+                    AppState().baseState.userListSimple.set(true);
                   },
                 ),
                 _buildOptionButton(
                   '详细',
-                  !Aps().userListSimple.watch(context),
+                  !AppState().baseState.userListSimple.watch(context),
                   () {
-                    Aps().setUserListSimple(false);
+                    AppState().baseState.userListSimple.set(false);
                   },
                 ),
               ], colorScheme),
@@ -156,18 +157,18 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('用户显示', [
                 _buildOptionButton(
                   '默认',
-                  Aps().displayMode.watch(context) == 0,
-                  () => Aps().setDisplayMode(0),
+                  AppState().baseState.displayMode.watch(context) == 0,
+                  () => AppState().baseState.displayMode.set(0),
                 ),
                 _buildOptionButton(
                   '用户',
-                  Aps().displayMode.watch(context) == 1,
-                  () => Aps().setDisplayMode(1),
+                  AppState().baseState.displayMode.watch(context) == 1,
+                  () => AppState().baseState.displayMode.set(1),
                 ),
                 _buildOptionButton(
                   '服务器',
-                  Aps().displayMode.watch(context) == 2,
-                  () => Aps().setDisplayMode(2),
+                  AppState().baseState.displayMode.watch(context) == 2,
+                  () => AppState().baseState.displayMode.set(2),
                 ),
               ], colorScheme),
 
@@ -175,18 +176,18 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('用户排序', [
                 _buildOptionButton(
                   '默认',
-                  Aps().sortOption.watch(context) == 0,
-                  () => Aps().setSortOption(0),
+                  AppState().baseState.sortOption.watch(context) == 0,
+                  () => AppState().baseState.sortOption.set(0),
                 ),
                 _buildOptionButton(
                   '延迟',
-                  Aps().sortOption.watch(context) == 1,
-                  () => Aps().setSortOption(1),
+                  AppState().baseState.sortOption.watch(context) == 1,
+                  () => AppState().baseState.sortOption.set(1),
                 ),
                 _buildOptionButton(
                   '用户名',
-                  Aps().sortOption.watch(context) == 2,
-                  () => Aps().setSortOption(2),
+                  AppState().baseState.sortOption.watch(context) == 2,
+                  () => AppState().baseState.sortOption.set(2),
                 ),
               ], colorScheme),
 
@@ -194,13 +195,13 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('排序方式', [
                 _buildOptionButton(
                   '升序',
-                  Aps().sortOrder.watch(context) == 0,
-                  () => Aps().setSortOrder(0),
+                  AppState().baseState.sortOrder.watch(context) == 0,
+                  () => AppState().baseState.sortOrder.set(0),
                 ),
                 _buildOptionButton(
                   '降序',
-                  Aps().sortOrder.watch(context) == 1,
-                  () => Aps().setSortOrder(1),
+                  AppState().baseState.sortOrder.watch(context) == 1,
+                  () => AppState().baseState.sortOrder.set(1),
                 ),
               ], colorScheme),
             ],

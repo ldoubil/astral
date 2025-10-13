@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -32,7 +32,7 @@ class UpdateChecker {
   }) async {
     try {
       final releaseInfo = await _fetchLatestRelease(
-        includePrereleases: Aps().beta.value,
+        includePrereleases: AppState().baseState.beta.value,
       );
       if (releaseInfo == null) {
         _showUpdateDialog(
@@ -50,7 +50,7 @@ class UpdateChecker {
       debugPrint('服务器版本: ${releaseInfo['tag_name']}');
 
       // 保存最新版本号到数据库
-      await Aps().updateLatestVersion(releaseInfo['tag_name']);
+       AppState().baseState.beta.set(releaseInfo['tag_name']);
 
       // 比较版本号，如果有新版本则显示更新弹窗
       // 在 checkForUpdates 方法中修改 _showUpdateDialog 调用
@@ -226,7 +226,7 @@ class UpdateChecker {
       // 其他平台直接下载
       final downloadUrlPath = _getDownloadUrl(releaseInfo);
       if (downloadUrlPath == null) return;
-      final downloadUrl = Aps().downloadAccelerate.value + downloadUrlPath;
+      final downloadUrl = AppState().baseState.downloadAccelerate.value + downloadUrlPath;
       final fileName = _getPlatformFileName();
 
       // 显示下载进度对话框
@@ -313,7 +313,7 @@ class UpdateChecker {
       return;
     }
 
-    final downloadUrl = Aps().downloadAccelerate.value + downloadUrlPath;
+    final downloadUrl = AppState().baseState.downloadAccelerate.value + downloadUrlPath;
 
     // 显示下载进度对话框
     showDialog(

@@ -1,4 +1,3 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';

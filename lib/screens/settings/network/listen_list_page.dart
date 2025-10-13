@@ -1,7 +1,8 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class ListenListPage extends StatelessWidget {
   const ListenListPage({super.key});
@@ -21,7 +22,7 @@ class ListenListPage extends StatelessWidget {
       ),
       body: Builder(
         builder: (context) {
-          final listenList = Aps().listenList.watch(context);
+          final listenList = AppState().baseState.listenList.watch(context);
 
           if (listenList.isEmpty) {
             return Center(
@@ -116,7 +117,7 @@ class ListenListPage extends StatelessWidget {
     );
 
     if (result != null && result.trim().isNotEmpty) {
-      await Aps().addListen(result.trim());
+      // await Aps().addListen(result.trim());
     }
   }
 
@@ -153,7 +154,7 @@ class ListenListPage extends StatelessWidget {
     );
 
     if (result != null && result.trim().isNotEmpty && result != item) {
-      await Aps().updateListen(index, result.trim());
+      // await Aps().updateListen(index, result.trim());
     }
   }
 
@@ -187,7 +188,7 @@ class ListenListPage extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await Aps().deleteListen(index);
+      // await Aps().deleteListen(index);
     }
   }
 }

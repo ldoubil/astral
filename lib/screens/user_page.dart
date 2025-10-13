@@ -1,11 +1,12 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/state/app_state.dart';
 import 'package:astral/widgets/all_user_card.dart';
 import 'package:astral/widgets/mini_user_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:astral/widgets/room_settings_sheet.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -27,8 +28,8 @@ class _UserPageState extends State<UserPage> {
       ),
       body: Builder(
         builder: (context) {
-          final netStatus = Aps().netStatus.watch(context);
-          if (!Aps().isConnecting.watch(context)) {
+          final netStatus = AppState().baseState.netStatus.watch(context);
+          if (!AppState().baseState.isConnecting.watch(context)) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -80,13 +81,13 @@ class _UserPageState extends State<UserPage> {
             );
           } else {
             // 获取排序选项
-            final sortOption = Aps().sortOption.watch(context);
+            final sortOption = AppState().baseState.sortOption.watch(context);
             // 获取排序顺序
-            final sortOrder = Aps().sortOrder.watch(context);
+            final sortOrder = AppState().baseState.sortOrder.watch(context);
             // 获取显示模式
-            final displayMode = Aps().displayMode.watch(context);
+            final displayMode = AppState().baseState.displayMode.watch(context);
             // 获取原始节点列表
-            var nodes = Aps().netStatus.watch(context)!.nodes;
+            var nodes = AppState().baseState.netStatus.watch(context)!.nodes;
             
             // 根据排序选项对节点进行排序
             if (sortOption == 1) {
@@ -143,16 +144,16 @@ class _UserPageState extends State<UserPage> {
                         // 获取当前索引对应的玩家数据
                         final player = filteredNodes[index];
                         // 根据简单列表模式选项返回不同的卡片组件
-                        return Aps().userListSimple.watch(context)
+                        return AppState().baseState.userListSimple.watch(context)
                             ? MiniUserCard(
                                 player: player,
                                 colorScheme: colorScheme,
-                                localIPv4: Aps().ipv4.watch(context),
+                                localIPv4: AppState().baseState.ipv4.watch(context),
                               )
                             : AllUserCard(
                                 player: player,
                                 colorScheme: colorScheme,
-                                localIPv4: Aps().ipv4.watch(context),
+                                localIPv4: AppState().baseState.ipv4.watch(context),
                               );
                       },
                       // 设置子项数量为过滤后的节点数量

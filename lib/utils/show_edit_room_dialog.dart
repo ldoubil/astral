@@ -1,4 +1,3 @@
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/room.dart';
 import 'package:flutter/material.dart';
 
@@ -49,7 +48,7 @@ Future<void> showEditRoomDialog(
           ),
           TextButton(
             onPressed: () {
-              Aps().updateRoom(room);
+              // Aps().updateRoom(room);
               Navigator.of(context).pop();
             },
             child: const Text('确定'),

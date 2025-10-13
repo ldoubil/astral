@@ -1,7 +1,8 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class SubnetProxyPage extends StatelessWidget {
   const SubnetProxyPage({super.key});
@@ -21,7 +22,7 @@ class SubnetProxyPage extends StatelessWidget {
       ),
       body: Builder(
         builder: (context) {
-          final cidrList = Aps().cidrproxy.watch(context);
+          final cidrList = AppState().baseState.cidrproxy.watch(context);
 
           if (cidrList.isEmpty) {
             return Center(
@@ -114,7 +115,7 @@ class SubnetProxyPage extends StatelessWidget {
     );
 
     if (result != null && result.isNotEmpty) {
-      await Aps().addCidrproxy(result);
+      // await Aps().addCidrproxy(result);
     }
   }
 
@@ -146,7 +147,7 @@ class SubnetProxyPage extends StatelessWidget {
     );
 
     if (result != null && result.isNotEmpty) {
-      await Aps().updateCidrproxy(index, result);
+      // await Aps().updateCidrproxy(index, result);
     }
   }
 
@@ -174,7 +175,7 @@ class SubnetProxyPage extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await Aps().deleteCidrproxy(index);
+      // await Aps().deleteCidrproxy(index);
     }
   }
 }

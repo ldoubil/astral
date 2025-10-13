@@ -257,7 +257,6 @@ Room? decryptRoom(String encryptedString) {
 /// 去除多余的空白字符，标准化数据格式
 Room cleanRoom(Room room) {
   return Room(
-    id: room.id,
     name: room.name.trim(),
     encrypted: room.encrypted,
     roomName: room.roomName.trim(),

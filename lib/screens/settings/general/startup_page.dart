@@ -1,7 +1,8 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class StartupPage extends StatelessWidget {
   const StartupPage({super.key});
@@ -30,9 +31,9 @@ class StartupPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_on_boot.tr()),
                   subtitle: Text(LocaleKeys.startup_on_boot_desc.tr()),
-                  value: Aps().startup.watch(context),
+                  value: AppState().baseState.startup.watch(context),
                   onChanged: (value) {
-                    Aps().setStartup(value);
+                    // AppState().baseState.setStartup(value);
                     // TODO: Implement startup setting handler
                   },
                 ),
@@ -40,18 +41,18 @@ class StartupPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_minimize.tr()),
                   subtitle: Text(LocaleKeys.startup_minimize_desc.tr()),
-                  value: Aps().startupMinimize.watch(context),
+                  value: AppState().baseState.startupMinimize.watch(context),
                   onChanged: (value) {
-                    Aps().setStartupMinimize(value);
+                    // AppState().baseState.setStartupMinimize(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_auto_connect.tr()),
                   subtitle: Text(LocaleKeys.startup_auto_connect_desc.tr()),
-                  value: Aps().startupAutoConnect.watch(context),
+                  value: AppState().baseState.startupAutoConnect.watch(context),
                   onChanged: (value) {
-                    Aps().setStartupAutoConnect(value);
+                    // AppState().baseState.setStartupAutoConnect(value);
                   },
                 ),
               ],

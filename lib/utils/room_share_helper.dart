@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:astral/utils/e_d_room.dart';
-import 'package:astral/k/app_s/aps.dart1';
 
 /// 房间分享助手类
 /// 提供完整的房间分享功能，包括链接生成、分享、导入等
@@ -327,7 +326,7 @@ $roomSummary
       final cleanedRoom = cleanRoom(room);
 
       // 检查重复
-      final existingRooms = await Aps().getAllRooms();
+      final existingRooms = await AppState().baseState.rooms.value;
       final duplicate =
           existingRooms.where((existing) {
             if (cleanedRoom.encrypted && existing.encrypted) {
@@ -347,7 +346,7 @@ $roomSummary
       }
 
       // 添加房间
-      await Aps().addRoom(cleanedRoom);
+      // await AppState().baseState.rooms.value.add(cleanedRoom);
 
       // 安全地跳转到房间页面并选中房间
       await navigateToRoomPage(cleanedRoom, context: context);
@@ -470,7 +469,7 @@ $roomSummary
         await Future.delayed(const Duration(milliseconds: 100));
 
         // 选中房间
-        await Aps().setRoom(room);
+        // await Aps().setRoom(room);
       });
 
       debugPrint('已跳转到房间页面并选中房间: ${room.name}');

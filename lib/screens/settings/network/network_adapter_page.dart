@@ -1,8 +1,9 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/src/rust/api/hops.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class NetworkAdapterPage extends StatelessWidget {
   const NetworkAdapterPage({super.key});
@@ -23,9 +24,9 @@ class NetworkAdapterPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.auto_set_hop.tr()),
                   subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
-                  value: Aps().autoSetMTU.watch(context),
+                  value: AppState().baseState.autoSetMTU.watch(context),
                   onChanged: (value) {
-                    Aps().setAutoSetMTU(value);
+                    // AppState().baseState.setAutoSetMTU(value);
                   },
                 ),
                 const Divider(),

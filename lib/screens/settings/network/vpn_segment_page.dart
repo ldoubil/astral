@@ -1,7 +1,8 @@
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class VpnSegmentPage extends StatelessWidget {
   const VpnSegmentPage({super.key});
@@ -21,7 +22,7 @@ class VpnSegmentPage extends StatelessWidget {
       ),
       body: Builder(
         builder: (context) {
-          final vpnList = Aps().customVpn.watch(context);
+          final vpnList = AppState().baseState.customVpn.watch(context);
 
           if (vpnList.isEmpty) {
             return Center(
@@ -114,7 +115,7 @@ class VpnSegmentPage extends StatelessWidget {
     );
 
     if (result != null && result.isNotEmpty) {
-      await Aps().addCustomVpn(result);
+      // await AppState().baseState.addCustomVpn(result);
     }
   }
 
@@ -150,7 +151,7 @@ class VpnSegmentPage extends StatelessWidget {
     );
 
     if (result != null && result.isNotEmpty) {
-      await Aps().updateCustomVpn(index, result);
+      // await Aps().updateCustomVpn(index, result);
     }
   }
 
@@ -182,7 +183,7 @@ class VpnSegmentPage extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await Aps().deleteCustomVpn(index);
+      // await Aps().deleteCustomVpn(index);
     }
   }
 }

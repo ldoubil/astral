@@ -1,12 +1,13 @@
+import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/utils/version_util.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:graphview/GraphView.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class AboutHome extends StatefulWidget {
   const AboutHome({super.key});
@@ -66,7 +67,7 @@ class _AboutHomeState extends State<AboutHome> {
               Builder(
                 builder: (context) {
                   final currentVersion = AppInfoUtil.getVersion();
-                  final latestVersion = Aps().latestVersion.watch(context);
+                  final latestVersion = AppState().baseState.latestVersion.watch(context);
                   final versionText = VersionUtil.getVersionDisplayText(
                     currentVersion,
                     latestVersion,

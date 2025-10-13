@@ -1,5 +1,5 @@
+import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/show_server_dialog.dart';
-import 'package:astral/k/app_s/aps.dart1';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/widgets/server_card.dart';
 import 'package:flutter/foundation.dart';
@@ -30,7 +30,7 @@ class _ServerPageState extends State<ServerPage>
     return 1;
   }
 
-  final _aps = Aps();
+  final _appstate = AppState();
   late AnimationController _animationController;
   Timer? _updateTimer; // 改为可空类型
   bool _isForeground = true;
@@ -131,10 +131,9 @@ class _ServerPageState extends State<ServerPage>
     _isUpdating = true;
 
     try {
-      await _aps.getAllServers();
 
       // 批量处理ping操作，避免并发过多
-      final servers = _aps.servers.value;
+      final servers = _appstate.baseState.servers.value;
       final futures = <Future<void>>[];
 
       // 限制并发数量，分批处理
@@ -170,14 +169,12 @@ class _ServerPageState extends State<ServerPage>
   Future<void> _pingServerWithDebounce(ServerMod server) async {
     try {
       // 执行ping操作
-      await _aps.pingServerOnce(server);
 
       // 从pingResults获取当前ping结果
-      final currentPing = _aps.getPingResult(server.url);
       final serverId = server.id;
 
       // 检查是否与上次结果相同
-      if (_lastPingResults[serverId] == currentPing) {
+      if (_lastPingResults[serverId] == 1) {
         // 相同结果，增加计数
         _stablePingCount[serverId] = (_stablePingCount[serverId] ?? 0) + 1;
 
@@ -189,7 +186,7 @@ class _ServerPageState extends State<ServerPage>
       } else {
         // 结果不同，重置计数
         _stablePingCount[serverId] = 0;
-        _lastPingResults[serverId] = currentPing;
+        _lastPingResults[serverId] = 1;
       }
     } catch (e) {
       // ping失败时也重置计数，避免因网络问题导致误判
@@ -209,13 +206,13 @@ class _ServerPageState extends State<ServerPage>
   }
 
   Future<void> _loadServers() async {
-    await _aps.getAllServers();
+    // await _aps.getAllServers();
   }
 
   @override
   Widget build(BuildContext context) {
     // 获取服务器列表并添加自动监听
-    final servers = _aps.servers.watch(context);
+    // final servers = _aps.servers.watch(context);
 
     return Scaffold(
       body: LayoutBuilder(
@@ -223,13 +220,13 @@ class _ServerPageState extends State<ServerPage>
           final columnCount = _getColumnCount(constraints.maxWidth);
 
           // 强制创建新的列表实例以触发更新
-          final List<ServerMod> displayServers = List.from(servers);
+          // final List<ServerMod> displayServers = List.from(servers);
 
           return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               // 如果服务器列表为空，显示提示信息
-              if (servers.isEmpty)
+              if (_appstate.baseState.servers.value.isEmpty)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -277,13 +274,13 @@ class _ServerPageState extends State<ServerPage>
               else if (columnCount == 1)
                 SliverPadding(
                   key: ValueKey(
-                    'list_layout_${columnCount}_${servers.hashCode}',
+                    'list_layout_${columnCount}_${_appstate.baseState.servers.value.hashCode}',
                   ),
                   padding: const EdgeInsets.all(14),
                   sliver: SliverList.separated(
-                    itemCount: displayServers.length,
+                    itemCount: _appstate.baseState.servers.value.length,
                     itemBuilder: (context, index) {
-                      final server = displayServers[index];
+                      final server = _appstate.baseState.servers.value[index];
                       return ServerCard(
                         key: ValueKey(server.id),
                         server: server,
@@ -302,16 +299,16 @@ class _ServerPageState extends State<ServerPage>
               else
                 SliverPadding(
                   key: ValueKey(
-                    'grid_layout_${columnCount}_${servers.hashCode}',
+                    'grid_layout_${columnCount}_${_appstate.baseState.servers.value.hashCode}',
                   ),
                   padding: const EdgeInsets.all(14),
                   sliver: SliverMasonryGrid.count(
                     crossAxisCount: columnCount,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childCount: displayServers.length,
+                    childCount: _appstate.baseState.servers.value.length,
                     itemBuilder: (context, index) {
-                      final server = displayServers[index];
+                      final server = _appstate.baseState.servers.value[index];
                       return ServerCard(
                         server: server,
                         onEdit: () {
@@ -340,17 +337,17 @@ class _ServerPageState extends State<ServerPage>
           FloatingActionButton(
             heroTag: 'server_sort',
             onPressed: () async {
-              final currentServers = _aps.servers.value;
+              final currentServers = _appstate.baseState.servers.value;
               final reorderedServers = await ServerReorderSheet.show(
                 context,
                 currentServers,
               );
               if (reorderedServers != null && mounted) {
-                await _aps.reorderServers(reorderedServers);
+                // await _appstate.baseState.reorderServers(reorderedServers);
                 // 使用更可靠的状态更新方式
                 setState(() {
                   // 使用展开运算符确保生成新列表实例
-                  _aps.servers.value = [...reorderedServers];
+                  _appstate.baseState.servers.value = [...reorderedServers];
                 });
               }
             },
@@ -381,7 +378,6 @@ class _ServerPageState extends State<ServerPage>
   // 添加公共服务器
   void _addPublicServer(String name, String url) {
     final server = ServerMod(
-      id: 1,
       enable: false,
       name: name,
       url: url,
@@ -397,9 +393,9 @@ class _ServerPageState extends State<ServerPage>
       https: false,
     );
 
-    _aps.addServer(server);
+    // _appstate.baseState.addServer(server);
     // 强制触发服务器列表更新
-    _aps.servers.value = [..._aps.servers.value];
+    _appstate.baseState.servers.value = [..._appstate.baseState.servers.value];
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('已添加服务器: $name')));
@@ -420,7 +416,7 @@ class _ServerPageState extends State<ServerPage>
               ),
               TextButton(
                 onPressed: () {
-                  _aps.deleteServer(server);
+                  // _aps.deleteServer(server);
                   Navigator.of(context).pop();
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),

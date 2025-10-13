@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart1';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class SoftwareSettingsPage extends StatefulWidget {
   const SoftwareSettingsPage({super.key});
@@ -142,18 +143,18 @@ class _SoftwareSettingsPageState extends State<SoftwareSettingsPage> {
                   SwitchListTile(
                     title: Text(LocaleKeys.minimize.tr()),
                     subtitle: Text(LocaleKeys.minimize_desc.tr()),
-                    value: Aps().closeMinimize.watch(context),
+                    value: AppState().baseState.closeMinimize.watch(context),
                     onChanged: (value) {
-                      Aps().updateCloseMinimize(value);
+                      // AppState().baseState.updateCloseMinimize(value);
                     },
                   ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.player_list_card.tr()),
                   subtitle: Text(LocaleKeys.player_list_card_desc.tr()),
-                  value: Aps().userListSimple.watch(context),
+                  value: AppState().baseState.userListSimple.watch(context),
                   onChanged: (value) {
-                    Aps().setUserListSimple(value);
+                    // AppState().baseState.setUserListSimple(value);
                   },
                 ),
               ],

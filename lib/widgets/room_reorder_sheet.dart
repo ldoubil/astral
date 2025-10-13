@@ -1,8 +1,8 @@
 import 'dart:ui';
 
+import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/k/models/room.dart';
-import 'package:astral/k/app_s/aps.dart1';
 
 // 添加DragHandle定义
 class DragHandle extends StatelessWidget {
@@ -35,7 +35,7 @@ class RoomReorderSheet extends StatefulWidget {
   State<RoomReorderSheet> createState() => _RoomReorderSheetState();
 
   static Future<void> show(BuildContext context, List<Room> rooms) async {
-    final aps = Aps();
+    final aps = AppState();
     
     if (MediaQuery.of(context).size.width > 600) {
       // PC端显示为对话框
@@ -48,7 +48,7 @@ class RoomReorderSheet extends StatefulWidget {
             child: RoomReorderSheet(
               rooms: List.from(rooms),
               onReorder: (reorderedRooms) {
-                aps.reorderRooms(reorderedRooms);
+                // aps.reorderRooms(reorderedRooms);
                 Navigator.of(context).pop();
               }
             ),
@@ -75,7 +75,7 @@ class RoomReorderSheet extends StatefulWidget {
             child: RoomReorderSheet(
               rooms: List.from(rooms),
               onReorder: (reorderedRooms) {
-                aps.reorderRooms(reorderedRooms);
+                // aps.reorderRooms(reorderedRooms);
                 Navigator.of(context).pop();
               },
             ),
