@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/utils/up.dart';
@@ -8,13 +7,11 @@ import 'package:astral/utils/reg.dart'; // 添加这行导入
 import 'package:astral/k/app_s/log_capture.dart';
 import 'package:astral/k/mod/window_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
-import 'package:easy_localization_loader/easy_localization_loader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/src/rust/frb_generated.dart';
-import 'package:astral/app.dart';
 import 'package:astral/app_wrapper.dart';
-import 'package:flutter/services.dart';
+import 'package:astral/core/hive_initializer.dart'; // 导入 HiveInitializer
 
 void main() async {
   await RustLib.init();
@@ -22,6 +19,9 @@ void main() async {
 
   // 确保在任何UI组件初始化之前先初始化数据库和适配器
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化 Hive 数据库
+  await HiveInitializer.init();
 
   // Linux 下检测是否为 root 权限
   if (!kIsWeb && Platform.isLinux) {
