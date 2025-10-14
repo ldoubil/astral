@@ -1,5 +1,6 @@
 import 'package:astral/state/child/base_state.dart';
 import 'package:astral/state/child/server_state.dart';
+import 'package:astral/state/child/startup_state.dart';
 import 'package:astral/state/child/theme_state.dart';
 enum CoState { idle, connecting, connected }
 /// 应用状态管理类
@@ -19,4 +20,7 @@ class AppState {
 
   /// 服务器状态管理实例
   final ServerState serverState = ServerState();
+
+  /// 启动状态管理实例
+  final StartupState startupState = StartupState();
 }

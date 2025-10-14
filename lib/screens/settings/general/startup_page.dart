@@ -31,28 +31,27 @@ class StartupPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_on_boot.tr()),
                   subtitle: Text(LocaleKeys.startup_on_boot_desc.tr()),
-                  value: AppState().baseState.startup.watch(context),
+                  value: AppState().startupState.startup.watch(context),
                   onChanged: (value) {
-                    // AppState().baseState.setStartup(value);
-                    // TODO: Implement startup setting handler
+                    AppState().startupState.startup.set(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_minimize.tr()),
                   subtitle: Text(LocaleKeys.startup_minimize_desc.tr()),
-                  value: AppState().baseState.startupMinimize.watch(context),
+                  value: AppState().startupState.startupMinimize.watch(context),
                   onChanged: (value) {
-                    // AppState().baseState.setStartupMinimize(value);
+                    AppState().startupState.startupMinimize.set(value);
                   },
                 ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.startup_auto_connect.tr()),
                   subtitle: Text(LocaleKeys.startup_auto_connect_desc.tr()),
-                  value: AppState().baseState.startupAutoConnect.watch(context),
+                  value: AppState().startupState.startupAutoConnect.watch(context),
                   onChanged: (value) {
-                    // AppState().baseState.setStartupAutoConnect(value);
+                    AppState().startupState.startupAutoConnect.set(value);
                   },
                 ),
               ],

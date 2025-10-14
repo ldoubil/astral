@@ -54,8 +54,7 @@ class BaseState {
   /// 日志内容
   final Signal<List<String>> logs = signal([]);
 
-  /// 启动后自动连接
-  final Signal<bool> startupAutoConnect = signal(false);
+
 
   /// 自定义vpn网段
   final Signal<List<String>> customVpn = signal([]);
@@ -92,11 +91,7 @@ class BaseState {
   final Signal<bool> autoSetMTU = signal(true); // 自动设置MTU
   /// listenList
   final Signal<List<String>> listenList = signal([]); // 房间列表
-  /// 开机自启
-  final Signal<bool> startup = signal(false);
 
-  /// 启动后最小化
-  final Signal<bool> startupMinimize = signal(false);
   final Signal<List<ConnectionManager>> connections = signal([]);
 
   /// 网络状态

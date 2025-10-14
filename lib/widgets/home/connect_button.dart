@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:math';
 import 'package:astral/state/app_state.dart';
 import 'package:astral/state/child/base_state.dart';
-import 'package:astral/utils/net_astral_udp.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +104,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
     // 添加自动连接逻辑
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (AppState().baseState.startupAutoConnect.watch(context)) {
+      if (AppState().startupState.startupAutoConnect.watch(context)) {
         _startConnection();
       }
     });
@@ -132,7 +131,7 @@ class _ConnectButtonState extends State<ConnectButton>
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
 
-    await _notificationsPlugin!.initialize(initializationSettings);
+    await _notificationsPlugin.initialize(initializationSettings);
   }
 
   // 显示或更新连接状态通知
