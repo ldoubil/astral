@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
+import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/state/app_state.dart';
 import 'package:astral/widgets/theme_selector.dart';
 import 'package:astral/widgets/windows_controls.dart';

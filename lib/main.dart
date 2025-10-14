@@ -4,7 +4,7 @@ import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/utils/reg.dart'; // 添加这行导入
-import 'package:astral/k/mod/window_manager.dart';
+import 'package:astral/core/mod/window_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

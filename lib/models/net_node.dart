@@ -2,17 +2,14 @@ import 'dart:io';
 import 'package:astral/models/base.dart';
 import 'package:hive/hive.dart';
 
-
 part 'net_node.g.dart';
-
-
 
 /// 网络节点的 Hive 模型
 @HiveType(typeId: 11)
 class NetNode {
-  // 主键自增
   @HiveField(0)
-  int id = 0;
+  int id = 0; // 主键自增
+
   @HiveField(1)
   String netns = ''; // 网络命名空间
 
@@ -27,8 +24,10 @@ class NetNode {
 
   @HiveField(5)
   bool dhcp = true; // 是否使用DHCP
+
   @HiveField(6)
   String network_name = ''; // 网络名称
+  
   @HiveField(7)
   String network_secret = ''; // 网络密钥
 

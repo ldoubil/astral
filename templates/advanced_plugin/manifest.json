@@ -1,0 +1,19 @@
+{
+  "id": "advanced_plugin",
+  "name": "高级插件模板",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "description": "具有网络请求、数据存储和复杂UI的高级插件模板",
+  "entry_point": "main.lua",
+  "homepage": "https://github.com/yourusername/advanced_plugin",
+  "permissions": [
+    "show_notification",
+    "show_dialog",
+    "http_get",
+    "http_post",
+    "get_app_version",
+    "get_user_data",
+    "set_user_data"
+  ],
+  "dependencies": []
+}

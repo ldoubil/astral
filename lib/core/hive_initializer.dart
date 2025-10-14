@@ -1,4 +1,5 @@
 import 'package:astral/models/net_node.dart';
+import 'package:astral/models/plugin.dart';
 import 'package:astral/models/server_node.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ class HiveInitializer {
       Hive.registerAdapter(ConnectionInfoAdapter());
       Hive.registerAdapter(ServerNodeAdapter());
       Hive.registerAdapter(ServerProtocolSwitchAdapter());
+      Hive.registerAdapter(PluginStatusAdapter());
 
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
       await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings

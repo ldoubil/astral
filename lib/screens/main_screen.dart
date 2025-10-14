@@ -1,14 +1,14 @@
 // 导入所需的包
 import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/up.dart';
-import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
+import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/home_page.dart';
 import 'package:astral/screens/settings_page.dart';
 import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
 import 'package:astral/widgets/status_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:astral/k/navigtion.dart';
+import 'package:astral/core/navigtion.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';

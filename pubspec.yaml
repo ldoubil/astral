@@ -51,6 +51,9 @@ dependencies:
   flutter_local_notifications: ^19.3.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0  # Flutter 集成库（提供路径管理等功能）
+  lua_dardo: ^0.0.5  # Lua解释器
+  archive: ^3.6.1  # 用于解压插件包
+  shared_preferences: ^2.2.2
 
 
 dev_dependencies:

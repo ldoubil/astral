@@ -1,4 +1,4 @@
-import 'package:astral/k/navigtion.dart';
+import 'package:astral/core/navigtion.dart';
 import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
