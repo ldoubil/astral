@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:astral/screens/settings/server/custom_server_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
@@ -94,7 +95,7 @@ class SettingsMainPage extends StatelessWidget {
             icon: Icons.public,
             title: '自定义服务器列表',
             subtitle: '管理自定义服务器',
-            onTap: () => {},
+            onTap: () => _navigateToPage(context, const CustomServerPage()),
           ),
 
           _buildSettingsCard(

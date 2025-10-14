@@ -1,10 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'server_node.g.dart';
+part 'server_json_node.g.dart';
 
 /// 服务器节点数据模型
 @JsonSerializable()
-class ServerNode {
+class ServerJsonNode {
   /// 节点唯一标识
   final int id;
   /// 节点名称
@@ -80,7 +80,7 @@ class ServerNode {
   /// 邮箱（可选）
   final String? mail;
 
-  ServerNode({
+  ServerJsonNode({
     required this.id,
     required this.name,
     required this.host,
@@ -111,11 +111,11 @@ class ServerNode {
     this.mail,
   });
 
-  /// 从JSON创建ServerNode实例
-  factory ServerNode.fromJson(Map<String, dynamic> json) =>
-      _$ServerNodeFromJson(json);
-  /// 将ServerNode实例转为JSON
-  Map<String, dynamic> toJson() => _$ServerNodeToJson(this);
+  /// 从JSON创建ServerJsonNode实例
+  factory ServerJsonNode.fromJson(Map<String, dynamic> json) =>
+      _$ServerJsonNodeFromJson(json);
+  /// 将ServerJsonNode实例转为JSON
+  Map<String, dynamic> toJson() => _$ServerJsonNodeToJson(this);
 
   // 便利方法
   /// 是否健康（健康状态为'healthy'）

@@ -1,4 +1,4 @@
-import '../../../data/models/server_node.dart';
+import '../../../data/models/server_json_node.dart';
 import 'package:flutter/material.dart';
 import '../../../services/server_api_service.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -12,7 +12,7 @@ class PublicServerPage extends StatefulWidget {
 
 class _PublicServerPageState extends State<PublicServerPage> {
   bool _isLoading = false;
-  List<ServerNode> _publicServers = [];
+  List<ServerJsonNode> _publicServers = [];
   String? _errorMessage;
 
   @override
@@ -120,7 +120,7 @@ class _PublicServerPageState extends State<PublicServerPage> {
     );
   }
 
-  Widget _buildServerCard(ServerNode server) {
+  Widget _buildServerCard(ServerJsonNode server) {
     final isHealthy = server.isHealthy;
     final cs = Theme.of(context).colorScheme;
     return Card(
@@ -239,7 +239,7 @@ class _PublicServerPageState extends State<PublicServerPage> {
   }
 
   // 构建负载指示器
-  Widget _buildLoadIndicator(ServerNode server) {
+  Widget _buildLoadIndicator(ServerJsonNode server) {
     final total = server.maxConnections > 0 ? server.maxConnections : 0;
     final current = server.currentConnections.clamp(0, total);
     final ratio = total > 0 ? current / total : 0.0;

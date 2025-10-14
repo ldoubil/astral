@@ -1,12 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'server_node.dart';
+part of 'server_json_node.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-ServerNode _$ServerNodeFromJson(Map<String, dynamic> json) => ServerNode(
+ServerJsonNode _$ServerJsonNodeFromJson(Map<String, dynamic> json) =>
+    ServerJsonNode(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       host: json['host'] as String,
@@ -43,7 +44,7 @@ ServerNode _$ServerNodeFromJson(Map<String, dynamic> json) => ServerNode(
       mail: json['mail'] as String?,
     );
 
-Map<String, dynamic> _$ServerNodeToJson(ServerNode instance) =>
+Map<String, dynamic> _$ServerJsonNodeToJson(ServerJsonNode instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,

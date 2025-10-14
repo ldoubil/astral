@@ -1,40 +1,11 @@
 import 'dart:io';
+import 'package:astral/models/base.dart';
 import 'package:hive/hive.dart';
+
 
 part 'net_node.g.dart';
 
 
-@HiveType(typeId: 12)
-class ConnectionInfo {
-  @HiveField(0)
-  late String bindAddr;
-  @HiveField(1)
-  late String dstAddr;
-  @HiveField(2)
-  late String proto;
-
-  ConnectionInfo() {
-    bindAddr = '';
-    dstAddr = '';
-    proto = '';
-  }
-}
-
-@HiveType(typeId: 13)
-class ConnectionManager {
-  @HiveField(0)
-  late String name; // 分组名称
-  @HiveField(1)
-  late List<ConnectionInfo> connections;
-  @HiveField(2)
-  late bool enabled;
-
-  ConnectionManager() {
-    name = '';
-    connections = [];
-    enabled = false;
-  }
-}
 
 /// 网络节点的 Hive 模型
 @HiveType(typeId: 11)

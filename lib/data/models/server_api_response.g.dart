@@ -9,7 +9,7 @@ part of 'server_api_response.dart';
 ServerApiData _$ServerApiDataFromJson(Map<String, dynamic> json) =>
     ServerApiData(
       items: (json['items'] as List<dynamic>)
-          .map((e) => ServerNode.fromJson(e as Map<String, dynamic>))
+          .map((e) => ServerJsonNode.fromJson(e as Map<String, dynamic>))
           .toList(),
       total: (json['total'] as num).toInt(),
       page: (json['page'] as num).toInt(),

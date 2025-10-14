@@ -1,11 +1,11 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'server_node.dart';
+import 'server_json_node.dart';
 
 part 'server_api_response.g.dart';
 
 @JsonSerializable()
 class ServerApiData {
-  final List<ServerNode> items;
+  final List<ServerJsonNode> items;
   final int total;
   final int page;
   @JsonKey(name: 'per_page')

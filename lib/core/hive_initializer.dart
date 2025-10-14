@@ -1,7 +1,9 @@
 import 'package:astral/models/net_node.dart';
+import 'package:astral/models/server_node.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/material.dart';
-import '../models/app_settings.dart'; // 导入需要注册的模型
+import '../models/app_settings.dart';
+import '../models/base.dart'; // 导入需要注册的模型
 
 class HiveInitializer {
   static Box<dynamic>? _basicDataBox;
@@ -25,9 +27,12 @@ class HiveInitializer {
       Hive.registerAdapter(NetNodeAdapter());
       Hive.registerAdapter(ConnectionManagerAdapter());
       Hive.registerAdapter(ConnectionInfoAdapter());
+      Hive.registerAdapter(ServerNodeAdapter());
+      Hive.registerAdapter(ServerProtocolSwitchAdapter());
 
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
       await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings
+      await Hive.openBox<ServerNode>('ServerNodes'); // 存储服务器节点数据
       _basicDataBox = await Hive.openBox<dynamic>('BasicData'); // 存储用户基础数据（String/int/List等）
 
       print('Hive初始化成功');
