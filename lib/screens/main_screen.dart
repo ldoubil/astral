@@ -1,4 +1,5 @@
 // 导入所需的包
+import 'package:astral/screens/room_page.dart';
 import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
@@ -95,6 +96,12 @@ class _MainScreenState extends State<MainScreen>
       activeIcon: Icons.home, // 选中时的图标
       label: LocaleKeys.nav_home.tr(), // 导航项标签
       page: const HomePage(), // 对应的页面
+    ),
+    NavigationItem(
+      icon: Icons.group_outlined, // 未选中时的图标
+      activeIcon: Icons.group, // 选中时的图标
+      label: LocaleKeys.nav_room.tr(), // 导航项标签
+      page: const RoomPage(), // 对应的页面
     ),
 
     NavigationItem(

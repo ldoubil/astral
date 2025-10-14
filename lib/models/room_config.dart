@@ -31,5 +31,4 @@ class RoomConfig {
   // 房间描述
   @HiveField(8)
   String room_desc = ''; // 房间描述
-
 }

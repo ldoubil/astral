@@ -1,5 +1,4 @@
 import 'package:astral/widgets/home/about_home.dart';
-import 'package:astral/widgets/home/contributors.dart'; // 添加这行
 import 'package:astral/widgets/home/servers_home.dart';
 import 'package:astral/widgets/home/user_ip.dart';
 import 'package:astral/widgets/home/virtual_ip.dart';
