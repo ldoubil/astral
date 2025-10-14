@@ -1,8 +1,6 @@
 
 import 'package:astral/state/app_state.dart';
 import 'package:astral/widgets/home_box.dart';
-import 'package:astral/widgets/canvas_jump.dart';
-import 'package:astral/k/models/room.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -84,7 +82,7 @@ class _UserIpBoxState extends State<UserIpBox> {
           });
         }
         // 房间选择器不是文本输入框，可以直接更新
-        _roomController.text = _appState.baseState.selectroom.value?.name ?? ''; // 监听房间选择变化
+        // _roomController.text = _appState.baseState.selectroom.value?.name ?? ''; // 监听房间选择变化
       });
 
       // 初始化验证状态
@@ -173,16 +171,16 @@ class _UserIpBoxState extends State<UserIpBox> {
 
           const SizedBox(height: 14),
           InkWell(
-            onTap:
-                (AppState().baseState.Connec_state.watch(context) != CoState.connected)
-                    ? () => CanvasJump.show(
-                      context,
-                      rooms: _appState.baseState.rooms.watch(context).cast<Room>(),
-                      onSelect: (Room room) {
-                        // _appState.baseState.setRoom(room);
-                      },
-                    )
-                    : null,
+            // onTap:
+            //     (AppState().baseState.Connec_state.watch(context) != CoState.connected)
+            //         ? () => CanvasJump.show(
+            //           context,
+            //           rooms: _appState.baseState.rooms.watch(context).cast<Room>(),
+            //           onSelect: (Room room) {
+            //             // _appState.baseState.setRoom(room);
+            //           },
+            //         )
+            //         : null,
             child: InputDecorator(
               decoration: InputDecoration(
                 labelText: LocaleKeys.select_room.tr(),
@@ -199,15 +197,15 @@ class _UserIpBoxState extends State<UserIpBox> {
               child: IgnorePointer(
                 ignoring:
                     AppState().baseState.Connec_state.watch(context) == CoState.connected,
-                child: Text(
-                  AppState().baseState.selectroom.watch(context)?.name ?? LocaleKeys.select_room_hint.tr(),
-                  style: TextStyle(
-                    color:
-                        AppState().baseState.Connec_state.watch(context) != CoState.connected
-                            ? Theme.of(context).textTheme.bodyLarge?.color
-                            : Theme.of(context).disabledColor,
-                  ),
-                ),
+                // child: Text(
+                //   AppState().baseState.selectroom.watch(context)?.name ?? LocaleKeys.select_room_hint.tr(),
+                //   style: TextStyle(
+                //     color:
+                //         AppState().baseState.Connec_state.watch(context) != CoState.connected
+                //             ? Theme.of(context).textTheme.bodyLarge?.color
+                //             : Theme.of(context).disabledColor,
+                //   ),
+                // ),
               ),
             ),
           ),

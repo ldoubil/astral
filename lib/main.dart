@@ -4,7 +4,6 @@ import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/utils/reg.dart'; // 添加这行导入
-import 'package:astral/k/app_s/log_capture.dart';
 import 'package:astral/k/mod/window_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';
@@ -45,7 +44,6 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   AppInfoUtil.init();
 
-  await LogCapture().startCapture();
   await UrlSchemeRegistrar.registerUrlScheme();
   await _initAppLinks();
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {

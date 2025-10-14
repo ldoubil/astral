@@ -126,7 +126,7 @@ class _WindowControlsState extends State<WindowControls>
         IconButton(
           icon: const Icon(Icons.close),
           onPressed: () async {
-            if (AppState().baseState.closeMinimize.value) {
+            if (AppState().applicationState.closeMinimize.value) {
               await windowManager.hide();
             } else {
               await windowManager.close();

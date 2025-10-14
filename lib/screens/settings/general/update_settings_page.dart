@@ -39,19 +39,19 @@ class UpdateSettingsPage extends StatelessWidget {
                 SwitchListTile(
                   title: Text(LocaleKeys.join_beta.tr()),
                   subtitle: Text(LocaleKeys.join_beta_desc.tr()),
-                  value: AppState().baseState.beta.watch(context),
+                  value: AppState().updateState.beta.watch(context),
                   onChanged: (value) {
-                    // AppState().baseState.b(value);
+                    AppState().updateState.beta.set(value);
                   },
                 ),
 
-                if (!AppState().baseState.beta.watch(context))
+                if (!AppState().updateState.beta.watch(context))
                   SwitchListTile(
                     title: Text(LocaleKeys.auto_update.tr()),
                     subtitle: Text(LocaleKeys.auto_update_desc.tr()),
-                    value: AppState().baseState.autoCheckUpdate.watch(context),
+                    value: AppState().updateState.autoCheckUpdate.watch(context),
                     onChanged: (value) {
-                      // AppState().baseState.setAutoCheckUpdate(value);
+                      AppState().updateState.autoCheckUpdate.set(value);
                     },
                   ),
               ],
@@ -80,9 +80,9 @@ class UpdateSettingsPage extends StatelessWidget {
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.link),
                     ),
-                    initialValue: AppState().baseState.downloadAccelerate.watch(context),
+                    initialValue: AppState().updateState.downloadAccelerate.watch(context),
                     onChanged: (value) {
-                      // AppState().baseState.setDownloadAccelerate(value);
+                      AppState().updateState.downloadAccelerate.set(value);
                     },
                   ),
                 ),
@@ -181,7 +181,7 @@ class UpdateSettingsPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('构建时间: 2024-01-01'),
                 const SizedBox(height: 8),
-                Text('更新通道: ${AppState().baseState.beta.value ? "Beta" : "Stable"}'),
+                Text('更新通道: ${AppState().updateState.beta.value ? "Beta" : "Stable"}'),
               ],
             ),
             actions: [

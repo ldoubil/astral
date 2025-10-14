@@ -144,7 +144,7 @@ class _UserPageState extends State<UserPage> {
                         // 获取当前索引对应的玩家数据
                         final player = filteredNodes[index];
                         // 根据简单列表模式选项返回不同的卡片组件
-                        return AppState().baseState.userListSimple.watch(context)
+                        return AppState().applicationState.userListSimple.watch(context)
                             ? MiniUserCard(
                                 player: player,
                                 colorScheme: colorScheme,

@@ -37,7 +37,7 @@ class WindowManagerUtils {
       // 等待窗口准备就绪并显示
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
         // 如果 startupMinimize 为 true，则最小化窗口
-        if (AppState().baseState.startupMinimize.value) {
+        if (AppState().startupState.startupMinimize.value) {
           await windowManager.hide();
         } else {
           await windowManager.show();
@@ -45,7 +45,7 @@ class WindowManagerUtils {
         }
       });
 
-      if (AppState().baseState.startup.value) {
+      if (AppState().startupState.startup.value) {
         handleStartupSetting(true);
       }
     }

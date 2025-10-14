@@ -32,7 +32,7 @@ class UpdateChecker {
   }) async {
     try {
       final releaseInfo = await _fetchLatestRelease(
-        includePrereleases: AppState().baseState.beta.value,
+        includePrereleases: AppState().updateState.beta.value,
       );
       if (releaseInfo == null) {
         _showUpdateDialog(
@@ -50,7 +50,7 @@ class UpdateChecker {
       debugPrint('服务器版本: ${releaseInfo['tag_name']}');
 
       // 保存最新版本号到数据库
-       AppState().baseState.beta.set(releaseInfo['tag_name']);
+      AppState().baseState.latestVersion.value = releaseInfo['tag_name'];
 
       // 比较版本号，如果有新版本则显示更新弹窗
       // 在 checkForUpdates 方法中修改 _showUpdateDialog 调用
@@ -71,10 +71,40 @@ class UpdateChecker {
         );
       }
     } catch (e) {
+      String errorMessage;
+      String errorTitle = '更新检查失败';
+      // 输出哪行出错
+      debugPrint('出错行: ${StackTrace.current.toString().split('\n')[1]}');
+
+      // 根据异常类型提供更详细的错误信息
+      if (e is SocketException) {
+        if (e.osError?.errorCode == 11001 || e.osError?.errorCode == -2) {
+          errorMessage = 'DNS解析失败，请检查网络连接或稍后重试';
+        } else if (e.osError?.errorCode == 10060 || e.osError?.errorCode == 110) {
+          errorMessage = '连接超时，请检查网络连接或稍后重试';
+        } else if (e.osError?.errorCode == 10061 || e.osError?.errorCode == 111) {
+          errorMessage = '无法连接到服务器，请检查网络设置';
+        } else {
+          errorMessage = '网络连接失败: ${e.message}';
+        }
+      } else if (e is HttpException) {
+        errorMessage = 'HTTP请求异常: ${e.message}';
+      } else if (e is FormatException) {
+        errorMessage = '数据格式错误，服务器返回了无效的响应';
+      } else if (e.toString().contains('timeout') || e.toString().contains('TimeoutException')) {
+        errorMessage = '请求超时，请检查网络连接或稍后重试';
+      } else {
+        errorMessage = '检查更新时发生未知错误: ${e.toString()}';
+      }
+      
+      debugPrint('更新检查失败: $e');
+      debugPrint('错误堆栈: ${StackTrace.current}');
+      debugPrint('错误详情: ${e.runtimeType} - ${e.toString()}');
+      
       _showUpdateDialog(
         context,
-        '更新检查失败',
-        '检查更新时发生错误: $e',
+        errorTitle,
+        errorMessage,
         'https://github.com/$owner/$repo/releases',
       );
     }
@@ -110,15 +140,56 @@ class UpdateChecker {
           return json.decode(response.body);
         }
       } else {
+        // 根据不同的HTTP状态码提供具体的错误信息
+        String errorMessage;
+        switch (response.statusCode) {
+          case 403:
+            errorMessage = 'GitHub API 访问受限，请稍后重试或检查网络设置';
+            break;
+          case 404:
+            errorMessage = '未找到指定的仓库或版本信息';
+            break;
+          case 429:
+            errorMessage = 'GitHub API 请求频率过高，请稍后重试';
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = 'GitHub 服务器暂时不可用，请稍后重试';
+            break;
+          default:
+            errorMessage = 'GitHub API 请求失败 (HTTP ${response.statusCode})';
+        }
+        
+        debugPrint('GitHub API 请求失败: ${response.statusCode} - ${response.reasonPhrase}');
+        
         return {
-          // 返回错误信息
           'tag_name': '错误 ${response.statusCode}',
-          'body': '请求GitHub API失败',
+          'body': errorMessage,
           'html_url': 'https://github.com/$owner/$repo/releases',
         };
       }
     } catch (e) {
-      return null;
+      debugPrint('获取GitHub发布信息失败: $e');
+      
+      // 根据异常类型返回更详细的错误信息
+      String errorMessage;
+      if (e is SocketException) {
+        errorMessage = '网络连接失败，无法访问 GitHub';
+      } else if (e is FormatException) {
+        errorMessage = 'GitHub 返回的数据格式无效';
+      } else if (e.toString().contains('timeout')) {
+        errorMessage = '请求 GitHub 超时，请稍后重试';
+      } else {
+        errorMessage = '获取版本信息时发生未知错误';
+      }
+      
+      return {
+        'tag_name': '网络错误',
+        'body': errorMessage,
+        'html_url': 'https://github.com/$owner/$repo/releases',
+      };
     }
   }
 
@@ -226,7 +297,7 @@ class UpdateChecker {
       // 其他平台直接下载
       final downloadUrlPath = _getDownloadUrl(releaseInfo);
       if (downloadUrlPath == null) return;
-      final downloadUrl = AppState().baseState.downloadAccelerate.value + downloadUrlPath;
+      final downloadUrl = AppState().updateState.downloadAccelerate.value + downloadUrlPath;
       final fileName = _getPlatformFileName();
 
       // 显示下载进度对话框
@@ -313,7 +384,7 @@ class UpdateChecker {
       return;
     }
 
-    final downloadUrl = AppState().baseState.downloadAccelerate.value + downloadUrlPath;
+    final downloadUrl = AppState().updateState.downloadAccelerate.value + downloadUrlPath;
 
     // 显示下载进度对话框
     showDialog(
@@ -378,9 +449,28 @@ class UpdateChecker {
       final response = await request.send();
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'HTTP ${response.statusCode}: ${response.reasonPhrase}',
-        );
+        String errorMessage;
+        switch (response.statusCode) {
+          case 403:
+            errorMessage = '下载被拒绝，可能是访问限制或权限问题';
+            break;
+          case 404:
+            errorMessage = '下载文件不存在，可能已被移除';
+            break;
+          case 429:
+            errorMessage = '下载请求过于频繁，请稍后重试';
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = '服务器暂时不可用，请稍后重试下载';
+            break;
+          default:
+            errorMessage = '下载请求失败 (HTTP ${response.statusCode}: ${response.reasonPhrase ?? "未知错误"})';
+        }
+        
+        throw Exception(errorMessage);
       }
 
       final contentLength = response.contentLength;
@@ -429,8 +519,43 @@ class UpdateChecker {
         }
       } catch (_) {}
 
-      debugPrint('下载失败: $e');
-      return null;
+      // 根据异常类型提供详细的错误信息
+      String errorMessage;
+      if (e is SocketException) {
+        if (e.osError?.errorCode == 28 || e.message.contains('No space left')) {
+          errorMessage = '存储空间不足，请清理设备存储空间后重试';
+        } else if (e.osError?.errorCode == 13 || e.message.contains('Permission denied')) {
+          errorMessage = '没有写入权限，请检查应用权限设置';
+        } else if (e.osError?.errorCode == 11001 || e.osError?.errorCode == -2) {
+          errorMessage = 'DNS解析失败，请检查网络连接';
+        } else if (e.osError?.errorCode == 10060 || e.osError?.errorCode == 110) {
+          errorMessage = '下载超时，请检查网络连接或稍后重试';
+        } else {
+          errorMessage = '网络连接失败: ${e.message}';
+        }
+      } else if (e is FileSystemException) {
+        if (e.osError?.errorCode == 28) {
+          errorMessage = '存储空间不足，无法保存下载文件';
+        } else if (e.osError?.errorCode == 13) {
+          errorMessage = '没有文件写入权限，请检查应用权限';
+        } else {
+          errorMessage = '文件系统错误: ${e.message}';
+        }
+      } else if (e is HttpException) {
+        errorMessage = '下载过程中发生HTTP错误: ${e.message}';
+      } else if (e.toString().contains('timeout') || e.toString().contains('TimeoutException')) {
+        errorMessage = '下载超时，请检查网络连接或稍后重试';
+      } else {
+        errorMessage = '下载失败: ${e.toString()}';
+      }
+
+      debugPrint('文件下载失败: $e');
+      debugPrint('错误类型: ${e.runtimeType}');
+      if (e is SocketException && e.osError != null) {
+        debugPrint('系统错误代码: ${e.osError!.errorCode}');
+      }
+      
+      throw Exception(errorMessage);
     }
   }
 }
@@ -583,16 +708,13 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
         setState(() {
           _isDownloading = false;
           _filePath = filePath;
-          if (filePath == null) {
-            _error = '下载失败：无法保存文件';
-          }
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _error = '下载失败: ${e.toString()}';
+          _error = e.toString(); // 直接使用详细的错误信息
         });
       }
     }
@@ -646,6 +768,8 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
     );
   }
 
+  /// 安装下载的文件
+  /// 提供详细的安装错误处理和用户指导
   Future<void> _installFile(String filePath) async {
     try {
       if (Platform.isAndroid) {
@@ -655,18 +779,71 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
           type: "application/vnd.android.package-archive",
         );
 
+        // 根据不同的结果类型提供具体的错误信息
         if (result.type != ResultType.done) {
-          throw Exception('安装失败: ${result.message}');
+          String errorMessage;
+          switch (result.type) {
+            case ResultType.noAppToOpen:
+              errorMessage = '没有找到可以安装APK的应用程序\n\n解决方案：\n1. 确保设备支持APK安装\n2. 检查是否禁用了包安装器';
+              break;
+            case ResultType.fileNotFound:
+              errorMessage = '安装文件不存在或已被删除\n\n解决方案：\n1. 重新下载安装包\n2. 检查存储空间是否充足';
+              break;
+            case ResultType.permissionDenied:
+              errorMessage = '没有安装权限\n\n解决方案：\n1. 前往设置 > 安全 > 允许安装未知来源应用\n2. 为本应用开启安装权限\n3. 重启应用后重试';
+              break;
+            case ResultType.error:
+            default:
+              errorMessage = '安装过程中发生错误: ${result.message}\n\n可能原因：\n1. 安装包损坏或不完整\n2. 设备存储空间不足\n3. 系统版本不兼容\n4. 安装权限被拒绝';
+              break;
+          }
+          throw Exception(errorMessage);
         }
       } else {
-        await OpenFile.open(filePath);
+        // 其他平台（Windows、macOS、Linux）
+        final result = await OpenFile.open(filePath);
+        
+        if (result.type != ResultType.done) {
+          String errorMessage;
+          switch (result.type) {
+            case ResultType.noAppToOpen:
+              errorMessage = '没有找到可以打开此文件的应用程序\n\n解决方案：\n1. 手动双击文件进行安装\n2. 使用系统默认的安装程序';
+              break;
+            case ResultType.fileNotFound:
+              errorMessage = '安装文件不存在\n\n解决方案：\n1. 重新下载安装包\n2. 检查文件路径是否正确';
+              break;
+            case ResultType.permissionDenied:
+              errorMessage = '没有权限访问安装文件\n\n解决方案：\n1. 以管理员身份运行应用\n2. 检查文件权限设置';
+              break;
+            case ResultType.error:
+            default:
+              errorMessage = '无法打开安装文件: ${result.message}\n\n解决方案：\n1. 手动导航到下载文件夹\n2. 双击安装文件进行安装';
+              break;
+          }
+          throw Exception(errorMessage);
+        }
       }
     } catch (e) {
+      debugPrint('安装文件失败: $e');
+      
       if (mounted) {
+        // 显示详细的错误信息和解决建议
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('无法打开安装文件: $e\n\n提示：请确保已开启"允许安装未知来源应用"权限'),
-            duration: const Duration(seconds: 5),
+            content: Text(e.toString()),
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: '查看文件',
+              onPressed: () {
+                // 尝试打开文件所在的目录
+                try {
+                  final directory = filePath.substring(0, filePath.lastIndexOf(Platform.pathSeparator));
+                  OpenFile.open(directory);
+                } catch (_) {
+                  // 如果无法打开目录，则忽略
+                }
+              },
+            ),
           ),
         );
       }

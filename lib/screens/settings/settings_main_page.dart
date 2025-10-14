@@ -3,7 +3,6 @@ import 'package:astral/screens/settings/server/custom_server_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/screens/settings/network/forwarding_management_page.dart';
 import 'package:astral/screens/settings/network/network_adapter_page.dart';
 import 'package:astral/screens/settings/network/listen_list_page.dart';
 import 'package:astral/screens/settings/network/subnet_proxy_page.dart';
@@ -29,17 +28,7 @@ class SettingsMainPage extends StatelessWidget {
           const SizedBox(height: 8),
 
           if (Platform.isWindows) ...[
-            _buildSettingsCard(
-              context,
-              icon: Icons.broadcast_on_personal,
-              title: LocaleKeys.forwarding_management.tr(),
-              subtitle: '管理网络转发规则',
-              onTap:
-                  () => _navigateToPage(
-                    context,
-                    const ForwardingManagementPage(),
-                  ),
-            ),
+
 
             _buildSettingsCard(
               context,

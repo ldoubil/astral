@@ -143,18 +143,18 @@ class _SoftwareSettingsPageState extends State<SoftwareSettingsPage> {
                   SwitchListTile(
                     title: Text(LocaleKeys.minimize.tr()),
                     subtitle: Text(LocaleKeys.minimize_desc.tr()),
-                    value: AppState().baseState.closeMinimize.watch(context),
+                    value: AppState().applicationState.closeMinimize.watch(context),
                     onChanged: (value) {
-                      // AppState().baseState.updateCloseMinimize(value);
+                      AppState().applicationState.closeMinimize.set(value);
                     },
                   ),
 
                 SwitchListTile(
                   title: Text(LocaleKeys.player_list_card.tr()),
                   subtitle: Text(LocaleKeys.player_list_card_desc.tr()),
-                  value: AppState().baseState.userListSimple.watch(context),
+                  value: AppState().applicationState.userListSimple.watch(context),
                   onChanged: (value) {
-                    // AppState().baseState.setUserListSimple(value);
+                    AppState().applicationState.userListSimple.set(value);
                   },
                 ),
               ],

@@ -1,10 +1,8 @@
 import 'package:astral/state/app_state.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:signals_flutter/signals_flutter.dart';
 
 class ServersHome extends StatelessWidget {
   const ServersHome({super.key});
@@ -30,7 +28,8 @@ class ServersHome extends StatelessWidget {
           const SizedBox(height: 8),
           Builder(
             builder: (context) {
-              final servers = AppState().baseState.servers.watch(context);
+              final servers = [];
+              // final servers = AppState().baseState.servers.watch(context);
               var enabledServers =
                   servers.where((s) => s.enable == true).toList();
               if (enabledServers.isEmpty) {

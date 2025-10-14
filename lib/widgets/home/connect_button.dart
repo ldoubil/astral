@@ -193,12 +193,13 @@ class _ConnectButtonState extends State<ConnectButton>
     // 如果当前状态不是空闲状态，则直接返回，防止重复触发连接操作
     if (AppState().baseState.Connec_state.value != CoState.idle) return;
 
-    final rom = AppState().baseState.selectroom.value;
-    if (rom == null) return;
+    // final rom = AppState().baseState.selectroom.value;
+    // if (rom == null) return;
 
     // 检查服务器列表是否为空
-    final enabledServers =
-        AppState().baseState.servers.value.where((server) => server.enable).toList();
+    // final enabledServers =
+        // AppState().baseState.servers.value.where((server) => server.enable).toList();
+         final enabledServers =[];
     if (enabledServers.isEmpty) {
       // 显示提示信息
       if (mounted) {
@@ -221,7 +222,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
     try {
       // 初始化服务器
-      await _initializeServer(rom);
+      // await _initializeServer(rom);
 
       // 开始连接流程
       await _beginConnectionProcess();
@@ -251,39 +252,39 @@ class _ConnectButtonState extends State<ConnectButton>
       ipForServer = currentIp;
     }
     List<Forward> forwards = [];
-    for (var conn in aps.connections.value) {
-      if (conn.enabled) {
-        for (var conn in conn.connections) {
-          // 根据协议类型添加转发规则
-          if (conn.proto == 'all') {
-            // ALL协议时添加TCP和UDP两条规则
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: 'tcp',
-              ),
-            );
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: 'udp',
-              ),
-            );
-          } else {
-            // TCP或UDP时只添加对应协议的规则
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: conn.proto,
-              ),
-            );
-          }
-        }
-      }
-    }
+    // for (var conn in aps.connections.value) {
+    //   if (conn.enabled) {
+    //     for (var conn in conn.connections) {
+    //       // 根据协议类型添加转发规则
+    //       if (conn.proto == 'all') {
+    //         // ALL协议时添加TCP和UDP两条规则
+    //         forwards.add(
+    //           Forward(
+    //             bindAddr: conn.bindAddr,
+    //             dstAddr: conn.dstAddr,
+    //             proto: 'tcp',
+    //           ),
+    //         );
+    //         forwards.add(
+    //           Forward(
+    //             bindAddr: conn.bindAddr,
+    //             dstAddr: conn.dstAddr,
+    //             proto: 'udp',
+    //           ),
+    //         );
+    //       } else {
+    //         // TCP或UDP时只添加对应协议的规则
+    //         forwards.add(
+    //           Forward(
+    //             bindAddr: conn.bindAddr,
+    //             dstAddr: conn.dstAddr,
+    //             proto: conn.proto,
+    //           ),
+    //         );
+    //       }
+    //     }
+    //   }
+    // }
     await createServer(
       username: aps.PlayerName.value,
       enableDhcp: forceDhcp ? true : aps.dhcp.value,
@@ -292,21 +293,7 @@ class _ConnectButtonState extends State<ConnectButton>
       roomPassword: rom.password,
       cidrs: aps.cidrproxy.value,
       forwards: forwards,
-      severurl:
-          aps.servers.value.where((server) => server.enable).expand((server) {
-            final urls = <String>[];
-            if (server.tcp) urls.add('tcp://${server.url}');
-            if (server.udp) urls.add('udp://${server.url}');
-            if (server.ws) urls.add('ws://${server.url}');
-            if (server.wss) urls.add('wss://${server.url}');
-            if (server.quic) urls.add('quic://${server.url}');
-            if (server.wg) urls.add('wg://${server.url}');
-            if (server.txt) urls.add('txt://${server.url}');
-            if (server.srv) urls.add('srv://${server.url}');
-            if (server.http) urls.add('http://${server.url}');
-            if (server.https) urls.add('https://${server.url}');
-            return urls;
-          }).toList(),
+      severurl:[],
       onurl:
           AppState().baseState.listenList.value.where((url) => !url.contains('[::]')).toList(),
       flag: _buildFlags(aps),

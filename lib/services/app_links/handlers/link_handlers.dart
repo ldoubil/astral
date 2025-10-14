@@ -1,6 +1,4 @@
 import 'package:astral/state/app_state.dart';
-import 'package:astral/utils/e_d_room.dart';
-import 'package:astral/utils/room_share_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,51 +25,51 @@ class LinkHandlers {
         return;
       }
 
-      // 解密 JWT 获取房间信息
-      final room = decryptRoomFromJWT(cleanedCode);
-      if (room == null) {
-        debugPrint('无效的房间分享码');
-        _showError(context, '分享码解析失败', '无法解析房间信息，可能是分享码已过期或损坏');
-        return;
-      }
+      // // 解密 JWT 获取房间信息
+      // final room = decryptRoomFromJWT(cleanedCode);
+      // if (room == null) {
+      //   debugPrint('无效的房间分享码');
+      //   _showError(context, '分享码解析失败', '无法解析房间信息，可能是分享码已过期或损坏');
+      //   return;
+      // }
 
-      // 验证房间信息完整性
-      if (room.name.isEmpty) {
-        debugPrint('房间信息不完整：房间名为空');
-        _showError(context, '房间信息不完整', '房间名称不能为空');
-        return;
-      }
+      // // 验证房间信息完整性
+      // if (room.name.isEmpty) {
+      //   debugPrint('房间信息不完整：房间名为空');
+      //   _showError(context, '房间信息不完整', '房间名称不能为空');
+      //   return;
+      // }
 
-      // 检查是否已存在相同的房间
-      final existingRooms =  AppState().baseState.rooms.value;
-      final duplicateRoom =
-          existingRooms.where((existingRoom) {
-            if (room.encrypted && existingRoom.encrypted) {
-              // 对于加密房间，比较房间名、房间号和密码
-              return existingRoom.name == room.name &&
-                  existingRoom.roomName == room.roomName &&
-                  existingRoom.password == room.password;
-            } else if (!room.encrypted && !existingRoom.encrypted) {
-              // 对于非加密房间，比较房间号和密码
-              return existingRoom.roomName == room.roomName &&
-                  existingRoom.password == room.password;
-            }
-            return false;
-          }).firstOrNull;
+      // // 检查是否已存在相同的房间
+      // final existingRooms =  AppState().baseState.rooms.value;
+      // final duplicateRoom =
+      //     existingRooms.where((existingRoom) {
+      //       if (room.encrypted && existingRoom.encrypted) {
+      //         // 对于加密房间，比较房间名、房间号和密码
+      //         return existingRoom.name == room.name &&
+      //             existingRoom.roomName == room.roomName &&
+      //             existingRoom.password == room.password;
+      //       } else if (!room.encrypted && !existingRoom.encrypted) {
+      //         // 对于非加密房间，比较房间号和密码
+      //         return existingRoom.roomName == room.roomName &&
+      //             existingRoom.password == room.password;
+      //       }
+      //       return false;
+      //     }).firstOrNull;
 
-      if (duplicateRoom != null) {
-        debugPrint('房间已存在: ${duplicateRoom.name}');
-        _showInfo(context, '房间已存在', '房间"${duplicateRoom.name}"已在您的房间列表中');
-        return;
-      } // 添加房间到数据库
-      // await _aps.addRoom(room);
-      debugPrint('成功添加分享房间: ${room.name}');
+      // if (duplicateRoom != null) {
+      //   debugPrint('房间已存在: ${duplicateRoom.name}');
+      //   _showInfo(context, '房间已存在', '房间"${duplicateRoom.name}"已在您的房间列表中');
+      //   return;
+      // } // 添加房间到数据库
+      // // await _aps.addRoom(room);
+      // debugPrint('成功添加分享房间: ${room.name}');
 
-      // 安全地跳转到房间页面并选中房间
-      await RoomShareHelper.navigateToRoomPage(room, context: context);
+      // // 安全地跳转到房间页面并选中房间
+      // await RoomShareHelper.navigateToRoomPage(room, context: context);
 
       // 显示成功提示
-      _showSuccess(context, '房间添加成功', '已成功添加并选中房间"${room.name}"');
+      // _showSuccess(context, '房间添加成功', '已成功添加并选中房间"${room.name}"');
     } catch (e) {
       debugPrint('处理房间分享链接失败: $e');
       _showError(context, '处理分享链接失败', '发生未知错误：${e.toString()}');

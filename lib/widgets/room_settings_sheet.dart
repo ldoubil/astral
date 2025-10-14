@@ -139,16 +139,16 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('显示模式', [
                 _buildOptionButton(
                   '简约',
-                  AppState().baseState.userListSimple.watch(context),
+                  AppState().applicationState.userListSimple.watch(context),
                   () {
-                    AppState().baseState.userListSimple.set(true);
+                    AppState().applicationState.userListSimple.set(true);
                   },
                 ),
                 _buildOptionButton(
                   '详细',
-                  !AppState().baseState.userListSimple.watch(context),
+                  !AppState().applicationState.userListSimple.watch(context),
                   () {
-                    AppState().baseState.userListSimple.set(false);
+                    AppState().applicationState.userListSimple.set(false);
                   },
                 ),
               ], colorScheme),

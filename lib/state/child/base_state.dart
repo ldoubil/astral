@@ -1,6 +1,3 @@
-import 'package:astral/k/models/net_config.dart';
-import 'package:astral/k/models/room.dart';
-import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/state/app_state.dart';
@@ -18,15 +15,6 @@ class BaseState {
   /// 玩家名称
   final Signal<String> PlayerName = signal('');
 
-  /// 所选房间
-  final Signal<Room?> selectroom = signal(null);
-
-  /// 房间列表
-  final Signal<List<Room>> rooms = signal([]);
-
-  /// 服务器列表
-  final Signal<List<ServerMod>> servers = signal([]);
-
   /// 是否使用DHCP
   final Signal<bool> dhcp = signal(true);
 
@@ -38,9 +26,6 @@ class BaseState {
 
   /// 当前选中的导航项索引
   final Signal<int> selectedIndex = signal(0);
-
-  /// 用户列表简约模式
-  final Signal<bool> userListSimple = signal(true);
 
   /// IPv4地址
   final Signal<String> ipv4 = signal('');
@@ -59,8 +44,7 @@ class BaseState {
   /// 自定义vpn网段
   final Signal<List<String>> customVpn = signal([]);
 
-  /// autoCheckUpdate - 自动检查更新
-  final Signal<bool> autoCheckUpdate = signal(true);
+
 
   /// 自定义cidr代理
   final Signal<String> defaultProtocol = signal(''); // 默认协议
@@ -92,7 +76,6 @@ class BaseState {
   /// listenList
   final Signal<List<String>> listenList = signal([]); // 房间列表
 
-  final Signal<List<ConnectionManager>> connections = signal([]);
 
   /// 网络状态
   final Signal<KVNetworkStatus?> netStatus = signal(null);
@@ -113,14 +96,6 @@ class BaseState {
 
   /// 添加显示模式状态
   final Signal<int> displayMode = signal(0); // 0: 默认, 1: 仅用户, 2: 仅服务器
-  /// 下载加速地址
-  final Signal<String> downloadAccelerate = signal('https://gh.xmly.dev/');
-
-  /// beta - 参与测试版
-  final Signal<bool> beta = signal(false);
-
-  /// 是否关闭最小化到托盘
-  final Signal<bool> closeMinimize = signal(true);
 
   final Signal<CoState> Connec_state = signal(CoState.idle);
 

@@ -3,8 +3,6 @@ import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/home_page.dart';
-import 'package:astral/screens/room_page.dart';
-import 'package:astral/screens/server_page.dart';
 import 'package:astral/screens/settings_page.dart';
 import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
@@ -39,7 +37,8 @@ class _MainScreenState extends State<MainScreen>
 
     // 在初始化时进行更新检查
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (AppState().baseState.autoCheckUpdate.value || AppState().baseState.beta.value) {
+      if (AppState().updateState.autoCheckUpdate.value ||
+          AppState().updateState.beta.value) {
         final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
         if (mounted) {
           Future.delayed(const Duration(milliseconds: 1000), () {
@@ -97,19 +96,7 @@ class _MainScreenState extends State<MainScreen>
       label: LocaleKeys.nav_home.tr(), // 导航项标签
       page: const HomePage(), // 对应的页面
     ),
-    NavigationItem(
-      icon: Icons.room_preferences_outlined, // 未选中时的图标
-      activeIcon: Icons.room_preferences, // 选中时的图标Icon(Icons.room_preferences)
-      label: LocaleKeys.nav_room.tr(), // 导航项标签
-      page: const RoomPage(), // 对应的页面
-    ),
 
-    NavigationItem(
-      icon: Icons.dns_outlined, // 未选中时的图标
-      activeIcon: Icons.dns, // 选中时的图标Icon(Icons.room_preferences)
-      label: LocaleKeys.nav_server.tr(), // 导航项标签
-      page: const ServerPage(), // 对应的页面
-    ),
     NavigationItem(
       icon: Icons.settings_outlined, // 未选中时的图标
       activeIcon: Icons.settings, // 选中时的图标
@@ -149,7 +136,9 @@ class _MainScreenState extends State<MainScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      navigationItems[AppState().baseState.selectedIndex.watch(context)]
+                      navigationItems[AppState().baseState.selectedIndex.watch(
+                            context,
+                          )]
                           .label,
                       style: TextStyle(
                         fontSize: 16,
