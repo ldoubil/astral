@@ -32,7 +32,7 @@ class NetNode {
   String network_secret = ''; // 网络密钥
 
   @HiveField(8)
-  List<String> listeners = []; // 监听端口
+  List<String> listeners = []; // 监听列表
 
   @HiveField(9)
   List<String> peer = []; // 服务器节点地址
