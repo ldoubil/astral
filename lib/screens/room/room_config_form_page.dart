@@ -223,7 +223,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
           context,
           icon: Icons.hearing,
           title: "监听列表",
-          subtitle: '管理房间监听地址',
+          subtitle: '管理房间监听地址（留空则使用全局设置）',
           onTap: () => {},
         ),
         _buildSettingsCard(
