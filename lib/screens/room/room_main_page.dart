@@ -264,7 +264,7 @@ class _RoomMainPageState extends State<RoomMainPage> {
     final result = await Navigator.push<RoomConfig>(
       context,
       MaterialPageRoute(
-        builder: (context) => RoomConfigFormPage(roomConfig: roomConfig),
+        builder: (context) => RoomConfigFormPage(roomConfig: roomConfig, isEditing: roomConfig != null),
       ),
     );
 

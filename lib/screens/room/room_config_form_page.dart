@@ -1,3 +1,4 @@
+import 'package:astral/screens/general/general_listen_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/models/room_config.dart';
 import 'package:astral/models/net_node.dart';
@@ -32,6 +33,8 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
   late TextEditingController _networkNameController; // 网络名称
   late TextEditingController _networkSecretController; // 网络密钥
   bool _roomProtect = true; // 是否启用房间保护
+  List<String> _listeners = []; // 监听列表
+  bool _isDirty = false; // 标记数据是否已更改
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     if (widget.isEditing && widget.roomConfig != null) {
       _loadExistingData();
     }
+    _addListeners();
   }
 
   /// 初始化控制器
@@ -51,6 +55,24 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     _instanceNameController = TextEditingController(text: 'default');
     _networkNameController = TextEditingController();
     _networkSecretController = TextEditingController();
+  }
+
+  /// 添加监听器以跟踪更改
+  void _addListeners() {
+    _nameController.addListener(_markDirty);
+    _uuidController.addListener(_markDirty);
+    _hostnameController.addListener(_markDirty);
+    _instanceNameController.addListener(_markDirty);
+    _networkNameController.addListener(_markDirty);
+    _networkSecretController.addListener(_markDirty);
+  }
+
+  void _markDirty() {
+    if (!mounted) return;
+    if (_isDirty) return;
+    setState(() {
+      _isDirty = true;
+    });
   }
 
   /// 生成UUID
@@ -66,17 +88,34 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     final config = widget.roomConfig!;
     _nameController.text = config.room_name;
     _uuidController.text = config.room_uuid;
+    _roomProtect = config.room_protect;
 
     // 网络配置
     final netNode = config.room_public;
+    
     _hostnameController.text = netNode.hostname;
     _instanceNameController.text = netNode.instance_name;
     _networkNameController.text = netNode.network_name;
     _networkSecretController.text = netNode.network_secret;
+    _listeners = List<String>.from(netNode.listeners);
+
+    // 重置脏标记，因为数据已加载
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _isDirty = false;
+      });
+    });
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_markDirty);
+    _uuidController.removeListener(_markDirty);
+    _hostnameController.removeListener(_markDirty);
+    _instanceNameController.removeListener(_markDirty);
+    _networkNameController.removeListener(_markDirty);
+    _networkSecretController.removeListener(_markDirty);
+
     _nameController.dispose();
     _uuidController.dispose();
 
@@ -89,9 +128,11 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? '编辑房间配置' : '添加房间配置'),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.isEditing ? '编辑房间配置' : '添加房间配置'),
         actions: [
           IconButton(
             onPressed: _saveConfiguration,
@@ -130,6 +171,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
           ],
         ),
       ),
+    ) 
     );
   }
 
@@ -173,6 +215,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
             onChanged: (value) {
               setState(() {
                 _roomProtect = value;
+                _markDirty();
               });
             },
           ),
@@ -215,6 +258,44 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     );
   }
 
+  Future<bool> _onWillPop() async {
+    if (_isDirty) {
+      final result = await _showExitConfirmDialog();
+      if (result == 'save') {
+        _saveConfiguration();
+        return false;
+      }
+      return result == 'discard';
+    }
+    return true;
+  }
+
+  Future<String?> _showExitConfirmDialog() async {
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('提示'),
+        content: const Text('配置已修改，是否保存？'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('放弃'),
+            onPressed: () => Navigator.of(context).pop('discard'),
+          ),
+          TextButton(
+            child: const Text('取消'),
+            onPressed: () => Navigator.of(context).pop('cancel'),
+          ),
+          ElevatedButton(
+            child: const Text('保存'),
+            onPressed: () {
+              Navigator.of(context).pop('save');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建网络配置卡片
   Widget _buildNetworkConfigCard() {
     return Column(
@@ -224,7 +305,23 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
           icon: Icons.hearing,
           title: "监听列表",
           subtitle: '管理房间监听地址（留空则使用全局设置）',
-          onTap: () => {},
+          onTap: () async {
+            final newListeners = await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => GeneralListenListPage(
+                  listeners: _listeners,
+                ),
+              ),
+            );
+            if (newListeners != null) {
+              setState(() {
+                if (newListeners.toString() != _listeners.toString()) {
+                  _listeners = newListeners;
+                  _markDirty();
+                }
+              });
+            }
+          },
         ),
         _buildSettingsCard(
           context,
@@ -272,7 +369,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
       // netNode.ipv4 = _ipv4Controller.text.trim();
       netNode.network_name = _networkNameController.text.trim();
       netNode.network_secret = _networkSecretController.text.trim();
-      // netNode.listeners = _listeners;
+      netNode.listeners = _listeners;
       // netNode.peer = _peer;
       // netNode.cidrproxy = _cidrproxy;
       // netNode.default_protocol = default_protocol;
@@ -283,6 +380,7 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
       roomConfig.create_time = widget.roomConfig?.create_time ?? DateTime.now();
 
       Navigator.of(context).pop(roomConfig);
+      _isDirty = false;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
