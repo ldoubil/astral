@@ -1,3 +1,4 @@
+import 'package:astral/screens/general/general_base_net_config_page.dart';
 import 'package:astral/screens/general/general_listen_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/models/room_config.dart';
@@ -35,6 +36,9 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
   bool _roomProtect = true; // 是否启用房间保护
   List<String> _listeners = []; // 监听列表
   bool _isDirty = false; // 标记数据是否已更改
+  
+  // 网络节点配置
+  late NetNode _netNode;
 
   @override
   void initState() {
@@ -55,6 +59,9 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     _instanceNameController = TextEditingController(text: 'default');
     _networkNameController = TextEditingController();
     _networkSecretController = TextEditingController();
+    
+    // 初始化网络节点配置
+    _netNode = widget.roomConfig?.room_public ?? NetNode();
   }
 
   /// 添加监听器以跟踪更改
@@ -90,14 +97,14 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
     _uuidController.text = config.room_uuid;
     _roomProtect = config.room_protect;
 
-    // 网络配置
-    final netNode = config.room_public;
+    // 网络配置 - 直接使用现有的netNode
+    _netNode = config.room_public;
     
-    _hostnameController.text = netNode.hostname;
-    _instanceNameController.text = netNode.instance_name;
-    _networkNameController.text = netNode.network_name;
-    _networkSecretController.text = netNode.network_secret;
-    _listeners = List<String>.from(netNode.listeners);
+    _hostnameController.text = _netNode.hostname;
+    _instanceNameController.text = _netNode.instance_name;
+    _networkNameController.text = _netNode.network_name;
+    _networkSecretController.text = _netNode.network_secret;
+    _listeners = List<String>.from(_netNode.listeners);
 
     // 重置脏标记，因为数据已加载
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -333,19 +340,58 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
         _buildSettingsCard(
           context,
           icon: Icons.settings_ethernet,
-          title: "基础网络配置",
-          subtitle: '配置房间的网络参数',
-          onTap: () => {},
-        ),
-        _buildSettingsCard(
-          context,
-          icon: Icons.tune,
-          title: "高级网络配置",
-          subtitle: '配置房间的高级网络参数',
-          onTap: () => {},
+          title: "个性化网络参数配置",
+          subtitle: '个性化网络参数配置',
+          onTap: () async {
+            final updatedNetNode = await Navigator.of(context).push<NetNode>(
+              MaterialPageRoute(
+                builder: (context) => GeneralBaseNetConfigPage(
+                  netNode: _netNode,
+                ),
+              ),
+            );
+            if (updatedNetNode != null) {
+              // 只有在网络配置实际发生变化时才标记为脏数据
+              if (_hasNetNodeChanged(_netNode, updatedNetNode)) {
+                setState(() {
+                  _netNode = updatedNetNode;
+                  _markDirty();
+                });
+              }
+            }
+          },
         ),
       ],
     );
+  }
+
+  /// 检查NetNode是否发生变化
+  bool _hasNetNodeChanged(NetNode original, NetNode updated) {
+    return original.ipv4 != updated.ipv4 ||
+        original.dev_name != updated.dev_name ||
+        original.mtu != updated.mtu ||
+        original.enable_ipv6 != updated.enable_ipv6 ||
+        original.dhcp != updated.dhcp ||
+        original.default_protocol != updated.default_protocol ||
+        original.enable_encryption != updated.enable_encryption ||
+        original.data_compress_algo != updated.data_compress_algo ||
+        original.disable_p2p != updated.disable_p2p ||
+        original.disable_udp_hole_punching != updated.disable_udp_hole_punching ||
+        original.relay_all_peer_rpc != updated.relay_all_peer_rpc ||
+        original.enable_exit_node != updated.enable_exit_node ||
+        original.no_tun != updated.no_tun ||
+        original.use_smoltcp != updated.use_smoltcp ||
+        original.bind_device != updated.bind_device ||
+        original.accept_dns != updated.accept_dns ||
+        original.private_mode != updated.private_mode ||
+        original.latency_first != updated.latency_first ||
+        original.multi_thread != updated.multi_thread ||
+        original.enable_kcp_proxy != updated.enable_kcp_proxy ||
+        original.disable_kcp_input != updated.disable_kcp_input ||
+        original.disable_relay_kcp != updated.disable_relay_kcp ||
+        original.enable_quic_proxy != updated.enable_quic_proxy ||
+        original.disable_quic_input != updated.disable_quic_input ||
+        original.relay_network_whitelist != updated.relay_network_whitelist;
   }
 
   /// 保存配置
@@ -363,19 +409,14 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
       roomConfig.priority = 0;
       roomConfig.room_protect = _roomProtect;
 
-      final netNode = NetNode();
-      netNode.hostname = _hostnameController.text.trim();
-      netNode.instance_name = _instanceNameController.text.trim();
-      // netNode.ipv4 = _ipv4Controller.text.trim();
-      netNode.network_name = _networkNameController.text.trim();
-      netNode.network_secret = _networkSecretController.text.trim();
-      netNode.listeners = _listeners;
-      // netNode.peer = _peer;
-      // netNode.cidrproxy = _cidrproxy;
-      // netNode.default_protocol = default_protocol;
-      // netNode.dhcp = _dhcp;
+      // 使用更新后的netNode配置
+      _netNode.hostname = _hostnameController.text.trim();
+      _netNode.instance_name = _instanceNameController.text.trim();
+      _netNode.network_name = _networkNameController.text.trim();
+      _netNode.network_secret = _networkSecretController.text.trim();
+      _netNode.listeners = _listeners;
 
-      roomConfig.room_public = netNode;
+      roomConfig.room_public = _netNode;
       // roomConfig.server = _servers;
       roomConfig.create_time = widget.roomConfig?.create_time ?? DateTime.now();
 
