@@ -1,0 +1,7 @@
+{
+  "name": "test_boolean",
+  "version": "1.0.0",
+  "description": "测试返回布尔值的插件",
+  "author": "Test",
+  "main": "main.js"
+}

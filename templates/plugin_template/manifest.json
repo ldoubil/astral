@@ -1,0 +1,18 @@
+{
+  "id": "my_plugin",
+  "name": "我的插件",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "description": "插件功能描述",
+  "entry_point": "main.js",
+  "homepage": "https://github.com/yourusername/my_plugin",
+  "permissions": [
+    "show_notification",
+    "show_dialog"
+  ],
+  "dependencies": [],
+  "config": {
+    "enabled": true,
+    "debug": false
+  }
+}

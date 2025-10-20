@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:astral/src/rust/frb_generated.dart';
 import 'package:astral/app_wrapper.dart';
 import 'package:astral/core/hive_initializer.dart'; // 导入 HiveInitializer
+import 'package:astral/core/plugin_system/plugin_manager.dart'; // 导入插件管理器
 
 void main() async {
   await RustLib.init();
@@ -21,6 +22,11 @@ void main() async {
 
   // 初始化 Hive 数据库
   await HiveInitializer.init();
+
+  // 初始化插件管理器
+  print('[Main] 准备初始化插件管理器...');
+  await PluginManager.instance.initialize();
+  print('[Main] 插件管理器初始化完成');
 
   // Linux 下检测是否为 root 权限
   if (!kIsWeb && Platform.isLinux) {

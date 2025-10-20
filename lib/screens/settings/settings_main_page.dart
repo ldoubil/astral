@@ -13,6 +13,7 @@ import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
 import 'package:astral/screens/settings/server/public_server_page.dart';
+import 'package:astral/screens/plugins/plugin_management_page.dart'; // 导入插件管理页面
 
 class SettingsMainPage extends StatelessWidget {
   const SettingsMainPage({super.key});
@@ -93,6 +94,20 @@ class SettingsMainPage extends StatelessWidget {
             title: '公共服务器列表',
             subtitle: '管理公共服务器',
             onTap: () => _navigateToPage(context, const PublicServerPage()),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 插件管理分组
+          _buildSectionHeader(context, '插件管理'),
+          const SizedBox(height: 8),
+
+          _buildSettingsCard(
+            context,
+            icon: Icons.extension,
+            title: '插件管理',
+            subtitle: '管理和配置应用插件',
+            onTap: () => _navigateToPage(context, const PluginManagementPage()),
           ),
 
           const SizedBox(height: 24),
