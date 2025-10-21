@@ -71,8 +71,8 @@ class SettingsMainPage extends StatelessWidget {
           _buildSettingsCard(
             context,
             icon: Icons.network_wifi,
-            title: '高级网络设置',
-            subtitle: '协议、加密等高级选项',
+            title: '个性化网络参数配置',
+            subtitle: '个性化网络参数配置',
             onTap: () => _navigateToNetworkConfigPage(context),
           ),
 
