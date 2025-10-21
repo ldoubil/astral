@@ -33,7 +33,19 @@ class ServerNode {
   late bool isPublic;
 
   /// 默认构造函数
-  ServerNode();
+  /// 初始化所有必需的字段以避免 LateInitializationError
+  ServerNode() {
+    id = const Uuid().v4();
+    name = '';
+    host = '';
+    port = 0;
+    protocolSwitch = ServerProtocolSwitch.tcp;
+    description = '';
+    version = '';
+    allowRelay = false;
+    usagePercentage = 0.0;
+    isPublic = false;
+  }
 
   /// 命名构造函数 - 创建新的服务器节点
   ServerNode.create({

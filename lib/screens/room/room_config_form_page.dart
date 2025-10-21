@@ -1,5 +1,6 @@
 import 'package:astral/screens/general/general_base_net_config_page.dart';
 import 'package:astral/screens/general/general_listen_list_page.dart';
+import 'package:astral/screens/general/server_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/models/room_config.dart';
 import 'package:astral/models/net_node.dart';
@@ -335,7 +336,24 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
           icon: Icons.dns,
           title: "服务器列表",
           subtitle: '管理房间服务器地址',
-          onTap: () => {},
+          onTap: () async {
+            final updatedNetNode = await Navigator.of(context).push<NetNode>(
+              MaterialPageRoute(
+                builder: (context) => ServerListPage(
+                  netNode: _netNode,
+                ),
+              ),
+            );
+            if (updatedNetNode != null) {
+              // 检查服务器列表是否发生变化
+              if (_hasServerListChanged(_netNode, updatedNetNode)) {
+                setState(() {
+                  _netNode = updatedNetNode;
+                  _markDirty();
+                });
+              }
+            }
+          },
         ),
         _buildSettingsCard(
           context,
@@ -392,6 +410,33 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
         original.enable_quic_proxy != updated.enable_quic_proxy ||
         original.disable_quic_input != updated.disable_quic_input ||
         original.relay_network_whitelist != updated.relay_network_whitelist;
+  }
+
+  /// 检查服务器列表是否发生变化
+  bool _hasServerListChanged(NetNode original, NetNode updated) {
+    if (original.peer.length != updated.peer.length) {
+      return true;
+    }
+    
+    for (int i = 0; i < original.peer.length; i++) {
+      final originalServer = original.peer[i];
+      final updatedServer = updated.peer[i];
+      
+      if (originalServer.id != updatedServer.id ||
+          originalServer.name != updatedServer.name ||
+          originalServer.host != updatedServer.host ||
+          originalServer.port != updatedServer.port ||
+          originalServer.protocolSwitch != updatedServer.protocolSwitch ||
+          originalServer.description != updatedServer.description ||
+          originalServer.version != updatedServer.version ||
+          originalServer.allowRelay != updatedServer.allowRelay ||
+          originalServer.usagePercentage != updatedServer.usagePercentage ||
+          originalServer.isPublic != updatedServer.isPublic) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /// 保存配置

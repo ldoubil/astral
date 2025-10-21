@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:astral/models/base.dart';
+import 'package:astral/models/server_node.dart';
 import 'package:hive/hive.dart';
 
 part 'net_node.g.dart';
@@ -35,7 +36,7 @@ class NetNode {
   List<String> listeners = []; // 监听列表
 
   @HiveField(9)
-  List<String> peer = []; // 服务器节点地址
+  List<ServerNode> peer = []; // 服务器节点地址
 
   // 子网代理
   @HiveField(10)

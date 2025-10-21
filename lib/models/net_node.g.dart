@@ -26,7 +26,7 @@ class NetNodeAdapter extends TypeAdapter<NetNode> {
       ..network_name = fields[6] as String
       ..network_secret = fields[7] as String
       ..listeners = (fields[8] as List).cast<String>()
-      ..peer = (fields[9] as List).cast<String>()
+      ..peer = (fields[9] as List).cast<ServerNode>()
       ..cidrproxy = (fields[10] as List).cast<String>()
       ..connectionManagers = (fields[11] as List).cast<ConnectionManager>()
       ..default_protocol = fields[12] as String
