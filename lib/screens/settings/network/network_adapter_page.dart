@@ -21,14 +21,16 @@ class NetworkAdapterPage extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                SwitchListTile(
-                  title: Text(LocaleKeys.auto_set_hop.tr()),
-                  subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
-                  value: AppState().baseState.autoSetMTU.watch(context),
-                  onChanged: (value) {
-                    // AppState().baseState.setAutoSetMTU(value);
-                  },
-                ),
+                // SwitchListTile(
+                //   title: Text(LocaleKeys.auto_set_hop.tr()),
+                //   subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
+                //   value: AppState().appSettings.watch(context).autoSetMTU,
+                //   onChanged: (value) {
+                //     // 更新AppSettings中的autoSetMTU
+                //     final currentSettings = AppState().appSettings.value;
+                //     AppState().appSettings.value = currentSettings.copyWith(autoSetMTU: value);
+                //   },
+                // ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.list),

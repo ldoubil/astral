@@ -101,7 +101,7 @@ class VirtualIpBox extends StatelessWidget {
               ],
             ),
           ],
-          if (AppState().baseState.ipv4.watch(context).isNotEmpty) ...[
+          if (AppState().baseNetNodeState.netNode.watch(context).ipv4.isNotEmpty) ...[
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
@@ -112,7 +112,7 @@ class VirtualIpBox extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  AppState().baseState.ipv4.watch(context),
+                  AppState().baseNetNodeState.netNode.watch(context).ipv4,
                   style: TextStyle(color: colorScheme.secondary),
                 ),
               ],

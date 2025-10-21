@@ -148,12 +148,12 @@ class _UserPageState extends State<UserPage> {
                             ? MiniUserCard(
                                 player: player,
                                 colorScheme: colorScheme,
-                                localIPv4: AppState().baseState.ipv4.watch(context),
+                                localIPv4: AppState().baseNetNodeState.netNode.value.ipv4,
                               )
                             : AllUserCard(
                                 player: player,
                                 colorScheme: colorScheme,
-                                localIPv4: AppState().baseState.ipv4.watch(context),
+                                localIPv4: AppState().baseNetNodeState.netNode.value.ipv4,
                               );
                       },
                       // 设置子项数量为过滤后的节点数量

@@ -42,7 +42,7 @@ class _AllUserCardState extends State<AllUserCard> {
     final connectionType = _mapConnectionType(
       player.cost,
       player.ipv4,
-      AppState().baseState.ipv4.watch(context), // Assuming Aps().ipv4 provides the local IP
+      AppState().baseNetNodeState.netNode.watch(context).ipv4, // Assuming Aps().ipv4 provides the local IP
     );
     final connectionTypeColor = _getConnectionTypeColor(
       connectionType,
@@ -618,7 +618,7 @@ class _AllUserCardState extends State<AllUserCard> {
                 _mapConnectionType(
                   widget.player.cost,
                   widget.player.ipv4,
-                  AppState().baseState.ipv4.watch(context),
+                  AppState().baseNetNodeState.netNode.watch(context).ipv4,
                 ),
               ),
             ),

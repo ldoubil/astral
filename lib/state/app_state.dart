@@ -1,4 +1,5 @@
 import 'package:astral/state/child/application_state.dart';
+import 'package:astral/state/child/base_net_node_state.dart';
 import 'package:astral/state/child/base_state.dart';
 import 'package:astral/state/child/server_state.dart';
 import 'package:astral/state/child/startup_state.dart';
@@ -31,4 +32,7 @@ class AppState {
 
   /// 更新状态管理实例
   final UpdateState updateState = UpdateState();
+
+  /// BaseNetNodeState 管理实例
+  final BaseNetNodeState baseNetNodeState = BaseNetNodeState();
 }

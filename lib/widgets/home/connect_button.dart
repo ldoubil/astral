@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:astral/state/app_state.dart';
 import 'package:astral/state/child/base_state.dart';
+import 'package:astral/state/child/base_net_node_state.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:flutter/material.dart';
@@ -239,7 +240,7 @@ class _ConnectButtonState extends State<ConnectButton>
       vpnPlugin?.prepareVpn();
     }
 
-    String currentIp = aps.ipv4.value;
+    String currentIp = AppState().baseNetNodeState.netNode.value.ipv4;
     bool forceDhcp = false;
     String ipForServer = ""; // 默认为空，如果强制DHCP
 
@@ -287,46 +288,49 @@ class _ConnectButtonState extends State<ConnectButton>
     // }
     await createServer(
       username: aps.PlayerName.value,
-      enableDhcp: forceDhcp ? true : aps.dhcp.value,
+      enableDhcp: forceDhcp ? true : AppState().baseNetNodeState.netNode.value.dhcp,
       specifiedIp: forceDhcp ? "" : ipForServer, // 如果强制DHCP，则指定IP为空
       roomName: rom.roomName,
       roomPassword: rom.password,
-      cidrs: aps.cidrproxy.value,
+      cidrs: AppState().baseNetNodeState.netNode.value.cidrproxy,
       forwards: forwards,
       severurl:[],
       onurl:
-          AppState().baseState.listenList.value.where((url) => !url.contains('[::]')).toList(),
+          AppState().baseState.listenListPersistent.value.where((url) => !url.contains('[::]')).toList(),
       flag: _buildFlags(aps),
     );
   }
 
-  FlagsC _buildFlags(BaseState aps) => FlagsC(
-    defaultProtocol: aps.defaultProtocol.value,
-    devName: aps.dev_name.value,
-    enableEncryption: aps.enableEncryption.value,
-    enableIpv6: true,
-    mtu: aps.enableEncryption.value ? 1360 : 1380,
-    multiThread: aps.multiThread.value,
-    latencyFirst: aps.latencyFirst.value,
-    enableExitNode: true,
-    noTun: aps.noTun.value,
-    useSmoltcp: aps.useSmoltcp.value,
-    // relayNetworkWhitelist: aps.relayNetworkWhitelist.value,
-    relayNetworkWhitelist: '*',
-    disableP2P: aps.disableP2p.value,
-    relayAllPeerRpc: aps.relayAllPeerRpc.value,
-    disableUdpHolePunching: aps.disableUdpHolePunching.value,
-    dataCompressAlgo: aps.dataCompressAlgo.value,
-    bindDevice: aps.bindDevice.value,
-    enableKcpProxy: aps.enableKcpProxy.value,
-    disableKcpInput: aps.disableKcpInput.value,
-    disableRelayKcp: aps.disableRelayKcp.value,
-    proxyForwardBySystem: true,
-    acceptDns: aps.accept_dns.value,
-    privateMode: aps.privateMode.value,
-    enableQuicProxy: aps.enableQuicProxy.value,
-    disableQuicInput: aps.disableQuicInput.value,
-  );
+  FlagsC _buildFlags(BaseState aps) {
+    final netNode = AppState().baseNetNodeState.netNode.value;
+    return FlagsC(
+      defaultProtocol: netNode.default_protocol,
+      devName: netNode.dev_name,
+      enableEncryption: netNode.enable_encryption,
+      enableIpv6: true,
+      mtu: netNode.enable_encryption ? 1360 : 1380,
+      multiThread: netNode.multi_thread,
+      latencyFirst: netNode.latency_first,
+      enableExitNode: true,
+      noTun: netNode.no_tun,
+      useSmoltcp: netNode.use_smoltcp,
+      // relayNetworkWhitelist: netNode.relay_network_whitelist,
+      relayNetworkWhitelist: '*',
+      disableP2P: netNode.disable_p2p,
+      relayAllPeerRpc: netNode.relay_all_peer_rpc,
+      disableUdpHolePunching: netNode.disable_udp_hole_punching,
+      dataCompressAlgo: netNode.data_compress_algo,
+      bindDevice: netNode.bind_device,
+      enableKcpProxy: netNode.enable_kcp_proxy,
+      disableKcpInput: netNode.disable_kcp_input,
+      disableRelayKcp: netNode.disable_relay_kcp,
+      proxyForwardBySystem: true,
+      acceptDns: netNode.accept_dns,
+      privateMode: netNode.private_mode,
+      enableQuicProxy: netNode.enable_quic_proxy,
+      disableQuicInput: netNode.disable_quic_input,
+    );
+  }
 
   Future<void> _beginConnectionProcess() async {
     AppState().baseState.Connec_state.value = CoState.connecting;
@@ -384,8 +388,9 @@ class _ConnectButtonState extends State<ConnectButton>
     final data = jsonDecode(runningInfo);
 
     final ipv4Address = _extractIpv4Address(data);
-    if (ipv4Address != "0.0.0.0" && AppState().baseState.ipv4.value != ipv4Address) {
-      // AppState().baseState.updateIpv4(ipv4Address);
+    if (ipv4Address != "0.0.0.0" && AppState().baseNetNodeState.netNode.value.ipv4 != ipv4Address) {
+      // 更新NetNode中的ipv4地址
+      AppState().baseNetNodeState.netNode.value.ipv4 = ipv4Address;
     }
     return ipv4Address != "0.0.0.0";
   }
@@ -408,18 +413,16 @@ class _ConnectButtonState extends State<ConnectButton>
     AppState().baseState.Connec_state.value = CoState.connected;
     AppState().baseState.isConnecting.value = true;
     if (Platform.isAndroid) {
-      _startVpn(ipv4Addr: AppState().baseState.ipv4.value, mtu: AppState().baseState.mtu.value);
+      _startVpn(ipv4Addr: AppState().baseNetNodeState.netNode.value.ipv4, mtu: AppState().baseNetNodeState.netNode.value.mtu);
       // 显示连接成功通知
       await _showConnectionNotification(
         status: '已连接',
-        ip: AppState().baseState.ipv4.value.isNotEmpty ? AppState().baseState.ipv4.value : '获取中...',
+        ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : '获取中...',
         duration: _formatDuration(_connectionDuration),
       );
     }
     if (Platform.isWindows) {
-      if (AppState().baseState.autoSetMTU.value) {
         setInterfaceMetric(interfaceName: "astral", metric: 0);
-      }
     }
     _startNetworkMonitoring();
   }
@@ -451,7 +454,7 @@ class _ConnectButtonState extends State<ConnectButton>
       if (Platform.isAndroid && AppState().baseState.Connec_state.value == CoState.connected) {
         await _showConnectionNotification(
           status: '已连接',
-          ip: AppState().baseState.ipv4.value.isNotEmpty ? AppState().baseState.ipv4.value : '获取中...',
+          ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : '获取中...',
           duration: _formatDuration(_connectionDuration),
         );
       }

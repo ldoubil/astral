@@ -15,9 +15,6 @@ class BaseState {
   /// 玩家名称
   final Signal<String> PlayerName = signal('');
 
-  /// 是否使用DHCP
-  final Signal<bool> dhcp = signal(true);
-
   /// 是否为桌面设备
   final Signal<bool> isDesktop = signal(false);
 
@@ -26,9 +23,6 @@ class BaseState {
 
   /// 当前选中的导航项索引
   final Signal<int> selectedIndex = signal(0);
-
-  /// IPv4地址
-  final Signal<String> ipv4 = signal('');
 
   /// IPv6地址
   final Signal<String> ipv6 = signal('');
@@ -39,52 +33,12 @@ class BaseState {
   /// 日志内容
   final Signal<List<String>> logs = signal([]);
 
-
-
   /// 自定义vpn网段
   final Signal<List<String>> customVpn = signal([]);
-
-
-
-  /// 自定义cidr代理
-  final Signal<String> defaultProtocol = signal(''); // 默认协议
-  final Signal<bool> enableEncryption = signal(true); // 加密设置
-  final Signal<bool> latencyFirst = signal(false); // 延迟优先设置
-  final Signal<bool> accept_dns = signal(false); // 接受DNS设置
-  final Signal<bool> noTun = signal(false); // TUN设备禁用设置
-  final Signal<bool> useSmoltcp = signal(false); // smoltcp网络栈设置
-  final Signal<bool> disableP2p = signal(false); // P2P禁用设置
-  final Signal<bool> relayAllPeerRpc = signal(false); // 中继所有对等RPC设置
-  final Signal<bool> disableUdpHolePunching = signal(false); // UDP打洞禁用设置
-  final Signal<bool> multiThread = signal(true); // 多线程设置
-  final Signal<int> dataCompressAlgo = signal(1);
-  final Signal<bool> bindDevice = signal(false);
-
-  /// 是否绑定设备
-  final Signal<bool> enableKcpProxy = signal(false);
-
-  /// 是否启用KCP代理
-  final Signal<bool> disableKcpInput = signal(false);
-
-  /// 是否禁用KCP输入
-  final Signal<bool> disableRelayKcp = signal(false);
-  final Signal<bool> privateMode = signal(false); // 私有模式设置
-  final Signal<bool> enableQuicProxy = signal(false); // QUIC代理设置
-  final Signal<bool> disableQuicInput = signal(false); // 禁用QUIC输入设置
-  final Signal<List<String>> cidrproxy = signal([]);
-  final Signal<bool> autoSetMTU = signal(true); // 自动设置MTU
-  /// listenList
-  final Signal<List<String>> listenList = signal([]); // 房间列表
-
 
   /// 网络状态
   final Signal<KVNetworkStatus?> netStatus = signal(null);
 
-  /// 设备名称
-  final Signal<String> dev_name = signal('');
-
-  /// 最大传输单元
-  final Signal<int> mtu = signal(1360); //x
   /// 是否正在连接
   final Signal<bool> isConnecting = signal(false);
 
@@ -101,6 +55,7 @@ class BaseState {
 
   ///防火墙状态 只要有一个没有关闭就是false
   final Signal<bool> firewallStatus = signal(false);
+  
   // 设置防火墙状态
   Future<void> setFirewall(bool value) async {
     firewallStatus.value = value;
@@ -118,6 +73,9 @@ class BaseState {
 
   /// 当前选中的语言信号（持久化存储）
   late final PersistentSignal<String> currentLanguage;
+
+  /// 监听列表（持久化存储）
+  late final PersistentSignal<List<String>> listenListPersistent;
 
   /* ------------------------ 构造函数与初始化 ------------------------ */
 
@@ -138,6 +96,9 @@ class BaseState {
 
     // 初始化当前语言（持久化）
     currentLanguage = persistentSignal('current_language', 'zh');
+
+    // 初始化监听列表（持久化）
+    listenListPersistent = persistentSignal('listen_list', []);
   }
 
   /// 初始化状态与副作用

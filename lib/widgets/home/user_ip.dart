@@ -74,7 +74,7 @@ class _UserIpBoxState extends State<UserIpBox> {
           _usernameController.text = _appState.baseState.PlayerName.value; // 监听玩家名变化
         }
         if (!_virtualIPFocusNode.hasFocus) {
-          final newIP = _appState.baseState.ipv4.value;
+          final newIP = _appState.baseNetNodeState.netNode.value.ipv4;
           _virtualIPController.text = newIP; // 监听IP地址变化
           // 同时更新验证状态
           setState(() {
@@ -221,10 +221,10 @@ class _UserIpBoxState extends State<UserIpBox> {
                     controller: _virtualIPController,
                     focusNode: _virtualIPFocusNode,
                     enabled:
-                        !AppState().baseState.dhcp.watch(context) &&
+                        !AppState().baseNetNodeState.netNode.watch(context).dhcp &&
                         (AppState().baseState.Connec_state.watch(context) == CoState.idle),
                     onChanged: (value) {
-                      if (!AppState().baseState.dhcp.watch(context)) {
+                      if (!AppState().baseNetNodeState.netNode.watch(context).dhcp) {
                         // 实时更新IPv4值并立即验证
                         // _appState.baseState.updateIpv4(value);
                         setState(() {
@@ -244,7 +244,7 @@ class _UserIpBoxState extends State<UserIpBox> {
                         horizontal: 12,
                       ),
                       errorText:
-                          (!_appState.baseState.dhcp.watch(context) && !_isValidIP)
+                          (!_appState.baseNetNodeState.netNode.watch(context).dhcp  && !_isValidIP)
                               ? LocaleKeys.invalid_ipv4_error.tr()
                               : null,
                     ),
@@ -255,7 +255,7 @@ class _UserIpBoxState extends State<UserIpBox> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Switch(
-                      value: _appState.baseState.dhcp.watch(context),
+                      value: _appState.baseNetNodeState.netNode.watch(context).dhcp,
                       onChanged: (value) {
                         if (AppState().baseState.Connec_state.watch(context) == CoState.idle) {
                           // _appState.baseState.updateDhcp(value);
@@ -263,7 +263,7 @@ class _UserIpBoxState extends State<UserIpBox> {
                       },
                     ),
                     Text(
-                      _appState.baseState.dhcp.watch(context) ? LocaleKeys.automatic.tr() : LocaleKeys.manual.tr(),
+                      _appState.baseNetNodeState.netNode.watch(context).dhcp ? LocaleKeys.automatic.tr() : LocaleKeys.manual.tr(),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],
@@ -272,7 +272,7 @@ class _UserIpBoxState extends State<UserIpBox> {
             ),
           ),
 
-          if (_appState.baseState.dhcp.watch(context))
+          if (_appState.baseNetNodeState.netNode.watch(context).dhcp)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Text(LocaleKeys.auto_assign_ip_notice.tr(), style: const TextStyle(fontSize: 12)),

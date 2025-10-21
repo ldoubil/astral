@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/screens/settings/network/network_adapter_page.dart';
-import 'package:astral/screens/settings/network/listen_list_page.dart';
 import 'package:astral/screens/settings/network/subnet_proxy_page.dart';
 import 'package:astral/screens/settings/network/vpn_segment_page.dart';
-import 'package:astral/screens/settings/network/network_settings_page.dart';
 import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
 import 'package:astral/screens/settings/general/about_page.dart';
 import 'package:astral/screens/settings/server/public_server_page.dart';
 import 'package:astral/screens/plugins/plugin_management_page.dart'; // 导入插件管理页面
+import 'package:astral/screens/general/general_listen_list_page.dart';
+import 'package:astral/screens/general/general_base_net_config_page.dart';
+import 'package:astral/models/net_node.dart';
+import 'package:astral/state/app_state.dart';
 
 class SettingsMainPage extends StatelessWidget {
   const SettingsMainPage({super.key});
@@ -45,7 +47,7 @@ class SettingsMainPage extends StatelessWidget {
             icon: Icons.list_alt,
             title: LocaleKeys.listen_list.tr(),
             subtitle: '管理网络监听地址',
-            onTap: () => _navigateToPage(context, const ListenListPage()),
+            onTap: () => _navigateToListenListPage(context),
           ),
 
           if (!Platform.isAndroid)
@@ -71,7 +73,7 @@ class SettingsMainPage extends StatelessWidget {
             icon: Icons.network_wifi,
             title: '高级网络设置',
             subtitle: '协议、加密等高级选项',
-            onTap: () => _navigateToPage(context, const NetworkSettingsPage()),
+            onTap: () => _navigateToNetworkConfigPage(context),
           ),
 
           const SizedBox(height: 24),
@@ -187,5 +189,44 @@ class SettingsMainPage extends StatelessWidget {
 
   void _navigateToPage(BuildContext context, Widget page) {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) => page));
+  }
+
+  /// 导航到网络配置页面
+  /// 传递当前的NetNode配置，并在返回时更新AppState
+  void _navigateToNetworkConfigPage(BuildContext context) async {
+    final currentNetNode = AppState().baseNetNodeState.getCurrentNetNode();
+    final updatedNetNode = await Navigator.of(context).push<NetNode>(
+      MaterialPageRoute(
+        builder: (context) => GeneralBaseNetConfigPage(
+          netNode: currentNetNode,
+        ),
+      ),
+    );
+    if (updatedNetNode != null) {
+      // 更新BaseNetNodeState中的配置
+      AppState().baseNetNodeState.updateNetNode(updatedNetNode);
+    }
+  }
+
+  /// 导航到监听列表页面
+  /// 传递当前的监听列表，并在返回时更新AppState
+  void _navigateToListenListPage(BuildContext context) async {
+    final currentListeners = AppState().baseNetNodeState.netNode.value.listeners  ;
+    final newListeners = await Navigator.of(context).push<List<String>>(
+      MaterialPageRoute(
+        builder: (context) => GeneralListenListPage(
+          listeners: currentListeners,
+        ),
+      ),
+    );
+    
+    if (newListeners != null) {
+      // 使用updateField方法更新listeners字段
+      AppState().baseNetNodeState.updateField(
+        (node) => node.listeners,
+        (node, value) => node.listeners = value,
+        newListeners,
+      );
+    }
   }
 }

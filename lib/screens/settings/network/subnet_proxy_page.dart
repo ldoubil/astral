@@ -22,7 +22,7 @@ class SubnetProxyPage extends StatelessWidget {
       ),
       body: Builder(
         builder: (context) {
-          final cidrList = AppState().baseState.cidrproxy.watch(context);
+          final cidrList = AppState().baseNetNodeState.netNode.watch(context).cidrproxy;
 
           if (cidrList.isEmpty) {
             return Center(
