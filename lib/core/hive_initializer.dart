@@ -33,6 +33,7 @@ class HiveInitializer {
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
       await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings
       await Hive.openBox<ServerNode>('ServerNodes'); // 存储服务器节点数据
+      await Hive.openBox<NetNode>('BaseNetNodeConfig'); // 存储基础网络节点配置
       _basicDataBox = await Hive.openBox<dynamic>('BasicData'); // 存储用户基础数据（String/int/List等）
 
       print('Hive初始化成功');
