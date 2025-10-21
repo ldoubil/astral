@@ -14,6 +14,7 @@ import 'package:astral/screens/settings/server/public_server_page.dart';
 import 'package:astral/screens/plugins/plugin_management_page.dart'; // 导入插件管理页面
 import 'package:astral/screens/general/general_listen_list_page.dart';
 import 'package:astral/screens/general/general_base_net_config_page.dart';
+import 'package:astral/screens/general/server_list_page.dart';
 import 'package:astral/models/net_node.dart';
 import 'package:astral/state/app_state.dart';
 
@@ -67,6 +68,15 @@ class SettingsMainPage extends StatelessWidget {
               subtitle: '配置VPN网段',
               onTap: () => _navigateToPage(context, const VpnSegmentPage()),
             ),
+
+          ///这个位置 服务器列表管理
+          _buildSettingsCard(
+            context,
+            icon: Icons.dns,
+            title: "服务器列表",
+            subtitle: '管理房间服务器地址',
+            onTap: () => _navigateToServerListPage(context),
+          ),
 
           _buildSettingsCard(
             context,
@@ -206,6 +216,59 @@ class SettingsMainPage extends StatelessWidget {
       // 更新BaseNetNodeState中的配置
       AppState().baseNetNodeState.updateNetNode(updatedNetNode);
     }
+  }
+
+  /// 导航到服务器列表页面
+  /// 传递当前的NetNode，并在返回时检查服务器列表变化并更新AppState
+  void _navigateToServerListPage(BuildContext context) async {
+    final currentNetNode = AppState().baseNetNodeState.getCurrentNetNode();
+    final updatedNetNode = await Navigator.of(context).push<NetNode>(
+      MaterialPageRoute(
+        builder: (context) => ServerListPage(
+          netNode: currentNetNode,
+        ),
+      ),
+    );
+    
+    if (updatedNetNode != null) {
+      // 检查服务器列表是否发生变化
+      if (_hasServerListChanged(currentNetNode, updatedNetNode)) {
+        // 使用updateField方法更新peer字段
+        AppState().baseNetNodeState.updateField(
+          (node) => node.peer,
+          (node, value) => node.peer = value,
+          updatedNetNode.peer,
+        );
+      }
+    }
+  }
+
+  /// 检查服务器列表是否发生变化
+  /// 比较原始NetNode和更新后NetNode的peer列表
+  bool _hasServerListChanged(NetNode original, NetNode updated) {
+    if (original.peer.length != updated.peer.length) {
+      return true;
+    }
+    
+    for (int i = 0; i < original.peer.length; i++) {
+      final originalServer = original.peer[i];
+      final updatedServer = updated.peer[i];
+      
+      if (originalServer.id != updatedServer.id ||
+          originalServer.name != updatedServer.name ||
+          originalServer.host != updatedServer.host ||
+          originalServer.port != updatedServer.port ||
+          originalServer.protocolSwitch != updatedServer.protocolSwitch ||
+          originalServer.description != updatedServer.description ||
+          originalServer.version != updatedServer.version ||
+          originalServer.allowRelay != updatedServer.allowRelay ||
+          originalServer.usagePercentage != updatedServer.usagePercentage ||
+          originalServer.isPublic != updatedServer.isPublic) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /// 导航到监听列表页面
