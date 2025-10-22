@@ -1,6 +1,8 @@
 import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:astral/generated/locale_keys.g.dart';
 
 // 房间设置弹窗组件
 class RoomSettingsSheet extends StatefulWidget {
@@ -108,7 +110,7 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '房间设置',
+                    LocaleKeys.room_settings.tr(),
                     style: TextStyle(
                       fontSize: 16,
                       color: colorScheme.primary,
@@ -119,7 +121,7 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                '点击下方设置项进行配置，所有更改将实时生效',
+                LocaleKeys.room_settings_desc.tr(),
                 textAlign: TextAlign.left,
                 maxLines: null,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -136,16 +138,16 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               // 显示模式
-              _buildSettingSection('显示模式', [
+              _buildSettingSection(LocaleKeys.display_mode.tr(), [
                 _buildOptionButton(
-                  '简约',
+                  LocaleKeys.display_simple.tr(),
                   AppState().applicationState.userListSimple.watch(context),
                   () {
                     AppState().applicationState.userListSimple.set(true);
                   },
                 ),
                 _buildOptionButton(
-                  '详细',
+                  LocaleKeys.display_detailed.tr(),
                   !AppState().applicationState.userListSimple.watch(context),
                   () {
                     AppState().applicationState.userListSimple.set(false);
@@ -154,52 +156,52 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               ], colorScheme),
 
               // 用户显示
-              _buildSettingSection('用户显示', [
+              _buildSettingSection(LocaleKeys.user_display.tr(), [
                 _buildOptionButton(
-                  '默认',
+                  LocaleKeys.default_option.tr(),
                   AppState().baseState.displayMode.watch(context) == 0,
                   () => AppState().baseState.displayMode.set(0),
                 ),
                 _buildOptionButton(
-                  '用户',
+                  LocaleKeys.user_option.tr(),
                   AppState().baseState.displayMode.watch(context) == 1,
                   () => AppState().baseState.displayMode.set(1),
                 ),
                 _buildOptionButton(
-                  '服务器',
+                  LocaleKeys.server_option.tr(),
                   AppState().baseState.displayMode.watch(context) == 2,
                   () => AppState().baseState.displayMode.set(2),
                 ),
               ], colorScheme),
 
               // 用户排序
-              _buildSettingSection('用户排序', [
+              _buildSettingSection(LocaleKeys.user_sorting.tr(), [
                 _buildOptionButton(
-                  '默认',
+                  LocaleKeys.default_option.tr(),
                   AppState().baseState.sortOption.watch(context) == 0,
                   () => AppState().baseState.sortOption.set(0),
                 ),
                 _buildOptionButton(
-                  '延迟',
+                  LocaleKeys.sort_by_latency.tr(),
                   AppState().baseState.sortOption.watch(context) == 1,
                   () => AppState().baseState.sortOption.set(1),
                 ),
                 _buildOptionButton(
-                  '用户名',
+                  LocaleKeys.sort_by_username.tr(),
                   AppState().baseState.sortOption.watch(context) == 2,
                   () => AppState().baseState.sortOption.set(2),
                 ),
               ], colorScheme),
 
               // 排序方式
-              _buildSettingSection('排序方式', [
+              _buildSettingSection(LocaleKeys.sort_order.tr(), [
                 _buildOptionButton(
-                  '升序',
+                  LocaleKeys.ascending.tr(),
                   AppState().baseState.sortOrder.watch(context) == 0,
                   () => AppState().baseState.sortOrder.set(0),
                 ),
                 _buildOptionButton(
-                  '降序',
+                  LocaleKeys.descending.tr(),
                   AppState().baseState.sortOrder.watch(context) == 1,
                   () => AppState().baseState.sortOrder.set(1),
                 ),

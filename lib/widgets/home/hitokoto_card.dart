@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:astral/generated/locale_keys.g.dart';
 
 class HitokotoCard extends StatefulWidget {
   const HitokotoCard({super.key});
@@ -11,7 +13,7 @@ class HitokotoCard extends StatefulWidget {
 }
 
 class _HitokotoCardState extends State<HitokotoCard> {
-  String hitokoto = '加载中...';
+  String hitokoto = LocaleKeys.hitokoto_loading.tr();
   String hitokotoFrom = '';
   bool isLoadingHitokoto = true;
 
@@ -27,20 +29,20 @@ class _HitokotoCardState extends State<HitokotoCard> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          hitokoto = data['hitokoto'] ?? '暂无内容';
-          hitokotoFrom = data['from'] ?? '未知来源';
+          hitokoto = data['hitokoto'] ?? LocaleKeys.hitokoto_no_content.tr();
+          hitokotoFrom = data['from'] ?? LocaleKeys.hitokoto_unknown_source.tr();
           isLoadingHitokoto = false;
         });
       } else {
         setState(() {
-          hitokoto = '获取失败';
+          hitokoto = LocaleKeys.hitokoto_fetch_failed.tr();
           hitokotoFrom = '';
           isLoadingHitokoto = false;
         });
       }
     } catch (e) {
       setState(() {
-        hitokoto = '网络错误';
+        hitokoto = LocaleKeys.hitokoto_network_error.tr();
         hitokotoFrom = '';
         isLoadingHitokoto = false;
       });
@@ -64,7 +66,7 @@ class _HitokotoCardState extends State<HitokotoCard> {
               ),
               const SizedBox(width: 8),
               Text(
-                '一言',
+                LocaleKeys.hitokoto_title.tr(),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w400,
@@ -80,12 +82,12 @@ class _HitokotoCardState extends State<HitokotoCard> {
                 onPressed: isLoadingHitokoto ? null : () {
                   setState(() {
                     isLoadingHitokoto = true;
-                    hitokoto = '加载中...';
+                    hitokoto = LocaleKeys.hitokoto_loading.tr();
                     hitokotoFrom = '';
                   });
                   _fetchHitokoto();
                 },
-                tooltip: '刷新一言',
+                tooltip: LocaleKeys.hitokoto_refresh.tr(),
               ),
             ],
           ),
@@ -103,7 +105,7 @@ class _HitokotoCardState extends State<HitokotoCard> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '加载中...',
+                  LocaleKeys.hitokoto_loading.tr(),
                   style: TextStyle(
                     color: colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 14,

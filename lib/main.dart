@@ -63,14 +63,10 @@ void _runApp() {
     EasyLocalization(
       supportedLocales: const [
         Locale('zh'),
-        Locale('zh', 'TW'),
         Locale('en'),
         Locale('ja'),
         Locale('ko'),
         Locale('ru'),
-        Locale('fr'),
-        Locale('de'),
-        Locale('es'),
       ],
       path: 'assets/translations',
       fallbackLocale: const Locale('zh'),

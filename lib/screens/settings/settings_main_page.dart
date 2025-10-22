@@ -38,7 +38,7 @@ class SettingsMainPage extends StatelessWidget {
               context,
               icon: Icons.network_check,
               title: LocaleKeys.network_adapter_hop_settings.tr(),
-              subtitle: '配置网络适配器跳数',
+              subtitle: LocaleKeys.network_adapter_hop_desc.tr(),
               onTap: () => _navigateToPage(context, const NetworkAdapterPage()),
             ),
           ],
@@ -47,7 +47,7 @@ class SettingsMainPage extends StatelessWidget {
             context,
             icon: Icons.list_alt,
             title: LocaleKeys.listen_list.tr(),
-            subtitle: '管理网络监听地址',
+            subtitle: LocaleKeys.listen_list_desc.tr(),
             onTap: () => _navigateToListenListPage(context),
           ),
 
@@ -56,7 +56,7 @@ class SettingsMainPage extends StatelessWidget {
               context,
               icon: Icons.route,
               title: LocaleKeys.subnet_proxy_cidr.tr(),
-              subtitle: '配置子网代理规则',
+              subtitle: LocaleKeys.subnet_proxy_desc.tr(),
               onTap: () => _navigateToPage(context, const SubnetProxyPage()),
             ),
 
@@ -65,7 +65,7 @@ class SettingsMainPage extends StatelessWidget {
               context,
               icon: Icons.vpn_lock,
               title: LocaleKeys.custom_vpn_segment.tr(),
-              subtitle: '配置VPN网段',
+              subtitle: LocaleKeys.custom_vpn_segment_desc.tr(),
               onTap: () => _navigateToPage(context, const VpnSegmentPage()),
             ),
 
@@ -73,59 +73,59 @@ class SettingsMainPage extends StatelessWidget {
           _buildSettingsCard(
             context,
             icon: Icons.dns,
-            title: "服务器列表",
-            subtitle: '管理房间服务器地址',
+            title: LocaleKeys.server_list.tr(),
+            subtitle: LocaleKeys.server_list_desc.tr(),
             onTap: () => _navigateToServerListPage(context),
           ),
 
           _buildSettingsCard(
             context,
             icon: Icons.network_wifi,
-            title: '个性化网络参数配置',
-            subtitle: '个性化网络参数配置',
+            title: LocaleKeys.personalized_network_config.tr(),
+            subtitle: LocaleKeys.personalized_network_config_desc.tr(),
             onTap: () => _navigateToNetworkConfigPage(context),
           ),
 
           const SizedBox(height: 24),
 
           // 服务器配置分组
-          _buildSectionHeader(context, '服务器配置'),
+          _buildSectionHeader(context, LocaleKeys.server_config.tr()),
           const SizedBox(height: 8),
           // CustomServerPage
           _buildSettingsCard(
             context,
             icon: Icons.public,
-            title: '自定义服务器列表',
-            subtitle: '管理自定义服务器',
+            title: LocaleKeys.custom_server_list.tr(),
+            subtitle: LocaleKeys.custom_server_list_desc.tr(),
             onTap: () => _navigateToPage(context, const CustomServerPage()),
           ),
 
           _buildSettingsCard(
             context,
             icon: Icons.public,
-            title: '公共服务器列表',
-            subtitle: '管理公共服务器',
+            title: LocaleKeys.public_server_list.tr(),
+            subtitle: LocaleKeys.public_server_list_desc.tr(),
             onTap: () => _navigateToPage(context, const PublicServerPage()),
           ),
 
           const SizedBox(height: 24),
 
           // 插件管理分组
-          _buildSectionHeader(context, '插件管理'),
+          _buildSectionHeader(context, LocaleKeys.plugin_management.tr()),
           const SizedBox(height: 8),
 
           _buildSettingsCard(
             context,
             icon: Icons.extension,
-            title: '插件管理',
-            subtitle: '管理和配置应用插件',
+            title: LocaleKeys.plugin_management.tr(),
+            subtitle: LocaleKeys.plugin_management_desc.tr(),
             onTap: () => _navigateToPage(context, const PluginManagementPage()),
           ),
 
           const SizedBox(height: 24),
 
           // 通用设置分组
-          _buildSectionHeader(context, '通用设置'),
+          _buildSectionHeader(context, LocaleKeys.general_settings.tr()),
           const SizedBox(height: 8),
 
           if (!Platform.isAndroid)
@@ -133,7 +133,7 @@ class SettingsMainPage extends StatelessWidget {
               context,
               icon: Icons.launch,
               title: LocaleKeys.startup_related.tr(),
-              subtitle: '开机启动和自动连接',
+              subtitle: LocaleKeys.startup_desc.tr(),
               onTap: () => _navigateToPage(context, const StartupPage()),
             ),
 
@@ -141,7 +141,7 @@ class SettingsMainPage extends StatelessWidget {
             context,
             icon: Icons.info,
             title: LocaleKeys.software_settings.tr(),
-            subtitle: '权限和界面设置',
+            subtitle: LocaleKeys.software_settings_desc.tr(),
             onTap: () => _navigateToPage(context, const SoftwareSettingsPage()),
           ),
 
@@ -149,7 +149,7 @@ class SettingsMainPage extends StatelessWidget {
             context,
             icon: Icons.system_update,
             title: LocaleKeys.update_settings.tr(),
-            subtitle: '自动更新和下载设置',
+            subtitle: LocaleKeys.update_settings_desc.tr(),
             onTap: () => _navigateToPage(context, const UpdateSettingsPage()),
           ),
 
@@ -157,7 +157,7 @@ class SettingsMainPage extends StatelessWidget {
             context,
             icon: Icons.info_outline,
             title: LocaleKeys.about.tr(),
-            subtitle: '版本信息和开源许可',
+            subtitle: LocaleKeys.about_desc.tr(),
             onTap: () => _navigateToPage(context, const AboutPage()),
           ),
         ],

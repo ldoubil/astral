@@ -143,11 +143,11 @@ class _ConnectButtonState extends State<ConnectButton>
   }) async {
     if (_notificationsPlugin == null) return;
 
-    const AndroidNotificationDetails androidNotificationDetails =
+    final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
           'astral_connection',
-          'Astral 连接状态',
-          channelDescription: '显示 Astral VPN 连接状态和信息',
+          LocaleKeys.notification_connection_status.tr(),
+          channelDescription: LocaleKeys.notification_connection_desc.tr(),
           importance: Importance.low,
           priority: Priority.low,
           ongoing: true,
@@ -156,14 +156,14 @@ class _ConnectButtonState extends State<ConnectButton>
           icon: '@mipmap/ic_launcher',
         );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
     );
 
     await _notificationsPlugin!.show(
       _notificationId,
-      'Astral VPN - $status',
-      'IP: $ip | 连接时间: $duration',
+      '${LocaleKeys.app_name.tr()} VPN - $status',
+      '${LocaleKeys.ip_label.tr()}: $ip | ${LocaleKeys.connection_time.tr()}: $duration',
       notificationDetails,
     );
   }
@@ -341,8 +341,8 @@ class _ConnectButtonState extends State<ConnectButton>
     // 在安卓平台显示连接中通知
     if (Platform.isAndroid) {
       await _showConnectionNotification(
-        status: '连接中',
-        ip: '正在获取...',
+        status: LocaleKeys.status_connecting.tr(),
+        ip: LocaleKeys.status_getting_ip.tr(),
         duration: '00:00',
       );
     }
@@ -357,7 +357,7 @@ class _ConnectButtonState extends State<ConnectButton>
   void _setupConnectionTimeout() {
     _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
       if (AppState().baseState.Connec_state.value == CoState.connecting) {
-        debugPrint("连接超时");
+        debugPrint(LocaleKeys.connection_timeout.tr());
         if (Platform.isAndroid) {
           _cancelNotification();
         }
@@ -416,8 +416,8 @@ class _ConnectButtonState extends State<ConnectButton>
       _startVpn(ipv4Addr: AppState().baseNetNodeState.netNode.value.ipv4, mtu: AppState().baseNetNodeState.netNode.value.mtu);
       // 显示连接成功通知
       await _showConnectionNotification(
-        status: '已连接',
-        ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : '获取中...',
+        status: LocaleKeys.status_connected.tr(),
+        ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : LocaleKeys.status_getting_ip.tr(),
         duration: _formatDuration(_connectionDuration),
       );
     }
@@ -453,8 +453,8 @@ class _ConnectButtonState extends State<ConnectButton>
       // 在安卓平台更新通知
       if (Platform.isAndroid && AppState().baseState.Connec_state.value == CoState.connected) {
         await _showConnectionNotification(
-          status: '已连接',
-          ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : '获取中...',
+          status: LocaleKeys.status_connected.tr(),
+          ip: AppState().baseNetNodeState.netNode.value.ipv4.isNotEmpty ? AppState().baseNetNodeState.netNode.value.ipv4 : LocaleKeys.status_getting_ip.tr(),
           duration: _formatDuration(_connectionDuration),
         );
       }
@@ -523,11 +523,11 @@ class _ConnectButtonState extends State<ConnectButton>
     final String text;
     switch (state) {
       case CoState.idle:
-        text = '连接';
+        text = LocaleKeys.connect.tr();
       case CoState.connecting:
-        text = '连接中...';
+        text = LocaleKeys.connecting.tr();
       case CoState.connected:
-        text = '已连接';
+        text = LocaleKeys.connected.tr();
     }
 
     return Text(

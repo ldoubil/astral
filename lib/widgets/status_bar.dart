@@ -13,11 +13,11 @@ import 'package:window_manager/window_manager.dart';
 String getThemeModeText(ThemeMode mode) {
   switch (mode) {
     case ThemeMode.light:
-      return '亮色模式';
+      return LocaleKeys.theme_light.tr();
     case ThemeMode.dark:
-      return '暗色模式';
+      return LocaleKeys.theme_dark.tr();
     case ThemeMode.system:
-      return '跟随系统';
+      return LocaleKeys.theme_system.tr();
   }
 }
 
@@ -91,20 +91,11 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                         children: [
                           Text('🇨🇳'),
                           SizedBox(width: 8),
-                          Text('简体中文'),
+                          Text(LocaleKeys.lang_zh.tr()),
                         ],
                       ),
                     ),
-                    PopupMenuItem(
-                      value: const Locale('zh', 'TW'),
-                      child: Row(
-                        children: [
-                          Text('🇹🇼'),
-                          SizedBox(width: 8),
-                          Text('繁體中文'),
-                        ],
-                      ),
-                    ),
+
                     PopupMenuItem(
                       value: const Locale('en'),
                       child: Row(
@@ -142,36 +133,6 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                           Text('🇷🇺'),
                           SizedBox(width: 8),
                           Text('Русский'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('fr'),
-                      child: Row(
-                        children: [
-                          Text('🇫🇷'),
-                          SizedBox(width: 8),
-                          Text('Français'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('de'),
-                      child: Row(
-                        children: [
-                          Text('🇩🇪'),
-                          SizedBox(width: 8),
-                          Text('Deutsch'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('es'),
-                      child: Row(
-                        children: [
-                          Text('🇪🇸'),
-                          SizedBox(width: 8),
-                          Text('Español'),
                         ],
                       ),
                     ),
@@ -268,20 +229,11 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                         children: [
                           Text('🇨🇳'),
                           SizedBox(width: 8),
-                          Text('简体中文'),
+                          Text(LocaleKeys.lang_zh.tr()),
                         ],
                       ),
                     ),
-                    PopupMenuItem(
-                      value: const Locale('zh', 'TW'),
-                      child: Row(
-                        children: [
-                          Text('🇹🇼'),
-                          SizedBox(width: 8),
-                          Text('繁體中文'),
-                        ],
-                      ),
-                    ),
+
                     PopupMenuItem(
                       value: const Locale('en'),
                       child: Row(
@@ -319,36 +271,6 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                           Text('🇷🇺'),
                           SizedBox(width: 8),
                           Text('Русский'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('fr'),
-                      child: Row(
-                        children: [
-                          Text('🇫🇷'),
-                          SizedBox(width: 8),
-                          Text('Français'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('de'),
-                      child: Row(
-                        children: [
-                          Text('🇩🇪'),
-                          SizedBox(width: 8),
-                          Text('Deutsch'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('es'),
-                      child: Row(
-                        children: [
-                          Text('🇪🇸'),
-                          SizedBox(width: 8),
-                          Text('Español'),
                         ],
                       ),
                     ),

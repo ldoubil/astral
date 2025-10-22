@@ -3,6 +3,8 @@ import 'package:astral/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:astral/generated/locale_keys.g.dart';
 
 // 将列表项卡片抽取为独立的StatefulWidget
 class AllUserCard extends StatefulWidget {
@@ -124,10 +126,10 @@ class _AllUserCardState extends State<AllUserCard> {
                   ),
                 ),
                 // 只有不是本机时才显示延迟和丢包
-                if (connectionType != '本机') ...[
+                if (connectionType != LocaleKeys.connection_local.tr()) ...[
                   // Latency
                   Tooltip(
-                    message: "延迟",
+                    message: LocaleKeys.latency.tr(),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -150,7 +152,7 @@ class _AllUserCardState extends State<AllUserCard> {
                   ),
                   // Packet Loss
                   Tooltip(
-                    message: "丢包率",
+                    message: LocaleKeys.packet_loss.tr(),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -185,7 +187,7 @@ class _AllUserCardState extends State<AllUserCard> {
         if (player.connections.isEmpty)
           Center(
             child: Text(
-              '无连接数据',
+              LocaleKeys.no_connection_data.tr(),
               style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
             ),
           )
@@ -198,7 +200,7 @@ class _AllUserCardState extends State<AllUserCard> {
                   Icon(Icons.wifi, size: 20, color: colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
-                    '网络数据:',
+                    LocaleKeys.network_data.tr(),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -226,7 +228,7 @@ class _AllUserCardState extends State<AllUserCard> {
         if (player.ipv4 != '' && player.ipv4 != "0.0.0.0")
           _buildInfoRow(
             Icons.lan_outlined,
-            'IP地址',
+            LocaleKeys.ip_address.tr(),
             player.ipv4,
             colorScheme,
             showCopyButton: true,
@@ -235,7 +237,7 @@ class _AllUserCardState extends State<AllUserCard> {
 
         _buildInfoRow(
           Icons.memory_outlined, // Changed icon
-          'ET版本',
+          LocaleKeys.et_version.tr(),
           player.version,
           colorScheme,
         ),
@@ -243,14 +245,14 @@ class _AllUserCardState extends State<AllUserCard> {
 
         _buildInfoRow(
           natTypeIcon,
-          'NAT类型',
+          LocaleKeys.nat_type.tr(),
           natTypeString,
           colorScheme,
           valueColor: natTypeColor,
         ),
         if (player.tunnelProto != '') ...[
           const SizedBox(height: 8),
-          _buildInfoRow(Icons.router, '隧道类型', player.tunnelProto, colorScheme),
+          _buildInfoRow(Icons.router, LocaleKeys.tunnel_type.tr(), player.tunnelProto, colorScheme),
         ],
 
         // Connection Path / Hops
@@ -281,7 +283,7 @@ class _AllUserCardState extends State<AllUserCard> {
             children: [
               _buildStatItem(
                 Icons.upload_rounded,
-                '累计上传',
+                LocaleKeys.total_upload.tr(),
                 _formatSpeed(uploadSpeedKB),
                 colorScheme.primary,
                 colorScheme,
@@ -289,7 +291,7 @@ class _AllUserCardState extends State<AllUserCard> {
               const SizedBox(height: 10),
               _buildStatItem(
                 Icons.arrow_upward_rounded,
-                '累计发送包',
+                LocaleKeys.total_sent_packets.tr(),
                 '$sentPackets',
                 colorScheme.primary,
                 colorScheme,
@@ -304,7 +306,7 @@ class _AllUserCardState extends State<AllUserCard> {
             children: [
               _buildStatItem(
                 Icons.download_rounded,
-                '累计下载',
+                LocaleKeys.total_download.tr(),
                 _formatSpeed(downloadSpeedKB),
                 colorScheme.secondary,
                 colorScheme,
@@ -312,7 +314,7 @@ class _AllUserCardState extends State<AllUserCard> {
               const SizedBox(height: 10),
               _buildStatItem(
                 Icons.arrow_downward_rounded,
-                '累计接收包',
+                LocaleKeys.total_received_packets.tr(),
                 '$receivedPackets',
                 colorScheme.secondary,
                 colorScheme,
@@ -518,24 +520,24 @@ class _AllUserCardState extends State<AllUserCard> {
     }
   }
 
-  // 如果传入数值=1就是p2p 否则是relay 最后判断是不是等于本机IP如果等于就是direct 本机ip传入
+  /// 根据连接类型和IP地址映射连接类型字符串
   String _mapConnectionType(int connType, String ip, String thisip) {
     // 新增服务器IP判断
     if (ip == "0.0.0.0") {
-      return '服务器';
+      return LocaleKeys.server.tr();
     }
-    // 如果是本机IP，返回direct
+    // 如果是本机IP，返回本机
     if (thisip != null && ip == thisip) {
       // 检查 thisip 是否为 null
-      return '本机';
+      return LocaleKeys.local.tr();
     }
     // 根据连接成本判断连接类型
     if (connType == 1) {
-      return '直链';
+      return LocaleKeys.direct.tr();
     } else if (connType >= 2) {
-      return '中转';
+      return LocaleKeys.relay.tr();
     }
-    return '未知';
+    return LocaleKeys.unknown.tr();
   }
 
   // 根据连接类型获取图标
