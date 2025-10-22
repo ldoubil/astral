@@ -88,18 +88,6 @@ class _RoomMainPageState extends State<RoomMainPage> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16.0),
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primary,
-          child: Text(
-            roomConfig.room_name.isNotEmpty
-                ? roomConfig.room_name[0].toUpperCase()
-                : 'R',
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
         title: Row(
           children: [
             Expanded(
@@ -113,29 +101,6 @@ class _RoomMainPageState extends State<RoomMainPage> {
                 ),
               ),
             ),
-            if (roomConfig.room_protect)
-              Icon(
-                Icons.lock,
-                size: 16,
-                color: colorScheme.primary.withOpacity(0.8),
-              ),
-            if (roomConfig.priority > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '优先级 ${roomConfig.priority}',
-                  style: TextStyle(
-                    color: colorScheme.onPrimary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
           ],
         ),
         subtitle: Column(
@@ -150,31 +115,7 @@ class _RoomMainPageState extends State<RoomMainPage> {
               const SizedBox(height: 8),
             ] else
               const SizedBox(height: 4),
-            Text(
-              'UUID: ${roomConfig.room_uuid}',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.5),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.network_check,
-                  size: 12,
-                  color: colorScheme.primary.withOpacity(0.7),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '网络: ${roomConfig.room_public.network_name.isNotEmpty ? roomConfig.room_public.network_name : "未配置"}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-              ],
-            ),
+
             const SizedBox(height: 2),
             Row(
               children: [
@@ -264,7 +205,11 @@ class _RoomMainPageState extends State<RoomMainPage> {
     final result = await Navigator.push<RoomConfig>(
       context,
       MaterialPageRoute(
-        builder: (context) => RoomConfigFormPage(roomConfig: roomConfig, isEditing: roomConfig != null),
+        builder:
+            (context) => RoomConfigFormPage(
+              roomConfig: roomConfig,
+              isEditing: roomConfig != null,
+            ),
       ),
     );
 

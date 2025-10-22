@@ -1,5 +1,4 @@
 import 'package:astral/widgets/home/about_home.dart';
-import 'package:astral/widgets/home/servers_home.dart';
 import 'package:astral/widgets/home/user_ip.dart';
 import 'package:astral/widgets/home/virtual_ip.dart';
 import 'package:astral/widgets/home/connect_button.dart';
@@ -47,8 +46,6 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         VirtualIpBox(),
                         UserIpBox(),
-                        ServersHome(),
-                        // UdpLog(),
                         AboutHome(),
                         HitokotoCard(),
                       ],
