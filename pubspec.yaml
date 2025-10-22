@@ -56,7 +56,6 @@ dependencies:
   shared_preferences: ^2.2.2
   flutter_js: ^0.8.5
 
-
 dev_dependencies:
   hive_generator: ^2.0.1
   flutter_test:
