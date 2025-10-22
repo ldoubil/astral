@@ -1,5 +1,6 @@
 import 'package:astral/screens/general/general_base_net_config_page.dart';
 import 'package:astral/screens/general/general_listen_list_page.dart';
+import 'package:astral/screens/general/general_subnet_proxy_page.dart';
 import 'package:astral/screens/general/server_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/models/room_config.dart';
@@ -379,6 +380,30 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
             }
           },
         ),
+        _buildSettingsCard(
+          context,
+          icon: Icons.route,
+          title: "子网代理",
+          subtitle: '管理 CIDR 代理规则',
+          onTap: () async {
+            final updatedCidrProxyList = await Navigator.of(context).push<List<String>>(
+              MaterialPageRoute(
+                builder: (context) => GeneralSubnetProxyPage(
+                  cidrProxyList: _netNode.cidrproxy,
+                ),
+              ),
+            );
+            if (updatedCidrProxyList != null) {
+              // 检查 CIDR 代理列表是否发生变化
+              if (_hasCidrProxyListChanged(_netNode.cidrproxy, updatedCidrProxyList)) {
+                setState(() {
+                  _netNode.cidrproxy = updatedCidrProxyList;
+                  _markDirty();
+                });
+              }
+            }
+          },
+        ),
       ],
     );
   }
@@ -432,6 +457,21 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
           originalServer.allowRelay != updatedServer.allowRelay ||
           originalServer.usagePercentage != updatedServer.usagePercentage ||
           originalServer.isPublic != updatedServer.isPublic) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /// 检查 CIDR 代理列表是否发生变化
+  bool _hasCidrProxyListChanged(List<String> original, List<String> updated) {
+    if (original.length != updated.length) {
+      return true;
+    }
+    
+    for (int i = 0; i < original.length; i++) {
+      if (original[i] != updated[i]) {
         return true;
       }
     }
