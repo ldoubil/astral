@@ -358,8 +358,8 @@ class _RoomConfigFormPageState extends State<RoomConfigFormPage> {
         _buildSettingsCard(
           context,
           icon: Icons.settings_ethernet,
-          title: "个性化网络参数配置",
-          subtitle: '个性化网络参数配置',
+          title: "组网参数配置",
+          subtitle: '组网参数配置',
           onTap: () async {
             final updatedNetNode = await Navigator.of(context).push<NetNode>(
               MaterialPageRoute(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/screens/settings/network/network_adapter_page.dart';
-import 'package:astral/screens/settings/network/subnet_proxy_page.dart';
+import 'package:astral/screens/general/general_subnet_proxy_page.dart';
 import 'package:astral/screens/settings/network/vpn_segment_page.dart';
 import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
@@ -57,7 +57,7 @@ class SettingsMainPage extends StatelessWidget {
               icon: Icons.route,
               title: LocaleKeys.subnet_proxy_cidr.tr(),
               subtitle: LocaleKeys.subnet_proxy_desc.tr(),
-              onTap: () => _navigateToPage(context, const SubnetProxyPage()),
+              onTap: () => _navigateToSubnetProxyPage(context),
             ),
 
           if (Platform.isAndroid)
@@ -289,6 +289,28 @@ class SettingsMainPage extends StatelessWidget {
         (node) => node.listeners,
         (node, value) => node.listeners = value,
         newListeners,
+      );
+    }
+  }
+
+  /// 导航到子网代理页面
+  /// 传递当前的 CIDR 代理列表，并在返回时更新AppState
+  void _navigateToSubnetProxyPage(BuildContext context) async {
+    final currentCidrProxyList = AppState().baseNetNodeState.netNode.value.cidrproxy;
+    final newCidrProxyList = await Navigator.of(context).push<List<String>>(
+      MaterialPageRoute(
+        builder: (context) => GeneralSubnetProxyPage(
+          cidrProxyList: currentCidrProxyList,
+        ),
+      ),
+    );
+    
+    if (newCidrProxyList != null) {
+      // 使用updateField方法更新cidrproxy字段
+      AppState().baseNetNodeState.updateField(
+        (node) => node.cidrproxy,
+        (node, value) => node.cidrproxy = value,
+        newCidrProxyList,
       );
     }
   }
