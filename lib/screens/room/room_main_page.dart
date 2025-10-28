@@ -226,16 +226,12 @@ class _RoomMainPageState extends State<RoomMainPage> {
 
   /// 添加房间配置
   void _addRoomConfig(RoomConfig roomConfig) {
-    final currentList = List<RoomConfig>.from(_roomState.roomConfig.value);
-    currentList.add(roomConfig);
-    _roomState.roomConfig.value = currentList;
+  _roomState.addRoomConfig(roomConfig);
   }
 
   /// 更新房间配置
   void _updateRoomConfig(int index, RoomConfig roomConfig) {
-    final currentList = List<RoomConfig>.from(_roomState.roomConfig.value);
-    currentList[index] = roomConfig;
-    _roomState.roomConfig.value = currentList;
+  _roomState.updateRoomConfig(roomConfig);
   }
 
   /// 删除房间配置
@@ -245,61 +241,57 @@ class _RoomMainPageState extends State<RoomMainPage> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          '确认删除',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          '确定要删除这个房间配置吗？此操作不可撤销。',
+          style: TextStyle(color: colorScheme.onSurface.withOpacity(0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.onSurface.withOpacity(0.6),
             ),
-            title: Text(
-              '确认删除',
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Text(
-              '确定要删除这个房间配置吗？此操作不可撤销。',
-              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.8)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.onSurface.withOpacity(0.6),
-                ),
-                child: const Text('取消'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final currentConfigs = List<RoomConfig>.from(
-                    _roomState.roomConfig.value,
-                  );
-                  currentConfigs.removeAt(index);
-                  _roomState.roomConfig.value = currentConfigs;
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final roomConfig = _roomState.roomConfig.value[index];
+              _roomState.removeRoomConfig(roomConfig.room_uuid);
 
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('房间配置删除成功'),
-                      backgroundColor: colorScheme.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.error,
-                  foregroundColor: colorScheme.onError,
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('房间配置删除成功'),
+                  backgroundColor: colorScheme.primary,
+                  behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('删除'),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+            ),
+            child: const Text('删除'),
           ),
+        ],
+      ),
     );
   }
 
