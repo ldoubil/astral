@@ -134,6 +134,12 @@ impl NetworkInstanceManager {
         Ok(ret)
     }
 
+    pub fn get_network_info(&self, instance_id: &uuid::Uuid) -> Option<NetworkInstanceRunningInfo> {
+        self.instance_map
+            .get(instance_id)
+            .and_then(|instance| instance.value().get_running_info())
+    }
+
     pub fn list_network_instance_ids(&self) -> Vec<uuid::Uuid> {
         self.instance_map.iter().map(|item| *item.key()).collect()
     }
@@ -261,6 +267,13 @@ fn handle_event(
                                 "connect to peer error. dst: {}, ip_version: {}, err: {}",
                                 dst, ip_version, err
                             ),
+                        );
+                    }
+
+                    GlobalCtxEvent::VpnPortalStarted(portal) => {
+                        print_event(
+                            instance_id,
+                            format!("vpn portal started. portal: {}", portal),
                         );
                     }
 

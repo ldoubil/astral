@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:astral/models/net_node.dart';
 import 'package:astral/models/server_node.dart';
 import 'package:astral/models/room_config.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/app_settings.dart';
 import '../models/base.dart'; // 导入需要注册的模型
 
@@ -18,19 +20,35 @@ class HiveInitializer {
   }
 
   // 初始化Hive（需在main函数中调用）
-  static Future<void> init() async {
+  static Future<void> init({bool isRetry = false}) async {
     try {
-      // 初始化Hive Flutter绑定
-      await Hive.initFlutter();
+      // 初始化Hive Flutter绑定（如果尚未初始化）
+      try {
+        await Hive.initFlutter();
+      } catch (e) {
+        // 如果已经初始化，忽略错误
+        if (!e.toString().contains('already initialized')) {
+          rethrow;
+        }
+      }
 
       // 注册所有Hive适配器（新增模型时，在此添加适配器）
-      Hive.registerAdapter(AppSettingsAdapter());
-      Hive.registerAdapter(NetNodeAdapter());
-      Hive.registerAdapter(ConnectionManagerAdapter());
-      Hive.registerAdapter(ConnectionInfoAdapter());
-      Hive.registerAdapter(ServerNodeAdapter());
-      Hive.registerAdapter(ServerProtocolSwitchAdapter());
-      Hive.registerAdapter(RoomConfigAdapter()); // 注册RoomConfig适配器
+      // 使用 try-catch 处理适配器已注册的情况
+      _registerAdapterSafely(() => Hive.registerAdapter(AppSettingsAdapter()));
+      _registerAdapterSafely(() => Hive.registerAdapter(NetNodeAdapter()));
+      _registerAdapterSafely(
+        () => Hive.registerAdapter(ConnectionManagerAdapter()),
+      );
+      _registerAdapterSafely(
+        () => Hive.registerAdapter(ConnectionInfoAdapter()),
+      );
+      _registerAdapterSafely(() => Hive.registerAdapter(ServerNodeAdapter()));
+      _registerAdapterSafely(
+        () => Hive.registerAdapter(ServerProtocolSwitchAdapter()),
+      );
+      _registerAdapterSafely(
+        () => Hive.registerAdapter(RoomConfigAdapter()),
+      ); // 注册RoomConfig适配器
 
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
       await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings
@@ -44,7 +62,107 @@ class HiveInitializer {
       print('Hive初始化成功');
     } catch (e) {
       print('Hive初始化失败: $e');
-      rethrow; // 抛出错误，让上层处理（如弹窗提示）
+
+      // 检查是否为类型转换错误，且不是重试过程中
+      final errorString = e.toString();
+      if (!isRetry &&
+          (errorString.contains('is not a subtype of type') ||
+              errorString.contains('type cast'))) {
+        print('检测到类型转换错误，正在删除数据库并重新初始化...');
+        try {
+          // 删除所有数据库
+          await _deleteAllHiveBoxes();
+          // 重新初始化（标记为重试）
+          await init(isRetry: true);
+          print('数据库已删除并重新初始化成功');
+          return;
+        } catch (retryError) {
+          print('删除数据库并重新初始化失败: $retryError');
+          rethrow;
+        }
+      }
+
+      rethrow; // 其他错误直接抛出
+    }
+  }
+
+  /// 安全注册适配器，如果已注册则跳过
+  static void _registerAdapterSafely(void Function() registerFn) {
+    try {
+      registerFn();
+    } catch (e) {
+      // 如果适配器已注册，忽略错误
+      if (e.toString().contains('already a TypeAdapter')) {
+        print('适配器已注册，跳过: $e');
+      } else {
+        // 其他错误重新抛出
+        rethrow;
+      }
+    }
+  }
+
+  /// 删除所有Hive数据库盒子
+  static Future<void> _deleteAllHiveBoxes() async {
+    try {
+      // 先关闭所有已打开的盒子
+      _basicDataBox = null;
+
+      // 定义所有盒子名称
+      final boxNames = [
+        'AppSettings',
+        'ServerNodes',
+        'BaseNetNodeConfig',
+        'RoomConfigs',
+        'BasicData',
+      ];
+
+      // 尝试关闭所有已打开的盒子（如果Hive已初始化）
+      try {
+        // 关闭所有已知的盒子
+        for (final boxName in boxNames) {
+          try {
+            final box = Hive.box(boxName);
+            if (box.isOpen) {
+              await box.close();
+            }
+          } catch (e) {
+            // 如果盒子不存在或未打开，忽略错误
+            print('关闭盒子 $boxName 时出错（可能不存在）: $e');
+          }
+        }
+        // 关闭 Hive（这会清除适配器注册）
+        await Hive.close();
+      } catch (e) {
+        // 如果Hive未初始化或已关闭，忽略错误
+        print('关闭Hive时出错（可能未初始化）: $e');
+      }
+
+      // 删除每个盒子
+      for (final boxName in boxNames) {
+        try {
+          await Hive.deleteBoxFromDisk(boxName);
+          print('已删除盒子: $boxName');
+        } catch (e) {
+          // 如果盒子不存在，忽略错误
+          print('删除盒子 $boxName 时出错（可能不存在）: $e');
+        }
+      }
+
+      // 尝试删除整个Hive目录（如果存在）
+      try {
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final hiveDir = Directory('${appDocDir.path}/hive');
+        if (await hiveDir.exists()) {
+          await hiveDir.delete(recursive: true);
+          print('已删除Hive目录');
+        }
+      } catch (e) {
+        print('删除Hive目录时出错: $e');
+        // 忽略错误，继续执行
+      }
+    } catch (e) {
+      print('删除Hive数据库时出错: $e');
+      rethrow;
     }
   }
 

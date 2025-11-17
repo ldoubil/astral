@@ -21,17 +21,15 @@ class RoomConfigAdapter extends TypeAdapter<RoomConfig> {
       ..room_name = fields[1] as String
       ..room_protect = fields[2] as bool
       ..create_time = fields[3] as DateTime
-      ..version = fields[4] as int
-      ..room_public = fields[5] as NetNode
-      ..server = (fields[6] as List).cast<ServerNode>()
-      ..priority = fields[7] as int
-      ..room_desc = fields[8] as String;
+      ..server = (fields[4] as List).cast<ServerNode>()
+      ..priority = fields[5] as int
+      ..room_desc = fields[6] as String;
   }
 
   @override
   void write(BinaryWriter writer, RoomConfig obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.room_uuid)
       ..writeByte(1)
@@ -41,14 +39,10 @@ class RoomConfigAdapter extends TypeAdapter<RoomConfig> {
       ..writeByte(3)
       ..write(obj.create_time)
       ..writeByte(4)
-      ..write(obj.version)
-      ..writeByte(5)
-      ..write(obj.room_public)
-      ..writeByte(6)
       ..write(obj.server)
-      ..writeByte(7)
+      ..writeByte(5)
       ..write(obj.priority)
-      ..writeByte(8)
+      ..writeByte(6)
       ..write(obj.room_desc);
   }
 

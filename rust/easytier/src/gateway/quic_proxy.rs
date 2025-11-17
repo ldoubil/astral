@@ -200,6 +200,11 @@ impl TcpProxyForKcpSrcTrait for TcpProxyForQUICSrc {
         let Some(peer_info) = peer_map.get_route_peer_info(dst_peer_id).await else {
             return false;
         };
+        tracing::debug!(
+            "check dst {} allow quic input, peer info: {:?}",
+            dst_ip,
+            peer_info
+        );
         let Some(quic_port) = peer_info.quic_port else {
             return false;
         };
@@ -247,10 +252,14 @@ pub struct QUICProxyDst {
     endpoint: Arc<quinn::Endpoint>,
     proxy_entries: Arc<DashMap<SocketAddr, TcpProxyEntry>>,
     tasks: Arc<Mutex<JoinSet<()>>>,
+    route: Arc<dyn crate::peers::route_trait::Route + Send + Sync + 'static>,
 }
 
 impl QUICProxyDst {
-    pub fn new(global_ctx: ArcGlobalCtx) -> Result<Self> {
+    pub fn new(
+        global_ctx: ArcGlobalCtx,
+        route: Arc<dyn crate::peers::route_trait::Route + Send + Sync + 'static>,
+    ) -> Result<Self> {
         let _g = global_ctx.net_ns.guard();
         let (endpoint, _) = make_server_endpoint("0.0.0.0:0".parse().unwrap())
             .map_err(|e| anyhow::anyhow!("failed to create QUIC endpoint: {}", e))?;
@@ -261,6 +270,7 @@ impl QUICProxyDst {
             endpoint: Arc::new(endpoint),
             proxy_entries: Arc::new(DashMap::new()),
             tasks,
+            route,
         })
     }
 
@@ -270,6 +280,7 @@ impl QUICProxyDst {
         let ctx = self.global_ctx.clone();
         let cidr_set = Arc::new(CidrSet::new(ctx.clone()));
         let proxy_entries = self.proxy_entries.clone();
+        let route = self.route.clone();
 
         let task = async move {
             loop {
@@ -289,6 +300,7 @@ impl QUICProxyDst {
                                 ctx.clone(),
                                 cidr_set.clone(),
                                 proxy_entries.clone(),
+                                route.clone(),
                             ));
                     }
                     None => {
@@ -312,6 +324,7 @@ impl QUICProxyDst {
         ctx: Arc<GlobalCtx>,
         cidr_set: Arc<CidrSet>,
         proxy_entries: Arc<DashMap<SocketAddr, TcpProxyEntry>>,
+        route: Arc<dyn crate::peers::route_trait::Route + Send + Sync + 'static>,
     ) {
         let remote_addr = conn.remote_address();
         defer!(
@@ -319,7 +332,14 @@ impl QUICProxyDst {
         );
         let ret = timeout(
             std::time::Duration::from_secs(10),
-            Self::handle_connection(conn, ctx, cidr_set, remote_addr, proxy_entries.clone()),
+            Self::handle_connection(
+                conn,
+                ctx,
+                cidr_set,
+                remote_addr,
+                proxy_entries.clone(),
+                route,
+            ),
         )
         .await;
 
@@ -348,6 +368,7 @@ impl QUICProxyDst {
         cidr_set: Arc<CidrSet>,
         proxy_entry_key: SocketAddr,
         proxy_entries: Arc<DashMap<SocketAddr, TcpProxyEntry>>,
+        route: Arc<dyn crate::peers::route_trait::Route + Send + Sync + 'static>,
     ) -> Result<(QUICStream, TcpStream, ProxyAclHandler)> {
         let conn = incoming.await.with_context(|| "accept failed")?;
         let addr = conn.remote_address();
@@ -379,6 +400,13 @@ impl QUICProxyDst {
             dst_socket.set_ip(real_ip);
         }
 
+        let src_ip = addr.ip();
+        let dst_ip = *dst_socket.ip();
+        let (src_groups, dst_groups) = tokio::join!(
+            route.get_peer_groups_by_ip(&src_ip),
+            route.get_peer_groups_by_ipv4(&dst_ip)
+        );
+
         let send_to_self = Some(*dst_socket.ip()) == ctx.get_ipv4().map(|ip| ip.address());
         if send_to_self && ctx.no_tun() {
             dst_socket = format!("127.0.0.1:{}", dst_socket.port()).parse().unwrap();
@@ -398,12 +426,14 @@ impl QUICProxyDst {
         let acl_handler = ProxyAclHandler {
             acl_filter: ctx.get_acl_filter().clone(),
             packet_info: PacketInfo {
-                src_ip: addr.ip(),
-                dst_ip: (*dst_socket.ip()).into(),
+                src_ip,
+                dst_ip: dst_ip.into(),
                 src_port: Some(addr.port()),
                 dst_port: Some(dst_socket.port()),
                 protocol: Protocol::Tcp,
                 packet_size: len as usize,
+                src_groups,
+                dst_groups,
             },
             chain_type: if send_to_self {
                 ChainType::Inbound

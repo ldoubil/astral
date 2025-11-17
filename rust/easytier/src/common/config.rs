@@ -10,6 +10,7 @@ use cidr::IpCidr;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    common::stun::StunInfoCollector,
     proto::{
         acl::Acl,
         common::{CompressionAlgoPb, PortForwardConfigPb, SocketType},
@@ -21,34 +22,35 @@ pub type Flags = crate::proto::common::FlagsInConfig;
 
 pub fn gen_default_flags() -> Flags {
     Flags {
-        default_protocol: "tcp".to_string(), // 默认协议
-        dev_name: "".to_string(), // 设备名称
-        enable_encryption: true, // 启用加密
-        enable_ipv6: true, // 启用IPv6
-        mtu: 1380, // 最大传输单元
-        latency_first: false, // 优先延迟
-        enable_exit_node: false, // 启用出口节点
-        proxy_forward_by_system: false, // 通过系统代理转发
-        no_tun: false, // 不启用TUN
-        use_smoltcp: false, // 使用smoltcp
-        relay_network_whitelist: "*".to_string(), // 中继网络白名单
-        disable_p2p: false, // 禁用P2P
-        relay_all_peer_rpc: false, // 中继所有Peer RPC
-        disable_udp_hole_punching: false, // 禁用UDP打洞
-        multi_thread: true, // 多线程
-        data_compress_algo: CompressionAlgoPb::None.into(), // 数据压缩算法
-        bind_device: true, // 绑定设备
-        enable_kcp_proxy: false, // 启用KCP代理
-        disable_kcp_input: false, // 禁用KCP输入
-        disable_relay_kcp: false, // 禁用KCP中继
-        enable_relay_foreign_network_kcp: false, // 启用外部网络KCP中继
-        accept_dns: false, // 接受DNS
-        private_mode: false, // 私有模式
-        enable_quic_proxy: false, // 启用QUIC代理
-        disable_quic_input: false, // 禁用QUIC输入
-        foreign_relay_bps_limit: u64::MAX, // 外部中继带宽限制
-        multi_thread_count: 2, // 多线程数量
-        encryption_algorithm: "aes-gcm".to_string(), // 加密算法
+        default_protocol: "tcp".to_string(),
+        dev_name: "".to_string(),
+        enable_encryption: true,
+        enable_ipv6: true,
+        mtu: 1380,
+        latency_first: false,
+        enable_exit_node: false,
+        proxy_forward_by_system: false,
+        no_tun: false,
+        use_smoltcp: false,
+        relay_network_whitelist: "*".to_string(),
+        disable_p2p: false,
+        relay_all_peer_rpc: false,
+        disable_udp_hole_punching: false,
+        multi_thread: true,
+        data_compress_algo: CompressionAlgoPb::None.into(),
+        bind_device: true,
+        enable_kcp_proxy: false,
+        disable_kcp_input: false,
+        disable_relay_kcp: false,
+        enable_relay_foreign_network_kcp: false,
+        accept_dns: false,
+        private_mode: false,
+        enable_quic_proxy: false,
+        disable_quic_input: false,
+        foreign_relay_bps_limit: u64::MAX,
+        multi_thread_count: 2,
+        encryption_algorithm: "aes-gcm".to_string(),
+        disable_sym_hole_punching: false,
     }
 }
 
@@ -199,8 +201,11 @@ pub trait ConfigLoader: Send + Sync {
     fn get_udp_whitelist(&self) -> Vec<String>;
     fn set_udp_whitelist(&self, whitelist: Vec<String>);
 
-    fn get_stun_servers(&self) -> Vec<String>;
-    fn set_stun_servers(&self, servers: Vec<String>);
+    fn get_stun_servers(&self) -> Option<Vec<String>>;
+    fn set_stun_servers(&self, servers: Option<Vec<String>>);
+
+    fn get_stun_servers_v6(&self) -> Option<Vec<String>>;
+    fn set_stun_servers_v6(&self, servers: Option<Vec<String>>);
 
     fn dump(&self) -> String;
 }
@@ -307,6 +312,8 @@ pub struct FileLoggerConfig {
     pub level: Option<String>,
     pub file: Option<String>,
     pub dir: Option<String>,
+    pub size_mb: Option<u64>,
+    pub count: Option<usize>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Default)]
@@ -373,44 +380,45 @@ impl From<PortForwardConfig> for PortForwardConfigPb {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 struct Config {
-    netns: Option<String>, // 网络命名空间
-    hostname: Option<String>, // 主机名
-    instance_name: Option<String>, // 实例名称
-    instance_id: Option<uuid::Uuid>, // 实例ID
-    ipv4: Option<String>, // IPv4地址
-    ipv6: Option<String>, // IPv6地址
-    dhcp: Option<bool>, // 是否启用DHCP
-    network_identity: Option<NetworkIdentity>, // 网络身份
-    listeners: Option<Vec<url::Url>>, // 监听地址列表
-    mapped_listeners: Option<Vec<url::Url>>, // 映射监听地址列表
-    exit_nodes: Option<Vec<IpAddr>>, // 出口节点列表
+    netns: Option<String>,
+    hostname: Option<String>,
+    instance_name: Option<String>,
+    instance_id: Option<uuid::Uuid>,
+    ipv4: Option<String>,
+    ipv6: Option<String>,
+    dhcp: Option<bool>,
+    network_identity: Option<NetworkIdentity>,
+    listeners: Option<Vec<url::Url>>,
+    mapped_listeners: Option<Vec<url::Url>>,
+    exit_nodes: Option<Vec<IpAddr>>,
 
-    peer: Option<Vec<PeerConfig>>, // 对等节点配置
-    proxy_network: Option<Vec<ProxyNetworkConfig>>, // 代理网络配置
+    peer: Option<Vec<PeerConfig>>,
+    proxy_network: Option<Vec<ProxyNetworkConfig>>,
 
-    rpc_portal: Option<SocketAddr>, // RPC入口地址
-    rpc_portal_whitelist: Option<Vec<IpCidr>>, // RPC入口白名单
+    rpc_portal: Option<SocketAddr>,
+    rpc_portal_whitelist: Option<Vec<IpCidr>>,
 
-    vpn_portal_config: Option<VpnPortalConfig>, // VPN入口配置
+    vpn_portal_config: Option<VpnPortalConfig>,
 
-    routes: Option<Vec<cidr::Ipv4Cidr>>, // 路由列表
+    routes: Option<Vec<cidr::Ipv4Cidr>>,
 
-    socks5_proxy: Option<url::Url>, // SOCKS5代理地址
+    socks5_proxy: Option<url::Url>,
 
-    port_forward: Option<Vec<PortForwardConfig>>, // 端口转发配置
+    port_forward: Option<Vec<PortForwardConfig>>,
 
-    flags: Option<serde_json::Map<String, serde_json::Value>>, // 配置标志
+    flags: Option<serde_json::Map<String, serde_json::Value>>,
 
     #[serde(skip)]
-    flags_struct: Option<Flags>, // 结构化配置标志
+    flags_struct: Option<Flags>,
 
-    acl: Option<Acl>, // 访问控制列表
+    acl: Option<Acl>,
 
-    tcp_whitelist: Option<Vec<String>>, // TCP白名单
-    udp_whitelist: Option<Vec<String>>, // UDP白名单
-    stun_servers: Option<Vec<String>>, // STUN服务器列表
+    tcp_whitelist: Option<Vec<String>>,
+    udp_whitelist: Option<Vec<String>>,
+    stun_servers: Option<Vec<String>>,
+    stun_servers_v6: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -790,17 +798,20 @@ impl ConfigLoader for TomlConfigLoader {
         self.config.lock().unwrap().udp_whitelist = Some(whitelist);
     }
 
-    fn get_stun_servers(&self) -> Vec<String> {
-        self.config
-            .lock()
-            .unwrap()
-            .stun_servers
-            .clone()
-            .unwrap_or_default()
+    fn get_stun_servers(&self) -> Option<Vec<String>> {
+        self.config.lock().unwrap().stun_servers.clone()
     }
 
-    fn set_stun_servers(&self, servers: Vec<String>) {
-        self.config.lock().unwrap().stun_servers = Some(servers);
+    fn set_stun_servers(&self, servers: Option<Vec<String>>) {
+        self.config.lock().unwrap().stun_servers = servers;
+    }
+
+    fn get_stun_servers_v6(&self) -> Option<Vec<String>> {
+        self.config.lock().unwrap().stun_servers_v6.clone()
+    }
+
+    fn set_stun_servers_v6(&self, servers: Option<Vec<String>>) {
+        self.config.lock().unwrap().stun_servers_v6 = servers;
     }
 
     fn dump(&self) -> String {
@@ -825,6 +836,12 @@ impl ConfigLoader for TomlConfigLoader {
 
         let mut config = self.config.lock().unwrap().clone();
         config.flags = Some(flag_map);
+        if config.stun_servers == Some(StunInfoCollector::get_default_servers()) {
+            config.stun_servers = None;
+        }
+        if config.stun_servers_v6 == Some(StunInfoCollector::get_default_servers_v6()) {
+            config.stun_servers_v6 = None;
+        }
         toml::to_string_pretty(&config).unwrap()
     }
 }
@@ -837,14 +854,14 @@ pub mod tests {
     fn test_stun_servers_config() {
         let config = TomlConfigLoader::default();
         let stun_servers = config.get_stun_servers();
-        assert!(stun_servers.is_empty());
+        assert!(stun_servers.is_none());
 
         // Test setting custom stun servers
         let custom_servers = vec!["txt:stun.easytier.cn".to_string()];
-        config.set_stun_servers(custom_servers.clone());
+        config.set_stun_servers(Some(custom_servers.clone()));
 
         let retrieved_servers = config.get_stun_servers();
-        assert_eq!(retrieved_servers, custom_servers);
+        assert_eq!(retrieved_servers.unwrap(), custom_servers);
     }
 
     #[test]
@@ -858,7 +875,7 @@ stun_servers = [
 ]"#;
 
         let config = TomlConfigLoader::new_from_str(config_str).unwrap();
-        let stun_servers = config.get_stun_servers();
+        let stun_servers = config.get_stun_servers().unwrap();
 
         assert_eq!(stun_servers.len(), 3);
         assert_eq!(stun_servers[0], "stun.l.google.com:19302");

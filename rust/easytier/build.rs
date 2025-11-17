@@ -128,13 +128,14 @@ fn check_locale() {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // enable thunk-rs when target os is windows and arch is x86_64 or i686
-    #[cfg(target_os = "windows")]
-    if !std::env::var("TARGET")
-        .unwrap_or_default()
-        .contains("aarch64")
-    {
-        thunk::thunk();
-    }
+    // Disabled: Windows 7 compatibility not needed
+    // #[cfg(target_os = "windows")]
+    // if !std::env::var("TARGET")
+    //     .unwrap_or_default()
+    //     .contains("aarch64")
+    // {
+    //     thunk::thunk();
+    // }
 
     #[cfg(target_os = "windows")]
     WindowsBuild::check_for_win();
@@ -169,6 +170,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .type_attribute("peer_rpc.DirectConnectedPeerInfo", "#[derive(Hash)]")
         .type_attribute("peer_rpc.PeerInfoForGlobalMap", "#[derive(Hash)]")
         .type_attribute("peer_rpc.ForeignNetworkRouteInfoKey", "#[derive(Hash, Eq)]")
+        .type_attribute(
+            "peer_rpc.RouteForeignNetworkSummary.Info",
+            "#[derive(Hash, Eq, serde::Serialize, serde::Deserialize)]",
+        )
+        .type_attribute(
+            "peer_rpc.RouteForeignNetworkSummary",
+            "#[derive(Hash, Eq, serde::Serialize, serde::Deserialize)]",
+        )
         .type_attribute("common.RpcDescriptor", "#[derive(Hash, Eq)]")
         .field_attribute(".web.NetworkConfig", "#[serde(default)]")
         .service_generator(Box::new(rpc_build::ServiceGenerator::new()))
