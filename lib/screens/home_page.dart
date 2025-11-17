@@ -1,10 +1,4 @@
-import 'package:astral/widgets/home/about_home.dart';
-import 'package:astral/widgets/home/user_ip.dart';
-import 'package:astral/widgets/home/virtual_ip.dart';
-import 'package:astral/widgets/home/connect_button.dart';
-import 'package:astral/widgets/home/hitokoto_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,50 +8,69 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 根据宽度计算列数
-  int _getColumnCount(double width) {
-    if (width >= 1200) {
-      return 5;
-    } else if (width >= 900) {
-      return 4;
-    } else if (width >= 600) {
-      return 3;
-    }
-    return 2;
-  }
+  final String _ip = '192.168.0.1';
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final columnCount = _getColumnCount(width);
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: StaggeredGrid.count(
-                      crossAxisCount: columnCount,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAvatar(theme),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        VirtualIpBox(),
-                        UserIpBox(),
-                        AboutHome(),
-                        HitokotoCard(),
+                        Text(
+                          '会做饭的二哈',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _ip,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Center(child: Text('内容区域')),
+              ),
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: const ConnectButton(),
     );
   }
+}
+
+Widget _buildAvatar(ThemeData theme) {
+  return CircleAvatar(
+    radius: 28,
+    backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+    child: Icon(Icons.person, color: theme.colorScheme.primary, size: 28),
+  );
 }

@@ -19,9 +19,11 @@ class WindowManagerUtils {
       });
       // 定义窗口选项配置
       final windowOptions = WindowOptions(
-        size: Size(960, 540),
-        // 设置窗口最小大小为 300x300
-        minimumSize: Size(200, 300),
+        size: Size(320, 640),
+        // 设置窗口最小大小为 320x320
+        minimumSize: Size(340, 320),
+        // 设置窗口最大宽度为 360
+        maximumSize: Size(360, 1200),
         // 设置窗口居中显示
         center: true,
         // 设置窗口标题

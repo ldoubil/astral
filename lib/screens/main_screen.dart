@@ -5,7 +5,6 @@ import 'package:astral/utils/up.dart';
 import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/home_page.dart';
 import 'package:astral/screens/settings_page.dart';
-import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
 import 'package:astral/widgets/status_bar.dart';
 import 'package:flutter/material.dart';
@@ -168,14 +167,14 @@ class _MainScreenState extends State<MainScreen>
           ),
         ],
       ),
-      // 底部导航栏：在非桌面端或小窗口模式下显示
-      bottomNavigationBar:
-          (AppState().baseState.isDesktop.watch(context) && !isSmallWindow)
-              ? null
-              : BottomNav(
-                navigationItems: navigationItems,
-                colorScheme: colorScheme,
-              ),
+      // // 底部导航栏：在非桌面端或小窗口模式下显示
+      // bottomNavigationBar:
+      //     (AppState().baseState.isDesktop.watch(context) && !isSmallWindow)
+      //         ? null
+      //         : BottomNav(
+      //           navigationItems: navigationItems,
+      //           colorScheme: colorScheme,
+      //         ),
     );
   }
 }

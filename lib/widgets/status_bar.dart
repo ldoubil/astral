@@ -174,8 +174,8 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           // 设置AppBar的背景色和前景色
-          backgroundColor: colorScheme.primaryContainer,
-          foregroundColor: colorScheme.onPrimaryContainer,
+          // backgroundColor: colorScheme.primaryContainer,
+          // foregroundColor: colorScheme.onPrimaryContainer,
           toolbarHeight: 36,
           // 在桌面平台显示窗口控制按钮
           actions: [
@@ -204,78 +204,6 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
               padding: const EdgeInsets.all(8),
             ),
 
-            IconButton(
-              icon: const Icon(Icons.color_lens, size: 20), // 减小图标大小
-              onPressed: () => showThemeColorPicker(context),
-              tooltip: '选择主题颜色',
-              padding: const EdgeInsets.all(4), // 减小内边距
-            ),
-            PopupMenuButton<Locale>(
-              icon: const Icon(Icons.language, size: 20),
-              tooltip: LocaleKeys.language.tr(),
-              onSelected: (Locale locale) {
-                String langCode =
-                    locale.countryCode != null
-                        ? '${locale.languageCode}_${locale.countryCode}'
-                        : locale.languageCode;
-                AppState().baseState.currentLanguage.value = langCode;
-                context.setLocale(locale);
-              },
-              itemBuilder:
-                  (BuildContext context) => [
-                    PopupMenuItem(
-                      value: const Locale('zh'),
-                      child: Row(
-                        children: [
-                          Text('🇨🇳'),
-                          SizedBox(width: 8),
-                          Text(LocaleKeys.lang_zh.tr()),
-                        ],
-                      ),
-                    ),
-
-                    PopupMenuItem(
-                      value: const Locale('en'),
-                      child: Row(
-                        children: [
-                          Text('🇺🇸'),
-                          SizedBox(width: 8),
-                          Text('English'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('ja'),
-                      child: Row(
-                        children: [
-                          Text('🇯🇵'),
-                          SizedBox(width: 8),
-                          Text('日本語'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('ko'),
-                      child: Row(
-                        children: [
-                          Text('🇰🇷'),
-                          SizedBox(width: 8),
-                          Text('한국어'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: const Locale('ru'),
-                      child: Row(
-                        children: [
-                          Text('🇷🇺'),
-                          SizedBox(width: 8),
-                          Text('Русский'),
-                        ],
-                      ),
-                    ),
-                  ],
-            ),
             if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
               const WindowControls(),
           ],

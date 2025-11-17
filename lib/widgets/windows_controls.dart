@@ -13,7 +13,6 @@ class WindowControls extends StatefulWidget {
 
 class _WindowControlsState extends State<WindowControls>
     with TrayListener, WindowListener {
-  bool _isMaximized = false;
   final TrayManager trayManager = TrayManager.instance;
 
   @override
@@ -78,19 +77,12 @@ class _WindowControlsState extends State<WindowControls>
   }
 
   @override
-  void onWindowMaximize() {
-    setState(() => _isMaximized = true);
-  }
+  void onWindowMaximize() {}
 
   @override
-  void onWindowUnmaximize() {
-    setState(() => _isMaximized = false);
-  }
+  void onWindowUnmaximize() {}
 
-  Future<void> _updateMaximizedStatus() async {
-    final maximized = await windowManager.isMaximized();
-    setState(() => _isMaximized = maximized);
-  }
+  Future<void> _updateMaximizedStatus() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -100,29 +92,6 @@ class _WindowControlsState extends State<WindowControls>
 
     return Row(
       children: [
-        IconButton(
-          icon: const Icon(Icons.remove),
-          onPressed: () async {
-            
-              print('Minimize button was pressed!');
-            await windowManager.minimize();
-            
-          },
-          tooltip: '最小化',
-          iconSize: 20,
-        ),
-        IconButton(
-          icon: Icon(_isMaximized ? Icons.filter_none : Icons.crop_square),
-          onPressed: () async {
-            if (_isMaximized) {
-              await windowManager.unmaximize();
-            } else {
-              await windowManager.maximize();
-            }
-          },
-          tooltip: _isMaximized ? '还原' : '最大化',
-          iconSize: 20,
-        ),
         IconButton(
           icon: const Icon(Icons.close),
           onPressed: () async {

@@ -22,12 +22,12 @@ class _LogsPageState extends State<LogsPage> {
   void _copyAllLogs() {
     final logs = AppState().baseState.logs.value;
     if (logs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无日志可复制')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('暂无日志可复制')));
       return;
     }
-    
+
     final allLogsText = logs.join('\n');
     Clipboard.setData(ClipboardData(text: allLogsText));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -77,26 +77,27 @@ class _LogsPageState extends State<LogsPage> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('确认清空'),
-                  content: const Text('确定要清空所有日志吗？'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('取消'),
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('确认清空'),
+                      content: const Text('确定要清空所有日志吗？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('取消'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            AppState().baseState.logs.value = [];
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('日志已清空')),
+                            );
+                          },
+                          child: const Text('确定'),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () {
-                        AppState().baseState.logs.value = [];
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('日志已清空')),
-                        );
-                      },
-                      child: const Text('确定'),
-                    ),
-                  ],
-                ),
               );
             },
           ),
@@ -105,54 +106,50 @@ class _LogsPageState extends State<LogsPage> {
       body: Builder(
         builder: (context) {
           final logs = AppState().baseState.logs.watch(context);
-          
+
           if (logs.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.article_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
+                  Icon(Icons.article_outlined, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
                     '暂无日志',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                 ],
               ),
             );
           }
-          
+
           return ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(8.0),
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];
-              final isError = log.toLowerCase().contains('error') || 
-                             log.toLowerCase().contains('错误');
-              final isWarning = log.toLowerCase().contains('warning') || 
-                               log.toLowerCase().contains('警告');
-              
+              final isError =
+                  log.toLowerCase().contains('error') ||
+                  log.toLowerCase().contains('错误');
+              final isWarning =
+                  log.toLowerCase().contains('warning') ||
+                  log.toLowerCase().contains('警告');
+
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 2.0),
                 child: ListTile(
                   dense: true,
                   leading: Icon(
-                    isError 
+                    isError
                         ? Icons.error_outline
-                        : isWarning 
-                            ? Icons.warning_amber_outlined
-                            : Icons.info_outline,
-                    color: isError 
-                        ? Colors.red
-                        : isWarning 
+                        : isWarning
+                        ? Icons.warning_amber_outlined
+                        : Icons.info_outline,
+                    color:
+                        isError
+                            ? Colors.red
+                            : isWarning
                             ? Colors.orange
                             : Colors.blue,
                     size: 20,
@@ -162,9 +159,10 @@ class _LogsPageState extends State<LogsPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontFamily: 'monospace',
-                      color: isError 
-                          ? Colors.red
-                          : isWarning 
+                      color:
+                          isError
+                              ? Colors.red
+                              : isWarning
                               ? Colors.orange
                               : null,
                     ),
