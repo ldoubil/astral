@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:astral/models/net_node.dart';
 import 'package:astral/models/server_node.dart';
 import 'package:astral/models/room_config.dart';
+import 'package:astral/models/room_info.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,7 +36,6 @@ class HiveInitializer {
       // 注册所有Hive适配器（新增模型时，在此添加适配器）
       // 使用 try-catch 处理适配器已注册的情况
       _registerAdapterSafely(() => Hive.registerAdapter(AppSettingsAdapter()));
-      _registerAdapterSafely(() => Hive.registerAdapter(NetNodeAdapter()));
       _registerAdapterSafely(
         () => Hive.registerAdapter(ConnectionManagerAdapter()),
       );
@@ -49,12 +49,15 @@ class HiveInitializer {
       _registerAdapterSafely(
         () => Hive.registerAdapter(RoomConfigAdapter()),
       ); // 注册RoomConfig适配器
+      _registerAdapterSafely(
+        () => Hive.registerAdapter(RoomInfoAdapter()),
+      ); // 注册RoomInfo适配器
 
       // 打开所需的Hive盒子（按类型/功能拆分盒子，避免混用）
       await Hive.openBox<AppSettings>('AppSettings'); // 存储AppSettings
-      await Hive.openBox<ServerNode>('ServerNodes'); // 存储服务器节点数据
-      await Hive.openBox<NetNode>('BaseNetNodeConfig'); // 存储基础网络节点配置
+      await Hive.openBox<ServerNode>('V2ServerNodes'); // 存储服务器节点数据
       await Hive.openBox<RoomConfig>('RoomConfigs'); // 存储房间配置
+      await Hive.openBox<RoomInfo>('V2Rooms'); // 存储V2房间数据
       _basicDataBox = await Hive.openBox<dynamic>(
         'BasicData',
       ); // 存储用户基础数据（String/int/List等）
@@ -111,8 +114,10 @@ class HiveInitializer {
       final boxNames = [
         'AppSettings',
         'ServerNodes',
+        'V2ServerNodes',
         'BaseNetNodeConfig',
         'RoomConfigs',
+        'V2Rooms',
         'BasicData',
       ];
 

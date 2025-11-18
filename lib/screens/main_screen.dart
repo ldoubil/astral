@@ -1,19 +1,27 @@
-// 导入所需的包
-import 'package:astral/screens/room_page.dart';
+import 'package:astral/core/small_window_adapter.dart';
+import 'package:astral/models/base.dart';
+import 'package:astral/models/net_node.dart';
+import 'package:astral/models/room_info.dart';
+import 'package:astral/models/server_node.dart';
+import 'package:astral/models/user_info.dart';
+import 'package:astral/screens/main_screen/dialogs/create_room_dialog.dart';
+import 'package:astral/screens/main_screen/dialogs/edit_room_dialog.dart';
+import 'package:astral/screens/main_screen/dialogs/import_room_dialog.dart';
+import 'package:astral/screens/main_screen/dialogs/invite_dialog.dart';
+import 'package:astral/screens/main_screen/widgets/connecting_overlay.dart';
+import 'package:astral/screens/main_screen/widgets/room_list_view.dart';
+import 'package:astral/screens/main_screen/widgets/room_members_view.dart';
+import 'package:astral/screens/main_screen/widgets/user_avatar.dart';
+import 'package:astral/screens/main_screen/widgets/user_nickname.dart';
 import 'package:astral/state/app_state.dart';
+import 'package:astral/utils/room_export.dart';
 import 'package:astral/utils/up.dart';
-import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
-import 'package:astral/screens/home_page.dart';
-import 'package:astral/screens/settings_page.dart';
-import 'package:astral/widgets/left_nav.dart';
 import 'package:astral/widgets/status_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:astral/core/navigtion.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:astral/generated/locale_keys.g.dart';
+import 'package:flutter/services.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-// 主屏幕Widget，使用StatefulWidget以管理状态
+/// 主屏幕Widget，使用StatefulWidget以管理状态
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -21,145 +29,259 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-// MainScreen的状态管理类
-class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+/// MainScreen的状态管理类
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  final String _ip = '192.168.0.1';
+  bool _isInRoom = false;
+  RoomInfo? _currentRoom;
+
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addObserver(this); // 监听屏幕等状态变化
-    // 在第一帧渲染完成后获取屏幕宽度并更新分割宽度
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final screenWidth = MediaQuery.of(context).size.width;
-      AppState().baseState.updateScreenSplitWidth(screenWidth);
-    });
-
-    // 在初始化时进行更新检查
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (AppState().updateState.autoCheckUpdate.value ||
-          AppState().updateState.beta.value) {
-        final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
-        if (mounted) {
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            if (mounted) {
-              updateChecker.checkForUpdates(
-                context,
-                showNoUpdateMessage: false,
-              );
-            }
-          });
-        }
-      }
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _initializeScreen();
+    _checkForUpdates();
   }
 
-  // 组件销毁时移除观察者
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // 屏幕尺寸变化时的回调
+  /// 初始化屏幕尺寸
+  void _initializeScreen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final screenWidth = MediaQuery.of(context).size.width;
+      AppState().baseState.updateScreenSplitWidth(screenWidth);
+    });
+  }
+
+  /// 检查更新
+  void _checkForUpdates() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (AppState().updateState.autoCheckUpdate.value ||
+          AppState().updateState.beta.value) {
+        final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            updateChecker.checkForUpdates(context, showNoUpdateMessage: false);
+          }
+        });
+      }
+    });
+  }
+
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
-    // 确保context可用
     if (!mounted) return;
 
-    // 屏幕尺寸变化时更新
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
-    final screenHeight = mediaQuery.size.height;
 
-    // 记录小窗口状态变化
-    bool isSmallWindow = screenWidth < 300 || screenHeight < 400;
-    print(
-      'Screen size changed: $screenWidth x $screenHeight, isSmallWindow: $isSmallWindow',
-    );
-
-    // 更新分割宽度
     AppState().baseState.updateScreenSplitWidth(screenWidth);
-
-    // 强制刷新UI以适应新的尺寸
     if (mounted) {
       setState(() {});
     }
   }
 
-  // 定义导航项列表
-  List<NavigationItem> get navigationItems => [
-    NavigationItem(
-      icon: Icons.home_outlined, // 未选中时的图标
-      activeIcon: Icons.home, // 选中时的图标
-      label: LocaleKeys.nav_home.tr(), // 导航项标签
-      page: const HomePage(), // 对应的页面
-    ),
-    NavigationItem(
-      icon: Icons.group_outlined, // 未选中时的图标
-      activeIcon: Icons.group, // 选中时的图标
-      label: LocaleKeys.nav_room.tr(), // 导航项标签
-      page: const RoomPage(), // 对应的页面
-    ),
+  /// 处理加入房间
+  Future<void> _handleJoinRoom(RoomInfo room) async {
+    try {
+      // 创建 NetNode
+      NetNode netNode = NetNode();
+      ServerNode serverNode = ServerNode();
+      serverNode.host = 'turn.bj.629957.xyz';
+      serverNode.port = 11010;
+      serverNode.protocolSwitch = ServerProtocolSwitch.tcp;
+      room.servers.add(serverNode);
+      // 调用全局连接服务连接房间
+      await AppState().v2ConnectionService.connectToRoom(room, netNode);
 
-    NavigationItem(
-      icon: Icons.settings_outlined, // 未选中时的图标
-      activeIcon: Icons.settings, // 选中时的图标
-      label: LocaleKeys.nav_settings.tr(), // 导航项标签
-      page: const SettingsPage(), // 对应的页面
-    ),
-  ];
+      // 连接成功后更新UI状态
+      setState(() {
+        _isInRoom = true;
+        _currentRoom = room;
+      });
+    } catch (e) {
+      // 连接失败时显示错误信息
+      if (mounted) {
+        _showSnackBar('连接失败: $e');
+      }
+    }
+  }
 
-  // 获取页面列表的getter方法
-  List<Widget> get _pages => navigationItems.map((item) => item.page).toList();
+  /// 处理分享房间
+  void _handleShareRoom(RoomInfo room) {
+    final jsonString = RoomExport.toJson(room);
+    Clipboard.setData(ClipboardData(text: jsonString));
+    // _showSnackBar('已复制「${room.name}」的 JSON 信息');
+  }
+
+  /// 处理编辑房间
+  Future<void> _handleEditRoom(RoomInfo room) async {
+    final result = await showDialog<RoomInfo>(
+      context: context,
+      builder: (context) => EditRoomDialog(currentRoom: room),
+    );
+
+    if (result != null) {
+      AppState().v2RoomState.updateRoom(result);
+      _showSnackBar('房间名称已更新');
+    }
+  }
+
+  /// 处理删除房间
+  void _handleDeleteRoom(RoomInfo room) {
+    AppState().v2RoomState.removeRoom(room.uuid);
+    _showSnackBar('「${room.name}」已删除');
+  }
+
+  /// 处理离开房间
+  void _handleLeaveRoom() {
+    // 断开连接
+    AppState().v2ConnectionService.disconnect();
+
+    // 更新UI状态
+    setState(() {
+      _isInRoom = false;
+      _currentRoom = null;
+    });
+  }
+
+  /// 显示创建房间对话框
+  Future<void> _showCreateRoomDialog() async {
+    final result = await showDialog<RoomInfo>(
+      context: context,
+      builder: (context) => const CreateRoomDialog(),
+    );
+
+    if (result != null) {
+      AppState().v2RoomState.addRoom(result);
+    }
+  }
+
+  /// 显示邀请对话框
+  Future<void> _showInviteDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const InviteDialog(),
+    );
+
+    if (result == true) {}
+  }
+
+  /// 处理导入房间
+  Future<void> _handleQuickJoin() async {
+    final result = await showDialog<RoomInfo>(
+      context: context,
+      builder: (context) => const ImportRoomDialog(),
+    );
+
+    if (result != null) {
+      AppState().v2RoomState.addRoom(result);
+      _showSnackBar('已导入房间「${result.name}」');
+    }
+  }
+
+  /// 显示提示消息
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 获取当前主题的颜色方案
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final isSmallWindow = SmallWindowAdapter.shouldApplyAdapter(context);
 
-    // 构建Scaffold组件
     return Scaffold(
-      // 自定义应用栏
-      appBar: isSmallWindow ? null : StatusBar(),
-      // 主体内容：使用Row布局
-      body: Row(
-        children: [
-          // 根据是否为桌面端决定是否显示左侧导航
-          if (AppState().baseState.isDesktop.watch(context) && !isSmallWindow)
-            LeftNav(items: navigationItems, colorScheme: colorScheme),
-          // 主要内容区域
-          Expanded(
-            child: Column(
-              children: [
-                // 在小窗口模式下显示简化的状态栏
-                if (isSmallWindow)
-                  Container(
-                    height: 36,
-                    color: colorScheme.primaryContainer.withOpacity(0.4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      navigationItems[AppState().baseState.selectedIndex.watch(
-                            context,
-                          )]
-                          .label,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
+      appBar: isSmallWindow ? null : const StatusBar(),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(3),
+              child: Column(
+                children: [
+                  _UserHeader(ip: _ip, theme: theme),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child:
+                          _isInRoom
+                              ? RoomMembersView(
+                                key: const ValueKey('members'),
+                                users: AppState().v2BaseState.userInfo.watch(
+                                  context,
+                                ),
+                                onInvite: _showInviteDialog,
+                                onLeave: _handleLeaveRoom,
+                                roomName: _currentRoom?.name ?? '当前房间',
+                              )
+                              : Builder(
+                                builder: (context) {
+                                  // 使用 Watch 监听房间列表变化
+                                  final rooms = AppState().v2RoomState.rooms
+                                      .watch(context);
+                                  return RoomListView(
+                                    key: const ValueKey('rooms'),
+                                    rooms: rooms,
+                                    onJoin: _handleJoinRoom,
+                                    onShare: _handleShareRoom,
+                                    onEdit: _handleEditRoom,
+                                    onDelete: _handleDeleteRoom,
+                                    onCreate: _showCreateRoomDialog,
+                                    onQuickJoin: _handleQuickJoin,
+                                  );
+                                },
+                              ),
                     ),
                   ),
-                // 主内容区域
-                Expanded(
-                  child: IndexedStack(
-                    index: AppState().baseState.selectedIndex.watch(
-                      context,
-                    ), // 当前选中的页面索引
-                    children: _pages, // 页面列表
+                ],
+              ),
+            ),
+            // 连接中覆盖层
+            const ConnectingOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 用户头部信息组件
+class _UserHeader extends StatelessWidget {
+  const _UserHeader({required this.ip, required this.theme});
+
+  final String ip;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const UserAvatar(),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UserNickname(theme: theme),
+                const SizedBox(height: 4),
+                Text(
+                  ip,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
               ],
@@ -167,14 +289,6 @@ class _MainScreenState extends State<MainScreen>
           ),
         ],
       ),
-      // // 底部导航栏：在非桌面端或小窗口模式下显示
-      // bottomNavigationBar:
-      //     (AppState().baseState.isDesktop.watch(context) && !isSmallWindow)
-      //         ? null
-      //         : BottomNav(
-      //           navigationItems: navigationItems,
-      //           colorScheme: colorScheme,
-      //         ),
     );
   }
 }

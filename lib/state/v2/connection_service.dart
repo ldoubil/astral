@@ -1,0 +1,518 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:astral/models/net_node.dart';
+import 'package:astral/models/room_info.dart';
+import 'package:astral/models/user_info.dart';
+import 'package:astral/src/rust/api/hops.dart';
+import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/state/app_state.dart';
+import 'package:astral/state/v2/base.dart';
+import 'package:flutter/material.dart';
+import 'package:vpn_service_plugin/vpn_service_plugin.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:astral/generated/locale_keys.g.dart';
+
+/// 全局连接服务类
+/// 负责管理服务器连接、断开连接等操作
+class V2ConnectionService {
+  static final V2ConnectionService _instance = V2ConnectionService._internal();
+  factory V2ConnectionService() => _instance;
+  V2ConnectionService._internal();
+
+  /* ------------------------ 常量定义 ------------------------ */
+  static const int connectionTimeoutSeconds = 15;
+  static const int networkMonitoringIntervalSeconds = 1;
+  static const int connectionCheckIntervalSeconds = 1;
+  static const String invalidIpAddress = "0.0.0.0";
+  static const String defaultCidrMask = "/24";
+  static const int defaultMtu = 1360;
+  static const int mtuWithEncryption = 1360;
+  static const int mtuWithoutEncryption = 1380;
+
+  /* ------------------------ 私有字段 ------------------------ */
+  final VpnServicePlugin? vpnPlugin =
+      Platform.isAndroid ? VpnServicePlugin() : null;
+
+  Timer? _connectionTimer;
+  Timer? _timeoutTimer;
+
+  /* ------------------------ 回调函数 ------------------------ */
+  Function(String message)? onError;
+  Function()? onConnected;
+  Function()? onDisconnected;
+
+  /* ------------------------ 公共方法 ------------------------ */
+
+  /// 初始化服务
+  Future<void> initialize() async {
+    if (Platform.isAndroid) {
+      _setupVpnListeners();
+    }
+  }
+
+  /// 开始连接房间
+  /// [room] 要连接的房间信息
+  /// [netNode] 网络节点配置
+  Future<void> connectToRoom(RoomInfo room, NetNode netNode) async {
+    if (!_canStartConnection()) {
+      print("初始化服务器1");
+      return;
+    }
+
+    if (!_validateRoom(room)) {
+      print("初始化服务器2");
+      onError?.call(LocaleKeys.add_server_first.tr());
+      return;
+    }
+
+    try {
+      await _initializeServer(room, netNode);
+      await _beginConnectionProcess(netNode);
+    } catch (e) {
+      _handleConnectionError(e);
+      rethrow;
+    }
+  }
+
+  /// 断开连接
+  void disconnect() {
+    _updateConnectionState(false);
+    _stopVpn();
+    _cancelAllTimers();
+    closeServer();
+    _clearUserInfo();
+    onDisconnected?.call();
+  }
+
+  /// 清空用户信息列表
+  void _clearUserInfo() {
+    AppState().v2BaseState.userInfo.value = [];
+  }
+
+  /// 清理资源
+  void dispose() {
+    _cancelAllTimers();
+  }
+
+  /* ------------------------ 初始化相关 ------------------------ */
+
+  /// 设置VPN监听器
+  void _setupVpnListeners() {
+    vpnPlugin?.onVpnServiceStarted.listen((data) {
+      setTunFd(fd: data['fd']);
+    });
+
+    vpnPlugin?.onVpnServiceStopped.listen((data) {
+      // VPN停止后的逻辑处理
+    });
+  }
+
+  /* ------------------------ 连接验证 ------------------------ */
+
+  /// 检查是否可以开始连接
+  bool _canStartConnection() {
+    return AppState().v2BaseState.roomConnectionState.value ==
+        RoomConnectionState.idle;
+  }
+
+  /// 验证房间信息
+  bool _validateRoom(RoomInfo room) {
+    return room.servers.isNotEmpty;
+  }
+
+  /* ------------------------ 服务器初始化 ------------------------ */
+
+  /// 初始化服务器
+  Future<void> _initializeServer(RoomInfo room, NetNode netNode) async {
+    _prepareVpnIfNeeded();
+    print("初始化服务器");
+    final serverConfig = _buildServerConfig(room, netNode);
+    await createServer(
+      username: AppState().v2UserState.Name.value,
+      enableDhcp: serverConfig.enableDhcp,
+      specifiedIp: serverConfig.specifiedIp,
+      roomName: room.uuid,
+      roomPassword: room.uuid,
+      cidrs: netNode.cidrproxy,
+      forwards: serverConfig.forwards,
+      severurl: serverConfig.serverUrls,
+      onurl: _getFilteredListenUrls(),
+      flag: _buildFlags(netNode),
+    );
+  }
+
+  /// 准备VPN（如果需要）
+  void _prepareVpnIfNeeded() {
+    if (Platform.isAndroid) {
+      vpnPlugin?.prepareVpn();
+    }
+  }
+
+  /// 构建服务器配置
+  _ServerConfig _buildServerConfig(RoomInfo room, NetNode netNode) {
+    return _ServerConfig(
+      enableDhcp: true,
+      specifiedIp: "",
+      serverUrls: _buildServerUrls(room.servers),
+      forwards: [], // 端口转发逻辑可以在这里添加
+    );
+  }
+
+  /// 构建服务器URL列表
+  List<String> _buildServerUrls(List servers) {
+    return servers.map((server) => _buildServerUrl(server)).toList();
+  }
+
+  /// 构建单个服务器URL
+  String _buildServerUrl(dynamic server) {
+    final protocol = _getProtocolString(server.protocolSwitch);
+    return '$protocol://${server.host}:${server.port}';
+  }
+
+  /// 获取过滤后的监听URL列表
+  List<String> _getFilteredListenUrls() {
+    return AppState().v2BaseState.listenListPersistent.value
+        .where((url) => !url.contains('[::]'))
+        .toList();
+  }
+
+  /// 获取协议字符串
+  String _getProtocolString(dynamic protocolSwitch) {
+    const protocolMap = {
+      'ServerProtocolSwitch.tcp': 'tcp',
+      'ServerProtocolSwitch.udp': 'udp',
+      'ServerProtocolSwitch.ws': 'ws',
+      'ServerProtocolSwitch.wss': 'wss',
+      'ServerProtocolSwitch.quic': 'quic',
+      'ServerProtocolSwitch.wg': 'wg',
+      'ServerProtocolSwitch.http': 'http',
+      'ServerProtocolSwitch.https': 'https',
+    };
+
+    return protocolMap[protocolSwitch.toString()] ?? 'tcp';
+  }
+
+  /// 构建标志配置
+  FlagsC _buildFlags(NetNode netNode) {
+    return FlagsC(
+      defaultProtocol: netNode.default_protocol,
+      devName: netNode.dev_name,
+      enableEncryption: netNode.enable_encryption,
+      enableIpv6: true,
+      mtu: netNode.enable_encryption ? mtuWithEncryption : mtuWithoutEncryption,
+      multiThread: netNode.multi_thread,
+      latencyFirst: netNode.latency_first,
+      enableExitNode: true,
+      noTun: netNode.no_tun,
+      useSmoltcp: netNode.use_smoltcp,
+      relayNetworkWhitelist: '*',
+      disableP2P: netNode.disable_p2p,
+      relayAllPeerRpc: netNode.relay_all_peer_rpc,
+      disableUdpHolePunching: netNode.disable_udp_hole_punching,
+      dataCompressAlgo: netNode.data_compress_algo,
+      bindDevice: netNode.bind_device,
+      enableKcpProxy: netNode.enable_kcp_proxy,
+      disableKcpInput: netNode.disable_kcp_input,
+      disableRelayKcp: netNode.disable_relay_kcp,
+      proxyForwardBySystem: true,
+      acceptDns: netNode.accept_dns,
+      privateMode: netNode.private_mode,
+      enableQuicProxy: netNode.enable_quic_proxy,
+      disableQuicInput: netNode.disable_quic_input,
+    );
+  }
+
+  /* ------------------------ 连接流程管理 ------------------------ */
+
+  /// 开始连接流程
+  Future<void> _beginConnectionProcess(NetNode netNode) async {
+    AppState().v2BaseState.setConnecting();
+    _setupConnectionTimeout();
+    _startConnectionStatusCheck(netNode);
+  }
+
+  /// 设置连接超时
+  void _setupConnectionTimeout() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(
+      Duration(seconds: connectionTimeoutSeconds),
+      _handleConnectionTimeout,
+    );
+  }
+
+  /// 处理连接超时
+  void _handleConnectionTimeout() {
+    if (AppState().v2BaseState.roomConnectionState.value ==
+        RoomConnectionState.connecting) {
+      debugPrint(LocaleKeys.connection_timeout.tr());
+      disconnect();
+    }
+  }
+
+  /// 启动连接状态检查
+  void _startConnectionStatusCheck(NetNode netNode) {
+    Timer.periodic(
+      const Duration(seconds: connectionCheckIntervalSeconds),
+      (timer) => _checkConnectionStatus(timer, netNode),
+    );
+  }
+
+  /// 检查连接状态
+  Future<void> _checkConnectionStatus(Timer timer, NetNode netNode) async {
+    if (AppState().v2BaseState.roomConnectionState.value !=
+        RoomConnectionState.connecting) {
+      timer.cancel();
+      return;
+    }
+
+    final isConnected = await _checkAndUpdateConnectionStatus(netNode);
+    if (isConnected) {
+      timer.cancel();
+      await _handleSuccessfulConnection(netNode);
+    }
+  }
+
+  /// 检查并更新连接状态
+  Future<bool> _checkAndUpdateConnectionStatus(NetNode netNode) async {
+    try {
+      final runningInfo = await getRunningInfo();
+      final data = jsonDecode(runningInfo) as Map<String, dynamic>;
+      final ipv4Address = _extractIpv4Address(data);
+
+      if (ipv4Address != invalidIpAddress) {
+        if (AppState().v2UserState.ipv4.value != ipv4Address) {
+          AppState().v2UserState.ipv4.value = ipv4Address;
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('检查连接状态失败: $e');
+      return false;
+    }
+  }
+
+  /// 提取IPv4地址
+  String _extractIpv4Address(Map<String, dynamic> data) {
+    final virtualIpv4 = data['my_node_info']?['virtual_ipv4'];
+    if (virtualIpv4 == null || virtualIpv4.isEmpty) {
+      return invalidIpAddress;
+    }
+
+    final addr = virtualIpv4['address']?['addr'] ?? 0;
+    return intToIp(addr as int);
+  }
+
+  /// 处理成功连接
+  Future<void> _handleSuccessfulConnection(NetNode netNode) async {
+    _cancelTimeoutTimer();
+    _updateConnectionState(true);
+    _setupPlatformSpecificFeatures(netNode);
+    onConnected?.call();
+    _startNetworkMonitoring();
+  }
+
+  /// 更新连接状态
+  void _updateConnectionState(bool isConnected) {
+    AppState().v2BaseState.isConnecting.value = isConnected;
+    if (isConnected) {
+      AppState().v2BaseState.setConnected();
+    } else {
+      AppState().v2BaseState.resetConnectionState();
+    }
+  }
+
+  /// 设置平台特定功能
+  void _setupPlatformSpecificFeatures(NetNode netNode) {
+    if (Platform.isAndroid) {
+      _startVpn(netNode);
+    } else if (Platform.isWindows) {
+      setInterfaceMetric(interfaceName: "astral", metric: 0);
+    }
+  }
+
+  /// 处理连接错误
+  void _handleConnectionError(dynamic error) {
+    AppState().v2BaseState.resetConnectionState();
+    onError?.call(error.toString());
+  }
+
+  /* ------------------------ VPN管理 ------------------------ */
+
+  /// 启动VPN
+  void _startVpn(NetNode netNode) {
+    final ipv4Addr = netNode.ipv4;
+
+    if (!_isValidIpAddress(ipv4Addr)) {
+      return;
+    }
+
+    final formattedIp = _formatIpAddress(ipv4Addr);
+    final routes = _getValidVpnRoutes();
+
+    vpnPlugin?.startVpn(
+      ipv4Addr: formattedIp,
+      mtu: netNode.mtu,
+      routes: routes,
+      disallowedApplications: const ['com.kevin.astral'],
+    );
+  }
+
+  /// 格式化IP地址（添加CIDR掩码）
+  String _formatIpAddress(String ip) {
+    if (ip.contains('/')) {
+      return ip;
+    }
+    return '$ip$defaultCidrMask';
+  }
+
+  /// 获取有效的VPN路由
+  List<String> _getValidVpnRoutes() {
+    return AppState().v2BaseState.customVpn.value
+        .where((route) => _isValidCIDR(route))
+        .toList();
+  }
+
+  /// 停止VPN
+  void _stopVpn() {
+    if (Platform.isAndroid) {
+      vpnPlugin?.stopVpn();
+    }
+  }
+
+  /* ------------------------ 网络监控 ------------------------ */
+
+  /// 启动网络监控
+  void _startNetworkMonitoring() {
+    _connectionTimer?.cancel();
+    _connectionTimer = Timer.periodic(
+      const Duration(seconds: networkMonitoringIntervalSeconds),
+      _monitorNetworkStatus,
+    );
+  }
+
+  /// 监控网络状态
+  Future<void> _monitorNetworkStatus(Timer timer) async {
+    try {
+      final status = await getNetworkStatus();
+      AppState().v2BaseState.netStatus.value = status;
+
+      // 更新用户信息列表
+      _updateUserInfo(status);
+    } catch (e) {
+      debugPrint('网络监控错误: $e');
+    }
+  }
+
+  /// 更新用户信息列表
+  void _updateUserInfo(KVNetworkStatus status) {
+    final userInfoList =
+        status.nodes.map((node) => _convertNodeToUserInfo(node)).toList();
+
+    AppState().v2BaseState.userInfo.value = userInfoList;
+  }
+
+  /// 将 KVNodeInfo 转换为 UserInfo
+  UserInfo _convertNodeToUserInfo(KVNodeInfo node) {
+    // 根据连接类型推断设备类型
+    final device = "android";
+
+    return UserInfo(
+      name: node.hostname.isNotEmpty ? node.hostname : '未知用户',
+      avatarUrl: '', // 可以从其他地方获取头像URL，或使用默认值
+      ip: node.ipv4,
+      latency: node.latencyMs.round(),
+      device: device,
+    );
+  }
+
+  /* ------------------------ 定时器管理 ------------------------ */
+
+  /// 取消所有定时器
+  void _cancelAllTimers() {
+    _cancelConnectionTimer();
+    _cancelTimeoutTimer();
+  }
+
+  /// 取消连接定时器
+  void _cancelConnectionTimer() {
+    _connectionTimer?.cancel();
+    _connectionTimer = null;
+  }
+
+  /// 取消超时定时器
+  void _cancelTimeoutTimer() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+  }
+
+  /* ------------------------ 工具方法 ------------------------ */
+
+  /// 验证IPv4地址格式
+  bool _isValidIpAddress(String ip) {
+    if (ip.isEmpty) return false;
+
+    final ipRegex = RegExp(
+      r"^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+    );
+
+    if (!ipRegex.hasMatch(ip)) {
+      return false;
+    }
+
+    // 排除特殊保留地址
+    if (ip == invalidIpAddress || ip == "255.255.255.255") {
+      return false;
+    }
+
+    return true;
+  }
+
+  /// 验证CIDR格式
+  bool _isValidCIDR(String cidr) {
+    final cidrPattern = RegExp(
+      r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/(3[0-2]|[12]?[0-9])$',
+    );
+
+    if (!cidrPattern.hasMatch(cidr)) {
+      debugPrint('⚠️ 无效路由条目已过滤: $cidr');
+      return false;
+    }
+
+    final parts = cidr.split('/');
+    final ip = parts[0];
+    final mask = int.tryParse(parts[1]) ?? -1;
+
+    return _isValidIpAddress(ip) && mask >= 0 && mask <= 32;
+  }
+}
+
+/* ------------------------ 辅助类 ------------------------ */
+
+/// 服务器配置数据类
+class _ServerConfig {
+  final bool enableDhcp;
+  final String specifiedIp;
+  final List<String> serverUrls;
+  final List<Forward> forwards;
+
+  _ServerConfig({
+    required this.enableDhcp,
+    required this.specifiedIp,
+    required this.serverUrls,
+    required this.forwards,
+  });
+}
+
+/* ------------------------ 工具函数 ------------------------ */
+
+/// 整数转为 IP 字符串
+String intToIp(int ipInt) {
+  return [
+    (ipInt >> 24) & 0xFF,
+    (ipInt >> 16) & 0xFF,
+    (ipInt >> 8) & 0xFF,
+    ipInt & 0xFF,
+  ].join('.');
+}

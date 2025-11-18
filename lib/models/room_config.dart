@@ -1,4 +1,3 @@
-import 'package:astral/models/net_node.dart';
 import 'package:astral/models/server_node.dart';
 import 'package:hive/hive.dart';
 
