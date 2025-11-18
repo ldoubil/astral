@@ -13,6 +13,7 @@ import 'package:astral/screens/main_screen/widgets/room_list_view.dart';
 import 'package:astral/screens/main_screen/widgets/room_members_view.dart';
 import 'package:astral/screens/main_screen/widgets/user_avatar.dart';
 import 'package:astral/screens/main_screen/widgets/user_nickname.dart';
+import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/state/app_state.dart';
 import 'package:astral/utils/room_export.dart';
 import 'package:astral/utils/up.dart';
@@ -31,9 +32,10 @@ class MainScreen extends StatefulWidget {
 
 /// MainScreen的状态管理类
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  final String _ip = '192.168.0.1';
   bool _isInRoom = false;
   RoomInfo? _currentRoom;
+
+  final Signal<String> version = signal('');
 
   @override
   void initState() {
@@ -41,6 +43,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _initializeScreen();
     _checkForUpdates();
+    easytierVersion().then((value) {
+      setState(() {
+        version.value = value;
+      });
+    });
   }
 
   @override
@@ -209,7 +216,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.all(3),
               child: Column(
                 children: [
-                  _UserHeader(ip: _ip, theme: theme),
+                  _UserHeader(
+                    ip:
+                        AppState().v2UserState.ipv4.watch(context) +
+                        version.watch(context),
+                    theme: theme,
+                  ),
                   const SizedBox(height: 6),
                   Expanded(
                     child: AnimatedSwitcher(

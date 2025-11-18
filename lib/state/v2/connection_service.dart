@@ -128,8 +128,9 @@ class V2ConnectionService {
     _prepareVpnIfNeeded();
     print("初始化服务器");
     final serverConfig = _buildServerConfig(room, netNode);
+    final username = _buildUsername();
     await createServer(
-      username: AppState().v2UserState.Name.value,
+      username: username,
       enableDhcp: serverConfig.enableDhcp,
       specifiedIp: serverConfig.specifiedIp,
       roomName: room.uuid,
@@ -157,6 +158,19 @@ class V2ConnectionService {
       serverUrls: _buildServerUrls(room.servers),
       forwards: [], // 端口转发逻辑可以在这里添加
     );
+  }
+
+  String _buildUsername() {
+    final baseName = AppState().v2UserState.Name.value.trim();
+    final avatarUrl = AppState().v2UserState.AvatarUrl.value.trim();
+    final qq = _extractQqFromAvatarUrl(avatarUrl);
+
+    final safeName = baseName.isNotEmpty ? baseName : '默认用户名';
+
+    if (qq != null && _isValidQq(qq)) {
+      return '$safeName*$qq';
+    }
+    return safeName;
   }
 
   /// 构建服务器URL列表
@@ -408,23 +422,89 @@ class V2ConnectionService {
   /// 更新用户信息列表
   void _updateUserInfo(KVNetworkStatus status) {
     final userInfoList =
-        status.nodes.map((node) => _convertNodeToUserInfo(node)).toList();
+        status.nodes
+            .where(_shouldIncludeNode)
+            .map((node) => _convertNodeToUserInfo(node))
+            .toList();
 
     AppState().v2BaseState.userInfo.value = userInfoList;
   }
 
+  /// 判断节点是否需要展示
+  bool _shouldIncludeNode(KVNodeInfo node) {
+    final hostname = node.hostname.toLowerCase();
+    final ipv4 = node.ipv4;
+
+    if (hostname.contains('server')) {
+      return false;
+    }
+
+    if (ipv4 == invalidIpAddress) {
+      return false;
+    }
+
+    return true;
+  }
+
   /// 将 KVNodeInfo 转换为 UserInfo
   UserInfo _convertNodeToUserInfo(KVNodeInfo node) {
-    // 根据连接类型推断设备类型
-    final device = "android";
+    final version = node.version;
+    String device = "unknown";
+
+    if (version.contains('|')) {
+      final parts = version.split('|');
+      if (parts.length >= 2 && parts[1].trim().isNotEmpty) {
+        device = parts[1].trim();
+      }
+    }
+
+    // avatarUrl 从昵称分割 * 为分割符 0是昵称 1 是qq号（可能为空）
+    String displayName = node.hostname;
+    String avatarUrl = "";
+
+    if (displayName.contains('*')) {
+      final parts = displayName.split('*');
+      if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
+        displayName = parts[0].trim();
+      }
+      if (parts.length > 1) {
+        final qq = parts[1].trim();
+        if (_isValidQq(qq)) {
+          avatarUrl = _buildQqAvatarUrl(qq);
+        }
+      }
+    }
+
+    if (displayName.isEmpty) {
+      displayName = '未知用户';
+    }
 
     return UserInfo(
-      name: node.hostname.isNotEmpty ? node.hostname : '未知用户',
-      avatarUrl: '', // 可以从其他地方获取头像URL，或使用默认值
+      name: displayName,
+      avatarUrl: avatarUrl,
       ip: node.ipv4,
       latency: node.latencyMs.round(),
       device: device,
     );
+  }
+
+  bool _isValidQq(String qq) {
+    if (qq.isEmpty || qq.length > 10) return false;
+    return RegExp(r'^\d+$').hasMatch(qq);
+  }
+
+  String _buildQqAvatarUrl(String qq) =>
+      'http://q.qlogo.cn/headimg_dl?dst_uin=$qq&spec=640&img_type=jpg';
+
+  String? _extractQqFromAvatarUrl(String url) {
+    if (url.isEmpty) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    final qq = uri.queryParameters['dst_uin'];
+    if (qq != null && _isValidQq(qq)) {
+      return qq;
+    }
+    return null;
   }
 
   /* ------------------------ 定时器管理 ------------------------ */

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 /// 头像URL输入对话框
@@ -19,13 +20,18 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
   bool _isValidating = false;
   String? _errorMessage;
   bool _isValid = false;
+  String _resolvedUrl = '';
 
   @override
   void initState() {
     super.initState();
-    _urlController.text = widget.currentUrl;
     if (widget.currentUrl.isNotEmpty) {
-      _isValid = true;
+      final existingQq = _extractQqFromUrl(widget.currentUrl);
+      if (existingQq != null) {
+        _urlController.text = existingQq;
+        _resolvedUrl = _buildQqAvatarUrl(existingQq);
+        _isValid = true;
+      }
     }
   }
 
@@ -35,23 +41,25 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
     super.dispose();
   }
 
-  /// 验证URL是否可访问
-  Future<void> _validateUrl(String url) async {
-    if (url.trim().isEmpty) {
+  /// 验证输入（仅支持 QQ 号）
+  Future<void> _validateInput(String input) async {
+    final value = input.trim();
+    if (value.isEmpty) {
       setState(() {
         _isValidating = false;
         _errorMessage = null;
         _isValid = true; // 允许清空
+        _resolvedUrl = '';
       });
       return;
     }
 
-    // 基本URL格式验证
-    if (!_isValidUrl(url)) {
+    if (!_isNumericQq(value)) {
       setState(() {
         _isValidating = false;
-        _errorMessage = '请输入有效的URL地址';
+        _errorMessage = '请输入最多10位纯数字 QQ 号';
         _isValid = false;
+        _resolvedUrl = '';
       });
       return;
     }
@@ -61,6 +69,9 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
       _errorMessage = null;
       _isValid = false;
     });
+
+    final url = _buildQqAvatarUrl(value);
+    _resolvedUrl = url;
 
     try {
       // 使用3秒超时验证URL
@@ -139,21 +150,32 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
     }
   }
 
-  /// 验证URL格式
-  bool _isValidUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
-    } catch (e) {
-      return false;
+  bool _isNumericQq(String value) =>
+      value.length <= 10 && RegExp(r'^\d+$').hasMatch(value);
+
+  String _buildQqAvatarUrl(String qq) =>
+      'http://q.qlogo.cn/headimg_dl?dst_uin=$qq&spec=640&img_type=jpg';
+
+  String? _extractQqFromUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    final dstUin = uri.queryParameters['dst_uin'];
+    if (dstUin != null && _isNumericQq(dstUin)) {
+      return dstUin;
     }
+    return null;
   }
 
   /// 处理确认
   void _handleConfirm() {
-    final url = _urlController.text.trim();
-    if (url.isEmpty || _isValid) {
-      Navigator.of(context).pop(url);
+    final input = _urlController.text.trim();
+    if (input.isEmpty) {
+      Navigator.of(context).pop('');
+      return;
+    }
+
+    if (_isValid) {
+      Navigator.of(context).pop(_resolvedUrl);
     }
   }
 
@@ -165,10 +187,13 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
           TextField(
             controller: _urlController,
+            maxLength: 10,
             decoration: InputDecoration(
-              hintText: '输入头像图片URL',
+              counterText: 'QQ头像',
+              hintText: '请输入 QQ 号',
               suffixIcon:
                   _isValidating
                       ? const SizedBox(
@@ -186,11 +211,16 @@ class _AvatarUrlDialogState extends State<AvatarUrlDialog> {
                       : null,
             ),
             autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
             onChanged: (value) {
               // 延迟验证，避免频繁请求
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (mounted && _urlController.text == value) {
-                  _validateUrl(value);
+                  _validateInput(value);
                 }
               });
             },

@@ -33,9 +33,22 @@ pub const UDP_HOLE_PUNCH_CONNECTOR_SERVICE_ID: u32 = 2;
 
 pub const WIN_SERVICE_WORK_DIR_REG_KEY: &str = "SOFTWARE\\EasyTier\\Service\\WorkDir";
 
-pub const EASYTIER_VERSION: &str = git_version::git_version!(
-    args = ["--abbrev=8", "--always", "--dirty=~"],
-    prefix = concat!(env!("CARGO_PKG_VERSION"), "-"),
-    suffix = "",
-    fallback = env!("CARGO_PKG_VERSION")
-);
+#[cfg(target_os = "android")]
+pub const EASYTIER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "|Android");
+
+#[cfg(target_os = "windows")]
+pub const EASYTIER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "|Windows");
+
+#[cfg(target_os = "linux")]
+pub const EASYTIER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "|Linux");
+
+#[cfg(target_os = "macos")]
+pub const EASYTIER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "|macOS");
+
+#[cfg(not(any(
+    target_os = "android",
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos"
+)))]
+pub const EASYTIER_VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "|Unknown");

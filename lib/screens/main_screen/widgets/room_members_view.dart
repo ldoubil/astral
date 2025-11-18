@@ -84,6 +84,8 @@ class _UserCard extends StatelessWidget {
 
   final UserInfo user;
   final ThemeData theme;
+  static const double _deviceIconSize = 16;
+  static final Map<String, ImageProvider> _avatarCache = {};
 
   /// 复制IP地址到剪贴板
   void _copyIpAddress(BuildContext context, String ip) {
@@ -122,6 +124,8 @@ class _UserCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            _buildAvatar(),
+            const SizedBox(width: 10),
             // 延迟（缩小，无边框）
             Text(
               '${user.latency}ms',
@@ -136,30 +140,15 @@ class _UserCard extends StatelessWidget {
             Expanded(
               child: Text(
                 user.name,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 13,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // 设备标签
+            // 设备标签（图标）
             if (user.device.isNotEmpty) ...[
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  user.device,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
+              _buildDeviceIndicator(),
             ],
             const SizedBox(width: 8),
             // IP地址
@@ -170,6 +159,118 @@ class _UserCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建设备指示器（使用不同平台图标）
+  Widget _buildDeviceIndicator() {
+    final device = user.device.toLowerCase();
+    IconData? iconData;
+    String tooltip = user.device;
+
+    if (device.contains('android')) {
+      iconData = Icons.android_rounded;
+      tooltip = 'Android';
+    } else if (device.contains('ios') || device.contains('iphone')) {
+      iconData = Icons.phone_iphone_rounded;
+      tooltip = 'iOS';
+    } else if (device.contains('windows')) {
+      iconData = Icons.window_rounded;
+      tooltip = 'Windows';
+    } else if (device.contains('mac') || device.contains('darwin')) {
+      iconData = Icons.laptop_mac_rounded;
+      tooltip = 'macOS';
+    } else if (device.contains('linux')) {
+      iconData = Icons.laptop_chromebook_rounded;
+      tooltip = 'Linux';
+    }
+
+    if (iconData == null) {
+      return Tooltip(
+        message: '未知设备',
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            Icons.help_outline_rounded,
+            size: _deviceIconSize,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
+      );
+    }
+
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          iconData,
+          size: _deviceIconSize,
+          color: theme.colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+  /// 构建头像
+  Widget _buildAvatar() {
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: theme.colorScheme.surface,
+      child: ClipOval(child: _buildAvatarContent()),
+    );
+  }
+
+  Widget _buildAvatarContent() {
+    final url = user.avatarUrl.trim();
+    if (url.isEmpty) {
+      return _buildAvatarFallback();
+    }
+
+    final provider = _getCachedAvatar(url);
+
+    return Image(
+      image: provider,
+      width: 36,
+      height: 36,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) {
+        _avatarCache.remove(url);
+        return _buildAvatarFallback();
+      },
+    );
+  }
+
+  ImageProvider _getCachedAvatar(String url) {
+    final cached = _avatarCache[url];
+    if (cached != null) {
+      return cached;
+    }
+
+    final provider = NetworkImage(url);
+    _avatarCache[url] = provider;
+    return provider;
+  }
+
+  Widget _buildAvatarFallback() {
+    return Container(
+      color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+      alignment: Alignment.center,
+      child: Text(
+        user.name.isNotEmpty ? user.name.characters.first : '?',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.onPrimaryContainer,
         ),
       ),
     );
