@@ -120,6 +120,7 @@ class _RoomCardState extends State<_RoomCard>
   late Animation<double> _slideAnimation;
   final GlobalKey _cardKey = GlobalKey();
   bool _isDragging = false;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -182,111 +183,129 @@ class _RoomCardState extends State<_RoomCard>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onPanStart: _handlePanStart,
-          onPanUpdate: _handlePanUpdate,
-          onPanEnd: _handlePanEnd,
-          onPanCancel: _handlePanCancel,
-          child: Stack(
-            key: _cardKey,
-            clipBehavior: Clip.none,
-            children: [
-              // 背景操作按钮（在卡片后面）
-              Positioned.fill(
-                child: AnimatedBuilder(
+        return MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: GestureDetector(
+            onPanStart: _handlePanStart,
+            onPanUpdate: _handlePanUpdate,
+            onPanEnd: _handlePanEnd,
+            onPanCancel: _handlePanCancel,
+            child: Stack(
+              key: _cardKey,
+              clipBehavior: Clip.none,
+              children: [
+                // 背景操作按钮（在卡片后面）
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _slideAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: widget.theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.only(right: 16),
+                        alignment: Alignment.centerRight,
+                        child: Opacity(
+                          opacity: (_slideAnimation.value / 0.55).clamp(
+                            0.0,
+                            1.0,
+                          ),
+                          child: IgnorePointer(
+                            ignoring: _isDragging,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _ActionButton(
+                                  icon: Icons.share_rounded,
+                                  color: Colors.blue,
+                                  onTap: () {
+                                    _controller.reverse();
+                                    widget.onShare();
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.edit_rounded,
+                                  color: Colors.orange,
+                                  onTap: () {
+                                    _controller.reverse();
+                                    widget.onEdit();
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.delete_rounded,
+                                  color: Colors.red,
+                                  onTap: () {
+                                    _controller.reverse();
+                                    widget.onDelete();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // 主卡片内容（滑动时向左移动）
+                AnimatedBuilder(
                   animation: _slideAnimation,
                   builder: (context, child) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: widget.theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
+                    return Transform.translate(
+                      offset: Offset(
+                        -constraints.maxWidth * _slideAnimation.value,
+                        0,
                       ),
-                      padding: const EdgeInsets.only(right: 16),
-                      alignment: Alignment.centerRight,
-                      child: Opacity(
-                        opacity: (_slideAnimation.value / 0.55).clamp(0.0, 1.0),
-                        child: IgnorePointer(
-                          ignoring: _isDragging,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _ActionButton(
-                                icon: Icons.share_rounded,
-                                color: Colors.blue,
-                                onTap: () {
-                                  _controller.reverse();
-                                  widget.onShare();
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              _ActionButton(
-                                icon: Icons.edit_rounded,
-                                color: Colors.orange,
-                                onTap: () {
-                                  _controller.reverse();
-                                  widget.onEdit();
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              _ActionButton(
-                                icon: Icons.delete_rounded,
-                                color: Colors.red,
-                                onTap: () {
-                                  _controller.reverse();
-                                  widget.onDelete();
-                                },
-                              ),
-                            ],
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.theme.colorScheme.surfaceVariant
+                              .withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color:
+                                _isHovered
+                                    ? widget.theme.colorScheme.primary
+                                        .withOpacity(0.5)
+                                    : widget.theme.colorScheme.outline
+                                        .withOpacity(0.08),
+                            width: _isHovered ? 1.5 : 1.0,
                           ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.room.name,
+                                    style: widget.theme.textTheme.titleMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FilledButton.tonal(
+                              onPressed: widget.onJoin,
+                              child: const Text('加入房间'),
+                            ),
+                          ],
                         ),
                       ),
                     );
                   },
                 ),
-              ),
-              // 主卡片内容（滑动时向左移动）
-              AnimatedBuilder(
-                animation: _slideAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(
-                      -constraints.maxWidth * _slideAnimation.value,
-                      0,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: widget.theme.colorScheme.surfaceVariant
-                            .withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.room.name,
-                                  style: widget.theme.textTheme.titleMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                          FilledButton.tonal(
-                            onPressed: widget.onJoin,
-                            child: const Text('加入房间'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

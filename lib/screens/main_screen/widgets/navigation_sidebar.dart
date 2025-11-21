@@ -304,32 +304,29 @@ class _NavButtonState extends State<_NavButton> {
     // 确保按钮的圆角与指示器完全一致
     final borderRadius = BorderRadius.circular(widget.size / 2);
 
-    return Tooltip(
-      message: widget.config.tooltip,
-      child: MouseRegion(
-        child: ClipRRect(
-          borderRadius: borderRadius,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onTap,
-                borderRadius: borderRadius,
-                splashColor: widget.theme.colorScheme.primary.withOpacity(0.15),
-                hoverColor: widget.theme.colorScheme.primary.withOpacity(0.1),
-                child: SizedBox(
-                  width: widget.size,
-                  height: widget.size,
-                  child: Center(
-                    child: Icon(
-                      widget.isSelected
-                          ? widget.config.selectedIcon
-                          : widget.config.icon,
-                      size: 24,
-                      color: iconColor,
-                    ),
+    return MouseRegion(
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: borderRadius,
+              splashColor: widget.theme.colorScheme.primary.withOpacity(0.15),
+              hoverColor: widget.theme.colorScheme.primary.withOpacity(0.1),
+              child: SizedBox(
+                width: widget.size,
+                height: widget.size,
+                child: Center(
+                  child: Icon(
+                    widget.isSelected
+                        ? widget.config.selectedIcon
+                        : widget.config.icon,
+                    size: 24,
+                    color: iconColor,
                   ),
                 ),
               ),

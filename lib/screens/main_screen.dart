@@ -11,8 +11,8 @@ import 'package:astral/screens/main_screen/widgets/connecting_overlay.dart';
 import 'package:astral/screens/main_screen/widgets/navigation_sidebar.dart';
 import 'package:astral/screens/main_screen/widgets/room_list_view.dart';
 import 'package:astral/screens/main_screen/widgets/room_members_view.dart';
+import 'package:astral/screens/main_screen/widgets/server_list_view.dart';
 import 'package:astral/screens/main_screen/widgets/settings_view.dart';
-import 'package:astral/screens/main_screen/widgets/test_3d_view.dart';
 import 'package:astral/screens/main_screen/widgets/user_avatar.dart';
 import 'package:astral/screens/main_screen/widgets/user_nickname.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -52,10 +52,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       NavigationPageConfig(
         id: 1,
-        icon: Icons.view_in_ar_outlined,
-        selectedIcon: Icons.view_in_ar,
-        tooltip: '3D测试',
-        builder: (context) => const Test3DView(),
+        icon: Icons.dns_outlined,
+        selectedIcon: Icons.dns,
+        tooltip: '服务器列表',
+        builder: (context) => const ServerListView(),
       ),
       NavigationPageConfig(
         id: 2,
@@ -293,7 +293,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   elevation: 2,
                   margin: EdgeInsets.zero,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Row(
