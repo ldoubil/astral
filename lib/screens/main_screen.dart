@@ -8,9 +8,11 @@ import 'package:astral/screens/main_screen/dialogs/edit_room_dialog.dart';
 import 'package:astral/screens/main_screen/dialogs/import_room_dialog.dart';
 import 'package:astral/screens/main_screen/dialogs/invite_dialog.dart';
 import 'package:astral/screens/main_screen/widgets/connecting_overlay.dart';
+import 'package:astral/screens/main_screen/widgets/navigation_sidebar.dart';
 import 'package:astral/screens/main_screen/widgets/room_list_view.dart';
 import 'package:astral/screens/main_screen/widgets/room_members_view.dart';
 import 'package:astral/screens/main_screen/widgets/settings_view.dart';
+import 'package:astral/screens/main_screen/widgets/test_3d_view.dart';
 import 'package:astral/screens/main_screen/widgets/user_avatar.dart';
 import 'package:astral/screens/main_screen/widgets/user_nickname.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -37,6 +39,70 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentPageIndex = 0; // 0: 主页, 1: 设置
 
   final Signal<String> version = signal('');
+
+  // 统一的导航页面配置（菜单项和页面内容）
+  List<NavigationPageConfig> _getNavigationPages() {
+    return [
+      NavigationPageConfig(
+        id: 0,
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
+        tooltip: '主页',
+        builder: (context) => _buildHomePage(context),
+      ),
+      NavigationPageConfig(
+        id: 1,
+        icon: Icons.view_in_ar_outlined,
+        selectedIcon: Icons.view_in_ar,
+        tooltip: '3D测试',
+        builder: (context) => const Test3DView(),
+      ),
+      NavigationPageConfig(
+        id: 2,
+        icon: Icons.settings_outlined,
+        selectedIcon: Icons.settings_rounded,
+        tooltip: '设置',
+        builder: (context) => const SettingsView(),
+        position: NavigationButtonPosition.bottom,
+      ),
+    ];
+  }
+
+  /// 构建主页内容
+  Widget _buildHomePage(BuildContext context) {
+    return Stack(
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child:
+              _isInRoom
+                  ? RoomMembersView(
+                    key: const ValueKey('members'),
+                    users: AppState().v2BaseState.userInfo.watch(context),
+                    onInvite: _showInviteDialog,
+                    onLeave: _handleLeaveRoom,
+                    roomName: _currentRoom?.name ?? '当前房间',
+                  )
+                  : Builder(
+                    builder: (context) {
+                      final rooms = AppState().v2RoomState.rooms.watch(context);
+                      return RoomListView(
+                        key: const ValueKey('rooms'),
+                        rooms: rooms,
+                        onJoin: _handleJoinRoom,
+                        onShare: _handleShareRoom,
+                        onEdit: _handleEditRoom,
+                        onDelete: _handleDeleteRoom,
+                        onCreate: _showCreateRoomDialog,
+                        onQuickJoin: _handleQuickJoin,
+                      );
+                    },
+                  ),
+        ),
+        const Positioned.fill(child: ConnectingOverlay()),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -235,13 +301,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       // 左侧导航栏 (1/6)
                       Expanded(
                         flex: 1,
-                        child: _NavigationSidebar(
+                        child: NavigationSidebar(
                           currentIndex: _currentPageIndex,
                           onPageChanged: (index) {
                             setState(() {
                               _currentPageIndex = index;
                             });
                           },
+                          pageConfigs: _getNavigationPages(),
                           theme: theme,
                         ),
                       ),
@@ -250,53 +317,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         flex: 5,
                         child: IndexedStack(
                           index: _currentPageIndex,
-                          children: [
-                            // 主页内容（带连接覆盖层）
-                            Stack(
-                              children: [
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 300),
-                                  child:
-                                      _isInRoom
-                                          ? RoomMembersView(
-                                            key: const ValueKey('members'),
-                                            users: AppState()
-                                                .v2BaseState
-                                                .userInfo
-                                                .watch(context),
-                                            onInvite: _showInviteDialog,
-                                            onLeave: _handleLeaveRoom,
-                                            roomName:
-                                                _currentRoom?.name ?? '当前房间',
-                                          )
-                                          : Builder(
-                                            builder: (context) {
-                                              // 使用 Watch 监听房间列表变化
-                                              final rooms = AppState()
-                                                  .v2RoomState
-                                                  .rooms
-                                                  .watch(context);
-                                              return RoomListView(
-                                                key: const ValueKey('rooms'),
-                                                rooms: rooms,
-                                                onJoin: _handleJoinRoom,
-                                                onShare: _handleShareRoom,
-                                                onEdit: _handleEditRoom,
-                                                onDelete: _handleDeleteRoom,
-                                                onCreate: _showCreateRoomDialog,
-                                                onQuickJoin: _handleQuickJoin,
-                                              );
-                                            },
-                                          ),
-                                ),
-                                const Positioned.fill(
-                                  child: ConnectingOverlay(),
-                                ),
-                              ],
-                            ),
-                            // 设置页面
-                            const SettingsView(),
-                          ],
+                          children:
+                              _getNavigationPages()
+                                  .map(
+                                    (config) =>
+                                        Builder(builder: config.builder),
+                                  )
+                                  .toList(),
                         ),
                       ),
                     ],
@@ -346,175 +373,4 @@ class _UserHeader extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 左侧导航栏组件
-class _NavigationSidebar extends StatelessWidget {
-  const _NavigationSidebar({
-    required this.currentIndex,
-    required this.onPageChanged,
-    required this.theme,
-  });
-
-  static const double _navItemSize = 56;
-  static const double _navItemSpacing = 12;
-  static const double _navPadding = 16;
-
-  final int currentIndex;
-  final ValueChanged<int> onPageChanged;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final destinations = [
-      _NavDestination(
-        icon: Icons.home_outlined,
-        selectedIcon: Icons.home_rounded,
-        tooltip: '主页',
-        onTap: () => onPageChanged(0),
-        isSelected: currentIndex == 0,
-      ),
-      _NavDestination(
-        icon: Icons.settings_outlined,
-        selectedIcon: Icons.settings_rounded,
-        tooltip: '设置',
-        onTap: () => onPageChanged(1),
-        isSelected: currentIndex == 1,
-      ),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: _navPadding,
-          horizontal: 10,
-        ),
-        child: Stack(
-          children: [
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 240),
-              curve: Curves.fastOutSlowIn,
-              top: currentIndex * (_navItemSize + _navItemSpacing),
-              left: 0,
-              right: 0,
-              child: Align(
-                alignment: Alignment.center,
-                child: _NavIndicator(size: _navItemSize, theme: theme),
-              ),
-            ),
-            Column(
-              children: [
-                for (int i = 0; i < destinations.length; i++) ...[
-                  Align(
-                    alignment: Alignment.center,
-                    child: _NavButton(
-                      destination: destinations[i],
-                      theme: theme,
-                      size: _navItemSize,
-                    ),
-                  ),
-                  if (i != destinations.length - 1)
-                    const SizedBox(height: _navItemSpacing),
-                ],
-                const Spacer(),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavIndicator extends StatelessWidget {
-  const _NavIndicator({required this.size, required this.theme});
-
-  final double size;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.25),
-          width: 1,
-        ),
-      ),
-    );
-  }
-}
-
-class _NavButton extends StatefulWidget {
-  const _NavButton({
-    required this.destination,
-    required this.theme,
-    required this.size,
-  });
-
-  final _NavDestination destination;
-  final ThemeData theme;
-  final double size;
-
-  @override
-  State<_NavButton> createState() => _NavButtonState();
-}
-
-class _NavButtonState extends State<_NavButton> {
-  @override
-  Widget build(BuildContext context) {
-    final iconColor =
-        widget.destination.isSelected
-            ? widget.theme.colorScheme.primary
-            : widget.theme.colorScheme.onSurfaceVariant;
-
-    return MouseRegion(
-      child: SizedBox(
-        width: widget.size,
-        height: widget.size,
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
-            onTap: widget.destination.onTap,
-            borderRadius: BorderRadius.circular(18),
-            splashColor: widget.theme.colorScheme.primary.withOpacity(0.15),
-            hoverColor: widget.theme.colorScheme.primary.withOpacity(0.1),
-            child: Center(
-              child: Icon(
-                widget.destination.isSelected
-                    ? widget.destination.selectedIcon
-                    : widget.destination.icon,
-                size: 24,
-                color: iconColor,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavDestination {
-  const _NavDestination({
-    required this.icon,
-    required this.selectedIcon,
-    required this.tooltip,
-    required this.onTap,
-    required this.isSelected,
-  });
-
-  final IconData icon;
-  final IconData selectedIcon;
-  final String tooltip;
-  final VoidCallback onTap;
-  final bool isSelected;
 }
