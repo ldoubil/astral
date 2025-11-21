@@ -41,6 +41,7 @@ class V2ConnectionService {
   /* ------------------------ VPN状态跟踪 ------------------------ */
   int? _vpnFileDescriptor;
   bool _isVpnServiceStarted = false;
+  bool _vpnDialogShown = false; // 标记是否已显示VPN对话框
 
   /// 获取VPN文件描述符
   int? get vpnFileDescriptor => _vpnFileDescriptor;
@@ -114,6 +115,7 @@ class V2ConnectionService {
     closeServer();
     _clearUserInfo();
     _currentContext = null; // 清除保存的context
+    _vpnDialogShown = false; // 重置对话框标记
     onDisconnected?.call();
   }
 
@@ -142,9 +144,23 @@ class V2ConnectionService {
 
       if (_isVpnServiceStarted && fd != null) {
         setTunFd(fd: fd);
-        _notifyVpnStatusChanged(true, fd, 'VPN连接已建立\n文件描述符: $fd');
+        debugPrint('VPN文件描述符已设置: $fd');
+
+        // 通知VPN状态变化（如果有context的话）
+        final context = _currentContext ?? _getCurrentContext();
+        if (context != null && context.mounted && !_vpnDialogShown) {
+          _vpnDialogShown = true; // 标记已显示对话框
+          _notifyVpnStatusChanged(true, fd, 'VPN连接已建立\n文件描述符: $fd');
+          // 显示成功对话框
+          _showVpnStatusDialog(context, true, fd, 'VPN连接已建立\n文件描述符: $fd');
+        }
       } else {
-        _notifyVpnStatusChanged(false, null, 'VPN服务启动失败：文件描述符无效');
+        final context = _currentContext ?? _getCurrentContext();
+        if (context != null && context.mounted && !_vpnDialogShown) {
+          _vpnDialogShown = true; // 标记已显示对话框
+          _notifyVpnStatusChanged(false, null, 'VPN服务启动失败：文件描述符无效');
+          _showVpnStatusDialog(context, false, null, 'VPN服务启动失败\n文件描述符无效');
+        }
       }
     });
 
@@ -152,6 +168,7 @@ class V2ConnectionService {
       debugPrint('VPN服务已停止');
       _vpnFileDescriptor = null;
       _isVpnServiceStarted = false;
+      _vpnDialogShown = false; // 重置对话框标记
       _notifyVpnStatusChanged(false, null, 'VPN连接已断开');
     });
   }
@@ -420,16 +437,41 @@ class V2ConnectionService {
     _cancelTimeoutTimer();
     _updateConnectionState(true);
 
-    // 在启动VPN前，确保IP地址已更新到netNode中
-    final currentIpv4 = AppState().v2UserState.ipv4.value;
-    if (currentIpv4.isNotEmpty &&
-        currentIpv4 != invalidIpAddress &&
-        _isValidIpAddress(currentIpv4)) {
-      // 更新netNode中的IP地址
-      netNode.ipv4 = currentIpv4;
+    // 连接成功后立即从服务器获取最新数据（IP地址等）
+    try {
+      debugPrint('连接成功，立即获取服务器数据...');
+      final runningInfo = await getRunningInfo();
+      final data = jsonDecode(runningInfo) as Map<String, dynamic>;
+      final extractedIp = _extractIpv4Address(data);
+
+      if (_isValidIpAddress(extractedIp)) {
+        // 更新IP地址到netNode和状态中
+        netNode.ipv4 = extractedIp;
+        AppState().v2UserState.ipv4.value = extractedIp;
+        debugPrint('从服务器获取IP地址成功: $extractedIp');
+      } else {
+        // 如果仍然无效，尝试从状态中获取
+        final stateIp = AppState().v2UserState.ipv4.value;
+        if (stateIp.isNotEmpty &&
+            stateIp != invalidIpAddress &&
+            _isValidIpAddress(stateIp)) {
+          netNode.ipv4 = stateIp;
+          debugPrint('从状态获取IP地址: $stateIp');
+        }
+      }
+    } catch (e) {
+      debugPrint('获取服务器数据失败: $e');
+      // 如果获取失败，尝试使用已有的IP地址
+      final stateIp = AppState().v2UserState.ipv4.value;
+      if (stateIp.isNotEmpty &&
+          stateIp != invalidIpAddress &&
+          _isValidIpAddress(stateIp)) {
+        netNode.ipv4 = stateIp;
+      }
     }
 
-    _setupPlatformSpecificFeatures(netNode, context: context);
+    // 立即启动VPN（等待IP地址准备好）
+    await _setupPlatformSpecificFeatures(netNode, context: context);
     onConnected?.call();
     _startNetworkMonitoring();
   }
@@ -552,16 +594,28 @@ class V2ConnectionService {
           // VPN服务会在用户授权完成后才能启动
         }
       } else {
-        debugPrint('VPN服务启动成功: $formattedIp');
+        debugPrint('VPN服务启动请求已发送: $formattedIp');
 
-        // 等待一小段时间让VPN服务启动
-        await Future.delayed(const Duration(milliseconds: 500));
+        // VPN服务启动请求已发送，文件描述符将通过 onVpnServiceStarted 回调返回
+        // 等待一段时间让服务启动完成（最多等待3秒）
+        bool vpnStarted = false;
+        for (int i = 0; i < 6; i++) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          final (isCreated, fd, status) = checkVpnConnection();
+          if (isCreated && fd != null) {
+            vpnStarted = true;
+            debugPrint('VPN服务已成功启动，文件描述符: $fd');
+            break;
+          }
+        }
 
-        // 检查VPN连接状态
-        final (isCreated, fd, status) = checkVpnConnection();
-
-        if (context != null && context.mounted) {
-          _showVpnStatusDialog(context, isCreated, fd, status);
+        // 如果等待后仍未启动，显示提示（实际成功会通过监听器显示）
+        if (!vpnStarted && context != null && context.mounted) {
+          final (isCreated, fd, status) = checkVpnConnection();
+          if (!isCreated) {
+            // 显示等待提示，但不在监听器中重复显示
+            debugPrint('VPN服务启动超时，等待文件描述符...');
+          }
         }
       }
     } catch (e) {
