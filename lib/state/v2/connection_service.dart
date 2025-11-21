@@ -419,6 +419,16 @@ class V2ConnectionService {
   }) async {
     _cancelTimeoutTimer();
     _updateConnectionState(true);
+
+    // 在启动VPN前，确保IP地址已更新到netNode中
+    final currentIpv4 = AppState().v2UserState.ipv4.value;
+    if (currentIpv4.isNotEmpty &&
+        currentIpv4 != invalidIpAddress &&
+        _isValidIpAddress(currentIpv4)) {
+      // 更新netNode中的IP地址
+      netNode.ipv4 = currentIpv4;
+    }
+
     _setupPlatformSpecificFeatures(netNode, context: context);
     onConnected?.call();
     _startNetworkMonitoring();
@@ -460,16 +470,46 @@ class V2ConnectionService {
       return;
     }
 
-    final ipv4Addr = netNode.ipv4;
+    // 尝试从多个来源获取IP地址
+    String ipv4Addr = netNode.ipv4;
 
-    if (!_isValidIpAddress(ipv4Addr)) {
-      debugPrint('无效的IP地址，无法启动VPN: $ipv4Addr');
+    // 如果netNode中的IP无效或为空，尝试从状态中获取
+    if (ipv4Addr.isEmpty || !_isValidIpAddress(ipv4Addr)) {
+      final stateIp = AppState().v2UserState.ipv4.value;
+      if (stateIp.isNotEmpty && _isValidIpAddress(stateIp)) {
+        ipv4Addr = stateIp;
+        netNode.ipv4 = stateIp; // 同步更新到netNode
+        debugPrint('从状态获取IP地址: $ipv4Addr');
+      }
+    }
+
+    // 如果还是无效，尝试重新从服务器获取
+    if (ipv4Addr.isEmpty || !_isValidIpAddress(ipv4Addr)) {
+      try {
+        debugPrint('尝试从服务器获取IP地址...');
+        final runningInfo = await getRunningInfo();
+        final data = jsonDecode(runningInfo) as Map<String, dynamic>;
+        final extractedIp = _extractIpv4Address(data);
+        if (_isValidIpAddress(extractedIp)) {
+          ipv4Addr = extractedIp;
+          netNode.ipv4 = extractedIp; // 更新netNode中的IP
+          AppState().v2UserState.ipv4.value = extractedIp; // 更新状态中的IP
+          debugPrint('从服务器获取IP地址成功: $ipv4Addr');
+        }
+      } catch (e) {
+        debugPrint('获取IP地址失败: $e');
+      }
+    }
+
+    // 必须等待IP地址分配，不能使用默认IP
+    if (ipv4Addr.isEmpty || !_isValidIpAddress(ipv4Addr)) {
+      debugPrint('未获取到有效IP地址，无法启动VPN: $ipv4Addr');
       if (context != null && context.mounted) {
         _showVpnStatusDialog(
           context,
           false,
           null,
-          'VPN启动失败\n无效的IP地址: $ipv4Addr',
+          'VPN启动失败\n未获取到虚拟IP地址，无法启动VPN\n\n当前IP: ${ipv4Addr.isEmpty ? "未获取" : ipv4Addr}\n\n提示：请等待IP地址分配完成后再启动VPN',
         );
       }
       return;
@@ -477,6 +517,7 @@ class V2ConnectionService {
 
     // 确保IP地址格式为"IP/掩码"
     final formattedIp = _formatIpAddress(ipv4Addr);
+    debugPrint('准备启动VPN，使用IP地址: $formattedIp');
     final routes = _getValidVpnRoutes();
 
     // 直接启动VPN，Android端会自动处理权限
@@ -484,7 +525,7 @@ class V2ConnectionService {
     // 用户授权后可以手动重新连接或等待自动重试
     try {
       final result = await vpnPlugin!.startVpn(
-        ipv4Addr: formattedIp,
+        ipv4Addr: formattedIp, // 必须提供有效的IP地址
         mtu: netNode.mtu,
         routes: routes,
         disallowedApplications: const ['com.kevin.astral'],
