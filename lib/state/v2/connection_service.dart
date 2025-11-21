@@ -125,7 +125,14 @@ class V2ConnectionService {
 
   /// 初始化服务器
   Future<void> _initializeServer(RoomInfo room, NetNode netNode) async {
-    _prepareVpnIfNeeded();
+    // 准备VPN权限（如果需要）
+    final vpnPrepared = await _prepareVpnIfNeeded();
+    if (!vpnPrepared) {
+      // VPN权限尚未准备好，用户需要授权
+      debugPrint('VPN权限尚未准备好，等待用户授权');
+      // 这里可以选择等待或返回错误
+    }
+
     print("初始化服务器");
     final serverConfig = _buildServerConfig(room, netNode);
     final username = _buildUsername();
@@ -144,9 +151,22 @@ class V2ConnectionService {
   }
 
   /// 准备VPN（如果需要）
-  void _prepareVpnIfNeeded() {
-    if (Platform.isAndroid) {
-      vpnPlugin?.prepareVpn();
+  Future<bool> _prepareVpnIfNeeded() async {
+    if (!Platform.isAndroid || vpnPlugin == null) {
+      return true;
+    }
+
+    try {
+      final result = await vpnPlugin!.prepareVpn();
+      // 如果返回errorMsg，说明需要用户授权，但已经启动了授权界面
+      // 这里返回false，表示权限尚未准备好
+      if (result.containsKey('errorMsg')) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('准备VPN失败: $e');
+      return false;
     }
   }
 
@@ -338,9 +358,9 @@ class V2ConnectionService {
   }
 
   /// 设置平台特定功能
-  void _setupPlatformSpecificFeatures(NetNode netNode) {
+  Future<void> _setupPlatformSpecificFeatures(NetNode netNode) async {
     if (Platform.isAndroid) {
-      _startVpn(netNode);
+      await _startVpn(netNode);
     } else if (Platform.isWindows) {
       setInterfaceMetric(interfaceName: "astral", metric: 0);
     }
@@ -355,22 +375,43 @@ class V2ConnectionService {
   /* ------------------------ VPN管理 ------------------------ */
 
   /// 启动VPN
-  void _startVpn(NetNode netNode) {
+  Future<void> _startVpn(NetNode netNode) async {
+    if (!Platform.isAndroid || vpnPlugin == null) {
+      return;
+    }
+
     final ipv4Addr = netNode.ipv4;
 
     if (!_isValidIpAddress(ipv4Addr)) {
+      debugPrint('无效的IP地址，无法启动VPN: $ipv4Addr');
       return;
     }
 
     final formattedIp = _formatIpAddress(ipv4Addr);
     final routes = _getValidVpnRoutes();
 
-    vpnPlugin?.startVpn(
-      ipv4Addr: formattedIp,
-      mtu: netNode.mtu,
-      routes: routes,
-      disallowedApplications: const ['com.kevin.astral'],
-    );
+    try {
+      final result = await vpnPlugin!.startVpn(
+        ipv4Addr: formattedIp,
+        mtu: netNode.mtu,
+        routes: routes,
+        disallowedApplications: const ['com.kevin.astral'],
+      );
+
+      // 检查是否需要准备VPN权限
+      if (result.containsKey('errorMsg')) {
+        final errorMsg = result['errorMsg'] as String;
+        if (errorMsg == 'need_prepare') {
+          debugPrint('需要VPN权限，请先调用prepareVpn()');
+          // 尝试再次准备VPN
+          await _prepareVpnIfNeeded();
+        }
+      } else {
+        debugPrint('VPN服务启动成功');
+      }
+    } catch (e) {
+      debugPrint('启动VPN失败: $e');
+    }
   }
 
   /// 格式化IP地址（添加CIDR掩码）
