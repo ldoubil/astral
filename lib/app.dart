@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
+// 全局导航键，用于显示对话框
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class KevinApp extends StatefulWidget {
   const KevinApp({super.key});
   @override
@@ -18,6 +21,8 @@ class _KevinAppState extends State<KevinApp> {
     super.initState();
     getIpv4AndIpV6Addresses();
     // 初始化链接服务
+    // 设置全局导航键到连接服务
+    AppState().v2ConnectionService.navigatorKey = navigatorKey;
   }
 
   @override
@@ -28,6 +33,7 @@ class _KevinAppState extends State<KevinApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,

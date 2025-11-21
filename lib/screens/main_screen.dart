@@ -172,8 +172,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       serverNode.port = 11010;
       serverNode.protocolSwitch = ServerProtocolSwitch.tcp;
       room.servers.add(serverNode);
-      // 调用全局连接服务连接房间
-      await AppState().v2ConnectionService.connectToRoom(room, netNode);
+      // 调用全局连接服务连接房间，传入context用于显示对话框
+      await AppState().v2ConnectionService.connectToRoom(
+        room,
+        netNode,
+        context: context,
+      );
 
       // 连接成功后更新UI状态
       setState(() {

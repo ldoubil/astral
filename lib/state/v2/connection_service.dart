@@ -36,11 +36,34 @@ class V2ConnectionService {
 
   Timer? _connectionTimer;
   Timer? _timeoutTimer;
+  BuildContext? _currentContext; // 保存当前context用于显示对话框
+
+  /* ------------------------ VPN状态跟踪 ------------------------ */
+  int? _vpnFileDescriptor;
+  bool _isVpnServiceStarted = false;
+
+  /// 获取VPN文件描述符
+  int? get vpnFileDescriptor => _vpnFileDescriptor;
+
+  /// 检查VPN服务是否已启动
+  bool get isVpnServiceStarted => _isVpnServiceStarted;
 
   /* ------------------------ 回调函数 ------------------------ */
   Function(String message)? onError;
   Function()? onConnected;
   Function()? onDisconnected;
+
+  /// VPN状态变化回调 (context, isStarted, fileDescriptor, message)
+  Function(
+    BuildContext context,
+    bool isStarted,
+    int? fileDescriptor,
+    String message,
+  )?
+  onVpnStatusChanged;
+
+  /// 用于获取context的全局导航键（可选）
+  GlobalKey<NavigatorState>? navigatorKey;
 
   /* ------------------------ 公共方法 ------------------------ */
 
@@ -54,7 +77,12 @@ class V2ConnectionService {
   /// 开始连接房间
   /// [room] 要连接的房间信息
   /// [netNode] 网络节点配置
-  Future<void> connectToRoom(RoomInfo room, NetNode netNode) async {
+  /// [context] 可选的BuildContext，用于显示对话框
+  Future<void> connectToRoom(
+    RoomInfo room,
+    NetNode netNode, {
+    BuildContext? context,
+  }) async {
     if (!_canStartConnection()) {
       print("初始化服务器1");
       return;
@@ -65,6 +93,9 @@ class V2ConnectionService {
       onError?.call(LocaleKeys.add_server_first.tr());
       return;
     }
+
+    // 保存context用于后续显示对话框
+    _currentContext = context;
 
     try {
       await _initializeServer(room, netNode);
@@ -82,6 +113,7 @@ class V2ConnectionService {
     _cancelAllTimers();
     closeServer();
     _clearUserInfo();
+    _currentContext = null; // 清除保存的context
     onDisconnected?.call();
   }
 
@@ -99,13 +131,66 @@ class V2ConnectionService {
 
   /// 设置VPN监听器
   void _setupVpnListeners() {
-    vpnPlugin?.onVpnServiceStarted.listen((data) {
-      setTunFd(fd: data['fd']);
+    if (vpnPlugin == null) return;
+
+    vpnPlugin!.onVpnServiceStarted.listen((data) {
+      final fd = data['fd'] as int?;
+      _vpnFileDescriptor = fd;
+      _isVpnServiceStarted = fd != null && fd > 0;
+
+      debugPrint('VPN服务已启动，文件描述符: $fd');
+
+      if (_isVpnServiceStarted && fd != null) {
+        setTunFd(fd: fd);
+        _notifyVpnStatusChanged(true, fd, 'VPN连接已建立\n文件描述符: $fd');
+      } else {
+        _notifyVpnStatusChanged(false, null, 'VPN服务启动失败：文件描述符无效');
+      }
     });
 
-    vpnPlugin?.onVpnServiceStopped.listen((data) {
-      // VPN停止后的逻辑处理
+    vpnPlugin!.onVpnServiceStopped.listen((data) {
+      debugPrint('VPN服务已停止');
+      _vpnFileDescriptor = null;
+      _isVpnServiceStarted = false;
+      _notifyVpnStatusChanged(false, null, 'VPN连接已断开');
     });
+  }
+
+  /// 获取当前context
+  BuildContext? _getCurrentContext() {
+    return navigatorKey?.currentContext;
+  }
+
+  /// 通知VPN状态变化
+  void _notifyVpnStatusChanged(
+    bool isStarted,
+    int? fileDescriptor,
+    String message,
+  ) {
+    final context = _getCurrentContext();
+    if (context != null && onVpnStatusChanged != null) {
+      onVpnStatusChanged!(context, isStarted, fileDescriptor, message);
+    }
+    debugPrint('VPN状态变化: $message');
+  }
+
+  /// 检查Android VPN连接是否已创建
+  /// 返回 (是否已创建, 文件描述符, 状态描述)
+  (bool isCreated, int? fileDescriptor, String status) checkVpnConnection() {
+    if (!Platform.isAndroid) {
+      return (false, null, '非Android平台');
+    }
+
+    if (!_isVpnServiceStarted || _vpnFileDescriptor == null) {
+      return (false, null, 'VPN服务未启动或文件描述符无效');
+    }
+
+    final fd = _vpnFileDescriptor!;
+    if (fd > 0) {
+      return (true, fd, 'VPN连接正常\n文件描述符: $fd');
+    } else {
+      return (false, null, 'VPN文件描述符无效: $fd');
+    }
   }
 
   /* ------------------------ 连接验证 ------------------------ */
@@ -125,14 +210,6 @@ class V2ConnectionService {
 
   /// 初始化服务器
   Future<void> _initializeServer(RoomInfo room, NetNode netNode) async {
-    // 准备VPN权限（如果需要）
-    final vpnPrepared = await _prepareVpnIfNeeded();
-    if (!vpnPrepared) {
-      // VPN权限尚未准备好，用户需要授权
-      debugPrint('VPN权限尚未准备好，等待用户授权');
-      // 这里可以选择等待或返回错误
-    }
-
     print("初始化服务器");
     final serverConfig = _buildServerConfig(room, netNode);
     final username = _buildUsername();
@@ -150,23 +227,18 @@ class V2ConnectionService {
     );
   }
 
-  /// 准备VPN（如果需要）
-  Future<bool> _prepareVpnIfNeeded() async {
+  /// 准备VPN权限（如果需要）
+  Future<void> _prepareVpnIfNeeded() async {
     if (!Platform.isAndroid || vpnPlugin == null) {
-      return true;
+      return;
     }
 
     try {
-      final result = await vpnPlugin!.prepareVpn();
-      // 如果返回errorMsg，说明需要用户授权，但已经启动了授权界面
-      // 这里返回false，表示权限尚未准备好
-      if (result.containsKey('errorMsg')) {
-        return false;
-      }
-      return true;
+      await vpnPlugin!.prepareVpn();
+      // prepareVpn() 如果返回errorMsg，说明需要用户授权，但已经启动了授权界面
+      // 这里不阻塞，让用户完成授权即可
     } catch (e) {
-      debugPrint('准备VPN失败: $e');
-      return false;
+      debugPrint('准备VPN权限失败: $e');
     }
   }
 
@@ -303,7 +375,9 @@ class V2ConnectionService {
     final isConnected = await _checkAndUpdateConnectionStatus(netNode);
     if (isConnected) {
       timer.cancel();
-      await _handleSuccessfulConnection(netNode);
+      // 使用保存的context或通过navigatorKey获取
+      final currentContext = _currentContext ?? _getCurrentContext();
+      await _handleSuccessfulConnection(netNode, context: currentContext);
     }
   }
 
@@ -339,10 +413,13 @@ class V2ConnectionService {
   }
 
   /// 处理成功连接
-  Future<void> _handleSuccessfulConnection(NetNode netNode) async {
+  Future<void> _handleSuccessfulConnection(
+    NetNode netNode, {
+    BuildContext? context,
+  }) async {
     _cancelTimeoutTimer();
     _updateConnectionState(true);
-    _setupPlatformSpecificFeatures(netNode);
+    _setupPlatformSpecificFeatures(netNode, context: context);
     onConnected?.call();
     _startNetworkMonitoring();
   }
@@ -358,9 +435,12 @@ class V2ConnectionService {
   }
 
   /// 设置平台特定功能
-  Future<void> _setupPlatformSpecificFeatures(NetNode netNode) async {
+  Future<void> _setupPlatformSpecificFeatures(
+    NetNode netNode, {
+    BuildContext? context,
+  }) async {
     if (Platform.isAndroid) {
-      await _startVpn(netNode);
+      await _startVpn(netNode, context: context);
     } else if (Platform.isWindows) {
       setInterfaceMetric(interfaceName: "astral", metric: 0);
     }
@@ -375,7 +455,7 @@ class V2ConnectionService {
   /* ------------------------ VPN管理 ------------------------ */
 
   /// 启动VPN
-  Future<void> _startVpn(NetNode netNode) async {
+  Future<void> _startVpn(NetNode netNode, {BuildContext? context}) async {
     if (!Platform.isAndroid || vpnPlugin == null) {
       return;
     }
@@ -384,12 +464,24 @@ class V2ConnectionService {
 
     if (!_isValidIpAddress(ipv4Addr)) {
       debugPrint('无效的IP地址，无法启动VPN: $ipv4Addr');
+      if (context != null && context.mounted) {
+        _showVpnStatusDialog(
+          context,
+          false,
+          null,
+          'VPN启动失败\n无效的IP地址: $ipv4Addr',
+        );
+      }
       return;
     }
 
+    // 确保IP地址格式为"IP/掩码"
     final formattedIp = _formatIpAddress(ipv4Addr);
     final routes = _getValidVpnRoutes();
 
+    // 直接启动VPN，Android端会自动处理权限
+    // 如果权限未准备好，startVpn会返回errorMsg，但我们不阻塞等待
+    // 用户授权后可以手动重新连接或等待自动重试
     try {
       final result = await vpnPlugin!.startVpn(
         ipv4Addr: formattedIp,
@@ -398,20 +490,121 @@ class V2ConnectionService {
         disallowedApplications: const ['com.kevin.astral'],
       );
 
-      // 检查是否需要准备VPN权限
+      // 检查是否需要VPN权限
       if (result.containsKey('errorMsg')) {
         final errorMsg = result['errorMsg'] as String;
         if (errorMsg == 'need_prepare') {
-          debugPrint('需要VPN权限，请先调用prepareVpn()');
-          // 尝试再次准备VPN
+          debugPrint('需要VPN权限，准备显示授权界面');
+
+          if (context != null && context.mounted) {
+            _showVpnStatusDialog(
+              context,
+              false,
+              null,
+              '需要VPN权限\n请在授权界面中允许VPN连接',
+            );
+          }
+
+          // 准备VPN权限，显示授权界面
           await _prepareVpnIfNeeded();
+          // 注意：此时权限可能还未准备好，需要用户授权
+          // VPN服务会在用户授权完成后才能启动
         }
       } else {
-        debugPrint('VPN服务启动成功');
+        debugPrint('VPN服务启动成功: $formattedIp');
+
+        // 等待一小段时间让VPN服务启动
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // 检查VPN连接状态
+        final (isCreated, fd, status) = checkVpnConnection();
+
+        if (context != null && context.mounted) {
+          _showVpnStatusDialog(context, isCreated, fd, status);
+        }
       }
     } catch (e) {
       debugPrint('启动VPN失败: $e');
+      if (context != null && context.mounted) {
+        _showVpnStatusDialog(context, false, null, 'VPN启动失败\n错误: $e');
+      }
     }
+  }
+
+  /// 显示VPN状态对话框
+  void _showVpnStatusDialog(
+    BuildContext context,
+    bool isCreated,
+    int? fileDescriptor,
+    String message,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  isCreated ? Icons.check_circle : Icons.error,
+                  color: isCreated ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 8),
+                Text(isCreated ? 'VPN连接成功' : 'VPN连接状态'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message),
+                if (fileDescriptor != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '文件描述符 (FD):',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '$fileDescriptor',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('确定'),
+              ),
+              if (!isCreated && Platform.isAndroid)
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // 可以在这里添加重试逻辑
+                    _prepareVpnIfNeeded();
+                  },
+                  child: const Text('重新授权'),
+                ),
+            ],
+          ),
+    );
   }
 
   /// 格式化IP地址（添加CIDR掩码）
