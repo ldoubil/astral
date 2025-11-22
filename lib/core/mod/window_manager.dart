@@ -23,7 +23,7 @@ class WindowManagerUtils {
         // 设置窗口最小大小为 320x320
         minimumSize: Size(360, 320),
         // 设置窗口最大宽度为 360
-        maximumSize: Size(360, 1200),
+        maximumSize: Size(900, 1200),
         // 设置窗口居中显示
         center: true,
         // 设置窗口标题

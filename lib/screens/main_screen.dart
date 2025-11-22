@@ -63,7 +63,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         selectedIcon: Icons.settings_rounded,
         tooltip: '设置',
         builder: (context) => const SettingsView(),
-        position: NavigationButtonPosition.bottom,
       ),
     ];
   }
@@ -277,6 +276,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isSmallWindow = SmallWindowAdapter.shouldApplyAdapter(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 600; // 超过 600px 使用桌面布局
 
     return Scaffold(
       appBar: isSmallWindow ? null : const StatusBar(),
@@ -300,44 +301,103 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Row(
-                    children: [
-                      // 左侧导航栏 (1/6)
-                      Expanded(
-                        flex: 1,
-                        child: NavigationSidebar(
-                          currentIndex: _currentPageIndex,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _currentPageIndex = index;
-                            });
-                          },
-                          pageConfigs: _getNavigationPages(),
-                          theme: theme,
-                        ),
-                      ),
-                      // 右侧内容区域 (5/6)
-                      Expanded(
-                        flex: 5,
-                        child: IndexedStack(
-                          index: _currentPageIndex,
-                          children:
-                              _getNavigationPages()
-                                  .map(
-                                    (config) =>
-                                        Builder(builder: config.builder),
-                                  )
-                                  .toList(),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child:
+                      isDesktop
+                          ? _buildDesktopLayout(context)
+                          : _buildMobileLayout(context),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 桌面布局：左侧导航栏 + 内容区
+  Widget _buildDesktopLayout(BuildContext context) {
+    final pages = _getNavigationPages();
+    return Row(
+      children: [
+        // 左侧导航栏 (NavigationRail)
+        NavigationRail(
+          selectedIndex: _currentPageIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentPageIndex = index;
+            });
+          },
+          extended: false, // 紧凑模式，仅显示图标
+          minExtendedWidth: 200,
+          leading: const SizedBox.shrink(),
+          trailing: const SizedBox.shrink(),
+          backgroundColor:
+              Theme.of(
+                context,
+              ).colorScheme.surfaceContainer, // 使用与 NavigationBar 相同的默认背景色
+          destinations:
+              pages
+                  .map(
+                    (config) => NavigationRailDestination(
+                      icon: Icon(config.icon),
+                      selectedIcon: Icon(config.selectedIcon),
+                      label: Text(config.tooltip),
+                    ),
+                  )
+                  .toList(),
+        ),
+        const VerticalDivider(thickness: 1, width: 1),
+        // 内容区域
+        Expanded(
+          child: IndexedStack(
+            index: _currentPageIndex,
+            children:
+                pages
+                    .map((config) => Builder(builder: config.builder))
+                    .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 移动端布局：内容区 + 底部导航栏
+  Widget _buildMobileLayout(BuildContext context) {
+    final pages = _getNavigationPages();
+    return Column(
+      children: [
+        // 内容区域
+        Expanded(
+          child: IndexedStack(
+            index: _currentPageIndex,
+            children:
+                pages
+                    .map((config) => Builder(builder: config.builder))
+                    .toList(),
+          ),
+        ),
+        // 底部导航栏 (MD3 风格，仅图标)
+        NavigationBar(
+          selectedIndex: _currentPageIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentPageIndex = index;
+            });
+          },
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          destinations:
+              pages
+                  .map(
+                    (config) => NavigationDestination(
+                      icon: Icon(config.icon),
+                      selectedIcon: Icon(config.selectedIcon),
+                      label: '',
+                    ),
+                  )
+                  .toList(),
+        ),
+      ],
     );
   }
 }
