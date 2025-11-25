@@ -8,11 +8,9 @@ import 'package:astral/screens/main_screen/dialogs/edit_room_dialog.dart';
 import 'package:astral/screens/main_screen/dialogs/import_room_dialog.dart';
 import 'package:astral/screens/main_screen/dialogs/invite_dialog.dart';
 import 'package:astral/screens/main_screen/widgets/connecting_overlay.dart';
-import 'package:astral/screens/main_screen/widgets/navigation_sidebar.dart';
 import 'package:astral/screens/main_screen/widgets/room_list_view.dart';
 import 'package:astral/screens/main_screen/widgets/room_members_view.dart';
-import 'package:astral/screens/main_screen/widgets/server_list_view.dart';
-import 'package:astral/screens/main_screen/widgets/settings_view.dart';
+import 'package:astral/screens/settings/settings_screen.dart';
 import 'package:astral/screens/main_screen/widgets/user_avatar.dart';
 import 'package:astral/screens/main_screen/widgets/user_nickname.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -36,36 +34,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   bool _isInRoom = false;
   RoomInfo? _currentRoom;
-  int _currentPageIndex = 0; // 0: 主页, 1: 设置
 
   final Signal<String> version = signal('');
-
-  // 统一的导航页面配置（菜单项和页面内容）
-  List<NavigationPageConfig> _getNavigationPages() {
-    return [
-      NavigationPageConfig(
-        id: 0,
-        icon: Icons.home_outlined,
-        selectedIcon: Icons.home_rounded,
-        tooltip: '主页',
-        builder: (context) => _buildHomePage(context),
-      ),
-      NavigationPageConfig(
-        id: 1,
-        icon: Icons.dns_outlined,
-        selectedIcon: Icons.dns,
-        tooltip: '服务器列表',
-        builder: (context) => const ServerListView(),
-      ),
-      NavigationPageConfig(
-        id: 2,
-        icon: Icons.settings_outlined,
-        selectedIcon: Icons.settings_rounded,
-        tooltip: '设置',
-        builder: (context) => const SettingsView(),
-      ),
-    ];
-  }
 
   /// 构建主页内容
   Widget _buildHomePage(BuildContext context) {
@@ -280,7 +250,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final isDesktop = screenWidth > 600; // 超过 600px 使用桌面布局
 
     return Scaffold(
-      appBar: isSmallWindow ? null : const StatusBar(),
+      appBar:
+          isSmallWindow
+              ? null
+              : StatusBar(
+                onSettingsTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                isSettingsSelected: false,
+              ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(3),
@@ -314,91 +296,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 桌面布局：左侧导航栏 + 内容区
+  /// 桌面布局：直接显示内容区
   Widget _buildDesktopLayout(BuildContext context) {
-    final pages = _getNavigationPages();
-    return Row(
-      children: [
-        // 左侧导航栏 (NavigationRail)
-        NavigationRail(
-          selectedIndex: _currentPageIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentPageIndex = index;
-            });
-          },
-          extended: false, // 紧凑模式，仅显示图标
-          minExtendedWidth: 200,
-          leading: const SizedBox.shrink(),
-          trailing: const SizedBox.shrink(),
-          backgroundColor:
-              Theme.of(
-                context,
-              ).colorScheme.surfaceContainer, // 使用与 NavigationBar 相同的默认背景色
-          destinations:
-              pages
-                  .map(
-                    (config) => NavigationRailDestination(
-                      icon: Icon(config.icon),
-                      selectedIcon: Icon(config.selectedIcon),
-                      label: Text(config.tooltip),
-                    ),
-                  )
-                  .toList(),
-        ),
-        const VerticalDivider(thickness: 1, width: 1),
-        // 内容区域
-        Expanded(
-          child: IndexedStack(
-            index: _currentPageIndex,
-            children:
-                pages
-                    .map((config) => Builder(builder: config.builder))
-                    .toList(),
-          ),
-        ),
-      ],
-    );
+    return _buildHomePage(context);
   }
 
-  /// 移动端布局：内容区 + 底部导航栏
+  /// 移动端布局：直接显示内容区
   Widget _buildMobileLayout(BuildContext context) {
-    final pages = _getNavigationPages();
-    return Column(
-      children: [
-        // 内容区域
-        Expanded(
-          child: IndexedStack(
-            index: _currentPageIndex,
-            children:
-                pages
-                    .map((config) => Builder(builder: config.builder))
-                    .toList(),
-          ),
-        ),
-        // 底部导航栏 (MD3 风格，仅图标)
-        NavigationBar(
-          selectedIndex: _currentPageIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentPageIndex = index;
-            });
-          },
-          height: 64,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-          destinations:
-              pages
-                  .map(
-                    (config) => NavigationDestination(
-                      icon: Icon(config.icon),
-                      selectedIcon: Icon(config.selectedIcon),
-                      label: '',
-                    ),
-                  )
-                  .toList(),
-        ),
-      ],
-    );
+    return _buildHomePage(context);
   }
 }
 

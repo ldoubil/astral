@@ -4,15 +4,15 @@ import 'package:astral/state/v2/server.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-/// 服务器列表页面
-class ServerListView extends StatefulWidget {
-  const ServerListView({super.key});
+/// 服务器列表编辑页面（MD3 风格）
+class ServerListEditScreen extends StatefulWidget {
+  const ServerListEditScreen({super.key});
 
   @override
-  State<ServerListView> createState() => _ServerListViewState();
+  State<ServerListEditScreen> createState() => _ServerListEditScreenState();
 }
 
-class _ServerListViewState extends State<ServerListView> {
+class _ServerListEditScreenState extends State<ServerListEditScreen> {
   final V2ServerState _serverState = V2ServerState();
 
   @override
@@ -32,49 +32,38 @@ class _ServerListViewState extends State<ServerListView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Watch((context) {
-      final servers = _serverState.serverNodes.value;
-
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 标题栏（带添加按钮）
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '服务器列表',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: () => _showAddServerDialog(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('添加服务器'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // 服务器列表
-            Expanded(
-              child:
-                  servers.isEmpty
-                      ? _buildEmptyState(theme)
-                      : ListView.builder(
-                        itemCount: servers.length,
-                        itemBuilder: (context, index) {
-                          final server = servers[index];
-                          return _buildServerCard(context, theme, server);
-                        },
-                      ),
-            ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('服务器列表'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      );
-    });
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: '添加服务器',
+            onPressed: () => _showAddServerDialog(context),
+          ),
+        ],
+      ),
+      body: Watch((context) {
+        final servers = _serverState.serverNodes.value;
+
+        if (servers.isEmpty) {
+          return _buildEmptyState(theme);
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          itemCount: servers.length,
+          itemBuilder: (context, index) {
+            final server = servers[index];
+            return _buildServerCard(context, theme, server);
+          },
+        );
+      }),
+    );
   }
 
   Widget _buildEmptyState(ThemeData theme) {
@@ -90,7 +79,7 @@ class _ServerListViewState extends State<ServerListView> {
           const SizedBox(height: 16),
           Text(
             '暂无服务器',
-            style: theme.textTheme.bodyLarge?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -118,9 +107,21 @@ class _ServerListViewState extends State<ServerListView> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primaryContainer,
-          child: Icon(Icons.dns, color: theme.colorScheme.onPrimaryContainer),
+          child: Icon(
+            Icons.dns,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
         ),
-        title: Text(address, style: theme.textTheme.titleMedium),
+        title: Text(
+          address,
+          style: theme.textTheme.titleMedium,
+        ),
+        subtitle: Text(
+          'TCP',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -205,15 +206,17 @@ class _ServerListViewState extends State<ServerListView> {
 
                 // 验证输入
                 if (host.isEmpty) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('请输入主机地址')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('请输入主机地址')),
+                  );
                   return;
                 }
 
                 if (port == null || port <= 0 || port > 65535) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('请输入有效的端口号 (1-65535)')),
+                    const SnackBar(
+                      content: Text('请输入有效的端口号 (1-65535)'),
+                    ),
                   );
                   return;
                 }
@@ -234,7 +237,9 @@ class _ServerListViewState extends State<ServerListView> {
 
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(isEdit ? '服务器已更新' : '服务器已添加')),
+                  SnackBar(
+                    content: Text(isEdit ? '服务器已更新' : '服务器已添加'),
+                  ),
                 );
               },
               child: Text(isEdit ? '保存' : '添加'),
@@ -263,9 +268,9 @@ class _ServerListViewState extends State<ServerListView> {
               onPressed: () {
                 _serverState.removeServerNode(server.id);
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('服务器已删除')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('服务器已删除')),
+                );
               },
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error,
@@ -278,3 +283,4 @@ class _ServerListViewState extends State<ServerListView> {
     );
   }
 }
+

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:astral/core/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/state/app_state.dart';
-import 'package:astral/widgets/theme_selector.dart';
 import 'package:astral/widgets/windows_controls.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -24,7 +23,17 @@ String getThemeModeText(ThemeMode mode) {
 /// 状态栏组件
 /// 实现了PreferredSizeWidget接口以指定首选高度
 class StatusBar extends StatelessWidget implements PreferredSizeWidget {
-  const StatusBar({super.key});
+  const StatusBar({
+    super.key,
+    this.onSettingsTap,
+    this.isSettingsSelected = false,
+  });
+
+  /// 设置按钮点击回调
+  final VoidCallback? onSettingsTap;
+
+  /// 是否选中设置页面
+  final bool isSettingsSelected;
 
   /// 指定状态栏的首选高度为36
   @override
@@ -52,6 +61,22 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           actions: [
+            // 设置图标按钮（在模式切换按钮左边）
+            if (onSettingsTap != null)
+              IconButton(
+                icon: Icon(
+                  isSettingsSelected
+                      ? Icons.settings
+                      : Icons.settings_outlined,
+                  size: 16,
+                ),
+                onPressed: onSettingsTap,
+                tooltip: '设置',
+                padding: const EdgeInsets.all(4),
+                color: isSettingsSelected
+                    ? colorScheme.primary
+                    : null,
+              ),
             IconButton(
               icon: Icon(
                 switch (AppState().themeState.themeModeValue.watch(context)) {
@@ -179,6 +204,22 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
           toolbarHeight: 36,
           // 在桌面平台显示窗口控制按钮
           actions: [
+            // 设置图标按钮（在模式切换按钮左边）
+            if (onSettingsTap != null)
+              IconButton(
+                icon: Icon(
+                  isSettingsSelected
+                      ? Icons.settings
+                      : Icons.settings_outlined,
+                  size: 20,
+                ),
+                onPressed: onSettingsTap,
+                tooltip: '设置',
+                padding: const EdgeInsets.all(8),
+                color: isSettingsSelected
+                    ? colorScheme.primary
+                    : null,
+              ),
             IconButton(
               icon: Icon(
                 // 根据当前主题模式选择对应图标
