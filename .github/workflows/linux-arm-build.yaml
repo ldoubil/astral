@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-arm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: write
       packages: write
@@ -56,7 +56,7 @@ jobs:
 
       - name: 🛠️ 构建 Linux ARM64 应用
         run: |
-          flutter build linux --release --target-platform=linux-arm64
+          flutter build linux --release
 
       - name: 📦 打包应用
         run: |
@@ -70,12 +70,12 @@ jobs:
       - name: 📦 打包 deb 包
         run: |
           mkdir -p release
-          fpm -s dir -t deb -n astral -v 1.0.0 --prefix /opt/astral -C build/linux/arm64/release/bundle .
+          fpm -s dir -t deb -n astral -v 1.0.0 -a arm64 --prefix /opt/astral -C build/linux/arm64/release/bundle .
           mv *.deb $GITHUB_WORKSPACE/release/astral-linux-arm64.deb
 
       - name: 📦 打包 rpm 包
         run: |
-          fpm -s dir -t rpm -n astral -v 1.0.0 --prefix /opt/astral -C build/linux/arm64/release/bundle .
+          fpm -s dir -t rpm -n astral -v 1.0.0 -a arm64 --prefix /opt/astral -C build/linux/arm64/release/bundle .
           mv *.rpm $GITHUB_WORKSPACE/release/astral-linux-arm64.rpm
 
       - name: 📤 上传所有 Linux ARM64 构建产物
