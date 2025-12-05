@@ -33,7 +33,6 @@ class StartupPage extends StatelessWidget {
                   value: Aps().startup.watch(context),
                   onChanged: (value) {
                     Aps().setStartup(value);
-                    // TODO: Implement startup setting handler
                   },
                 ),
 
@@ -73,7 +72,7 @@ class StartupPage extends StatelessWidget {
 
                 ListTile(
                   title: Text('开机启动'),
-                  subtitle: Text('应用程序将在系统启动时自动运行'),
+                  subtitle: Text('使用Windows计划任务，在用户登录时自动运行应用程序'),
                   leading: const Icon(Icons.power_settings_new),
                 ),
 

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:astral/utils/net/ping_util.dart';
+import 'package:astral/utils/reg.dart';
 
 import 'package:astral/utils/random_name.dart';
 import 'package:astral/k/models/net_config.dart';
@@ -924,6 +926,19 @@ class Aps {
   Future<void> setStartup(bool value) async {
     startup.value = value;
     await AppDatabase().AllSettings.setStartup(value);
+    // 实际设置Windows计划任务
+    if (Platform.isWindows) {
+      try {
+        await handleStartupSetting(value);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('设置开机自启失败: $e');
+        }
+        // 如果设置失败，恢复状态
+        startup.value = !value;
+        await AppDatabase().AllSettings.setStartup(!value);
+      }
+    }
   }
 
   /// 设置启动后最小化
