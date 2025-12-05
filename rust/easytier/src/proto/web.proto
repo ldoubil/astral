@@ -73,6 +73,8 @@ message NetworkConfig {
     optional bool enable_quic_proxy = 45;
     optional bool disable_quic_input = 46;
     repeated PortForwardConfig port_forwards = 48;
+
+    optional bool disable_sym_hole_punching = 49;
 }
 
 message PortForwardConfig {
@@ -102,6 +104,7 @@ message NetworkInstanceRunningInfo {
   repeated cli.PeerRoutePair peer_route_pairs = 6;
   bool running = 7;
   optional string error_msg = 8;
+  peer_rpc.RouteForeignNetworkSummary foreign_network_summary = 9;
 }
 
 message NetworkInstanceRunningInfoMap {

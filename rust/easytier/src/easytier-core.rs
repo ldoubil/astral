@@ -13,7 +13,6 @@ use std::{
 use anyhow::Context;
 use cidr::IpCidr;
 use clap::{CommandFactory, Parser};
-
 use clap_complete::Shell;
 use easytier::{
     common::{
@@ -35,6 +34,7 @@ use easytier::{
     utils::{init_logger, setup_panic_handler},
     web_client,
 };
+use tokio::io::AsyncReadExt;
 
 #[cfg(target_os = "windows")]
 windows_service::define_windows_service!(ffi_service_main, win_service_main);
@@ -132,6 +132,9 @@ struct Cli {
 
     #[clap(long, help = t!("core_clap.generate_completions").to_string())]
     gen_autocomplete: Option<Shell>,
+
+    #[clap(long, help = t!("core_clap.check_config").to_string())]
+    check_config: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -288,7 +291,6 @@ struct NetworkOptions {
         long,
         env = "ET_ENCRYPTION_ALGORITHM",
         help = t!("core_clap.encryption_algorithm").to_string(),
-        default_value = "aes-gcm",
         value_parser = get_avaliable_encrypt_methods()
     )]
     encryption_algorithm: Option<String>,
@@ -424,6 +426,15 @@ struct NetworkOptions {
         default_missing_value = "true"
     )]
     disable_udp_hole_punching: Option<bool>,
+
+    #[arg(
+        long,
+        env = "ET_DISABLE_SYM_HOLE_PUNCHING",
+        help = t!("core_clap.disable_sym_hole_punching").to_string(),
+        num_args = 0..=1,
+        default_missing_value = "true"
+    )]
+    disable_sym_hole_punching: Option<bool>,
 
     #[arg(
         long,
@@ -564,6 +575,15 @@ struct NetworkOptions {
         num_args = 0..
     )]
     stun_servers: Option<Vec<String>>,
+
+    #[arg(
+        long,
+        env = "ET_STUN_SERVERS_V6",
+        value_delimiter = ',',
+        help = t!("core_clap.stun_servers_v6").to_string(),
+        num_args = 0..
+    )]
+    stun_servers_v6: Option<Vec<String>>,
 }
 
 #[derive(Parser, Debug)]
@@ -588,6 +608,20 @@ struct LoggingOptions {
         help = t!("core_clap.file_log_dir").to_string()
     )]
     file_log_dir: Option<String>,
+
+    #[arg(
+        long,
+        env = "ET_FILE_LOG_SIZE",
+        help = t!("core_clap.file_log_size_mb").to_string()
+    )]
+    file_log_size: Option<u64>,
+
+    #[arg(
+        long,
+        env = "ET_FILE_LOG_COUNT",
+        help = t!("core_clap.file_log_count").to_string()
+    )]
+    file_log_count: Option<usize>,
 }
 
 rust_i18n::i18n!("locales", fallback = "en");
@@ -919,6 +953,7 @@ impl NetworkOptions {
         f.enable_relay_foreign_network_kcp = self
             .enable_relay_foreign_network_kcp
             .unwrap_or(f.enable_relay_foreign_network_kcp);
+        f.disable_sym_hole_punching = self.disable_sym_hole_punching.unwrap_or(false);
         cfg.set_flags(f);
 
         if !self.exit_nodes.is_empty() {
@@ -934,9 +969,16 @@ impl NetworkOptions {
         cfg.set_udp_whitelist(old_udp_whitelist);
 
         if let Some(stun_servers) = &self.stun_servers {
-            cfg.set_stun_servers(stun_servers.clone());
+            let mut old_stun_servers = cfg.get_stun_servers().unwrap_or_default();
+            old_stun_servers.extend(stun_servers.iter().cloned());
+            cfg.set_stun_servers(Some(old_stun_servers));
         }
 
+        if let Some(stun_servers_v6) = &self.stun_servers_v6 {
+            let mut old_stun_servers_v6 = cfg.get_stun_servers_v6().unwrap_or_default();
+            old_stun_servers_v6.extend(stun_servers_v6.iter().cloned());
+            cfg.set_stun_servers_v6(Some(old_stun_servers_v6));
+        }
         Ok(())
     }
 }
@@ -953,6 +995,8 @@ impl LoggingConfigLoader for &LoggingOptions {
             level: self.file_log_level.clone(),
             dir: self.file_log_dir.clone(),
             file: None,
+            size_mb: self.file_log_size,
+            count: self.file_log_count,
         }
     }
 }
@@ -1027,6 +1071,18 @@ fn win_service_event_loop(
     });
 }
 
+fn parse_cli() -> Cli {
+    let mut cli = Cli::parse();
+    // for --stun-servers="", we want vec![], but clap will give vec![""], hack for that
+    if let Some(stun_servers) = &mut cli.network_options.stun_servers {
+        stun_servers.retain(|s| !s.trim().is_empty());
+    }
+    if let Some(stun_servers_v6) = &mut cli.network_options.stun_servers_v6 {
+        stun_servers_v6.retain(|s| !s.trim().is_empty());
+    }
+    cli
+}
+
 #[cfg(target_os = "windows")]
 fn win_service_main(arg: Vec<std::ffi::OsString>) {
     use std::sync::Arc;
@@ -1037,7 +1093,7 @@ fn win_service_main(arg: Vec<std::ffi::OsString>) {
 
     _ = win_service_set_work_dir(&arg[0]);
 
-    let cli = Cli::parse();
+    let cli = parse_cli();
 
     let stop_notify_send = Arc::new(Notify::new());
     let stop_notify_recv = Arc::clone(&stop_notify_send);
@@ -1069,7 +1125,7 @@ fn win_service_main(arg: Vec<std::ffi::OsString>) {
 }
 
 async fn run_main(cli: Cli) -> anyhow::Result<()> {
-    init_logger(&cli.logging_options, false)?;
+    init_logger(&cli.logging_options, true)?;
 
     if cli.config_server.is_some() {
         set_default_machine_id(cli.machine_id);
@@ -1129,8 +1185,15 @@ async fn run_main(cli: Cli) -> anyhow::Result<()> {
     if let Some(config_files) = cli.config_file {
         let config_file_count = config_files.len();
         for config_file in config_files {
-            let mut cfg = TomlConfigLoader::new(&config_file)
-                .with_context(|| format!("failed to load config file: {:?}", config_file))?;
+            let mut cfg = if config_file == PathBuf::from("-") {
+                let mut stdin = String::new();
+                _ = tokio::io::stdin().read_to_string(&mut stdin).await?;
+                TomlConfigLoader::new_from_str(stdin.as_str())
+                    .with_context(|| "failed to load config from stdin")?
+            } else {
+                TomlConfigLoader::new(&config_file)
+                    .with_context(|| format!("failed to load config file: {:?}", config_file))?
+            };
 
             if cli.network_options.can_merge(&cfg, config_file_count) {
                 cli.network_options.merge_into(&mut cfg).with_context(|| {
@@ -1245,12 +1308,24 @@ async fn main() -> ExitCode {
     set_prof_active(true);
     let _monitor = std::thread::spawn(memory_monitor);
 
-    let cli = Cli::parse();
+    let cli = parse_cli();
+
     if let Some(shell) = cli.gen_autocomplete {
         let mut cmd = Cli::command();
         easytier::print_completions(shell, &mut cmd, "easytier-core");
         return ExitCode::SUCCESS;
     }
+
+    // Verify configurations
+    if cli.check_config {
+        if let Err(e) = validate_config(&cli).await {
+            eprintln!("Config validation failed: {:?}", e);
+            return ExitCode::FAILURE;
+        } else {
+            return ExitCode::SUCCESS;
+        }
+    }
+
     let mut ret_code = 0;
 
     if let Err(e) = run_main(cli).await {
@@ -1264,4 +1339,26 @@ async fn main() -> ExitCode {
     set_prof_active(false);
 
     ExitCode::from(ret_code)
+}
+
+async fn validate_config(cli: &Cli) -> anyhow::Result<()> {
+    // Check if config file is provided
+    let config_files = cli
+        .config_file
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("--config-file is required when using --check-config"))?;
+
+    for config_file in config_files {
+        if config_file == &PathBuf::from("-") {
+            let mut stdin = String::new();
+            _ = tokio::io::stdin().read_to_string(&mut stdin).await?;
+            TomlConfigLoader::new_from_str(stdin.as_str())
+                .with_context(|| "config source: stdin")?;
+        } else {
+            TomlConfigLoader::new(config_file)
+                .with_context(|| format!("config source: {:?}", config_file))?;
+        };
+    }
+
+    Ok(())
 }

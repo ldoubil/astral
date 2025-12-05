@@ -3,7 +3,7 @@ name = "easytier"
 description = "A full meshed p2p VPN, connecting all your devices in one network with one command."
 homepage = "https://github.com/EasyTier/EasyTier"
 repository = "https://github.com/EasyTier/EasyTier"
-version = "2.4.2"
+version = "2.4.5"
 edition = "2021"
 authors = ["kkrainbow"]
 keywords = ["vpn", "p2p", "network", "easytier"]
@@ -36,7 +36,7 @@ tracing-subscriber = { version = "0.3", features = [
     "local-time",
     "time",
 ] }
-tracing-appender = "0.2.3"
+console-subscriber = { version = "0.4.1", optional = true }
 thiserror = "1.0"
 auto_impl = "1.1.0"
 crossbeam = "0.8.4"
@@ -163,7 +163,7 @@ mimalloc = { version = "*", optional = true }
 # mips
 atomic-shim = "0.2.0"
 
-smoltcp = { version = "0.12.0", optional = true, default-features = false, features = [
+smoltcp = { git = "https://github.com/smoltcp-rs/smoltcp.git", rev = "0a926767a68bc88d5512afefa7529c5ecdade4ea", optional = true, default-features = false, features = [
     "std",
     "medium-ip",
     "proto-ipv4",
@@ -214,6 +214,8 @@ derive_builder = "0.20.2"
 humantime-serde = "1.1.1"
 multimap = "0.10.0"
 version-compare = "0.2.0"
+hmac = "0.12.1"
+sha2 = "0.10.8"
 
 [target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))'.dependencies]
 machine-uid = "0.5.3"
@@ -235,6 +237,7 @@ windows = { version = "0.52.0", features = [
     "Win32_System_Com",
     "Win32_Networking",
     "Win32_System_Ole",
+    "Win32_System_Variant",
     "Win32_Networking_WinSock",
     "Win32_System_IO",
 ] }
@@ -255,9 +258,15 @@ jemallocator = { package = "tikv-jemallocator", version = "0.6.0", optional = tr
 ] }
 jemalloc-ctl = { package = "tikv-jemalloc-ctl", version = "0.6.0", optional = true, features = [
 ] }
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
 jemalloc-sys = { package = "tikv-jemalloc-sys", version = "0.6.0", features = [
     "background_threads_runtime_support",
     "background_threads",
+], optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+jemalloc-sys = { package = "tikv-jemalloc-sys", version = "0.6.0", features = [
 ], optional = true }
 
 [build-dependencies]
@@ -275,11 +284,12 @@ reqwest = { version = "0.12.12", features = ["blocking"] }
 zip = "4.0.0"
 
 # enable thunk-rs when compiling for x86_64 or i686 windows
-[target.x86_64-pc-windows-msvc.build-dependencies]
-thunk-rs = { git = "https://github.com/easytier/thunk.git", default-features = false, features = ["win7"] }
+# Disabled: Windows 7 compatibility not needed
+# [target.x86_64-pc-windows-msvc.build-dependencies]
+# thunk-rs = { git = "https://github.com/easytier/thunk.git", default-features = false, features = ["win7"] }
 
-[target.i686-pc-windows-msvc.build-dependencies]
-thunk-rs = { git = "https://github.com/easytier/thunk.git", default-features = false, features = ["win7"] }
+# [target.i686-pc-windows-msvc.build-dependencies]
+# thunk-rs = { git = "https://github.com/easytier/thunk.git", default-features = false, features = ["win7"] }
 
 
 [dev-dependencies]
@@ -287,6 +297,7 @@ serial_test = "3.0.0"
 rstest = "0.25.0"
 futures-util = "0.3.30"
 maplit = "1.0.2"
+tempfile = "3.22.0"
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 defguard_wireguard_rs = "0.4.2"
@@ -321,3 +332,4 @@ smoltcp = ["dep:smoltcp", "dep:parking_lot"]
 socks5 = ["dep:smoltcp"]
 jemalloc = ["dep:jemallocator", "dep:jemalloc-sys"]
 jemalloc-prof = ["jemalloc", "dep:jemalloc-ctl", "jemalloc-ctl/stats", "jemalloc-sys/profiling", "jemalloc-sys/stats"]
+tracing = ["tokio/tracing", "dep:console-subscriber"]

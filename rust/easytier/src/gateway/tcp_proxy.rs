@@ -24,6 +24,7 @@ use crate::common::error::Result;
 use crate::common::global_ctx::{ArcGlobalCtx, GlobalCtx};
 use crate::common::join_joinset_background;
 
+use crate::common::stats_manager::{LabelSet, LabelType, MetricName};
 use crate::peers::peer_manager::PeerManager;
 use crate::peers::{NicPacketFilter, PeerPacketFilter};
 use crate::proto::cli::{
@@ -70,27 +71,12 @@ impl NatDstConnector for NatDstTcpConnector {
                 return Err(e.into());
             }
         };
-        if let Err(e) = socket.set_nodelay(true) {
-            tracing::warn!("set_nodelay failed, ignore it: {:?}", e);
-        }
-
-        const TCP_KEEPALIVE_TIME: Duration = Duration::from_secs(5);
-        const TCP_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(2);
-        const TCP_KEEPALIVE_RETRIES: u32 = 2;
 
         let stream = timeout(Duration::from_secs(10), socket.connect(nat_dst))
             .await?
             .with_context(|| format!("connect to nat dst failed: {:?}", nat_dst))?;
 
-        let ka = TcpKeepalive::new()
-            .with_time(TCP_KEEPALIVE_TIME)
-            .with_interval(TCP_KEEPALIVE_INTERVAL);
-
-        #[cfg(not(target_os = "windows"))]
-        let ka = ka.with_retries(TCP_KEEPALIVE_RETRIES);
-
-        let sf = SockRef::from(&stream);
-        sf.set_tcp_keepalive(&ka)?;
+        prepare_kernel_tcp_socket(&stream)?;
 
         Ok(stream)
     }
@@ -279,11 +265,33 @@ enum ProxyTcpListener {
     SmolTcpListener(SmolTcpListener),
 }
 
+fn prepare_kernel_tcp_socket(stream: &TcpStream) -> Result<()> {
+    const TCP_KEEPALIVE_TIME: Duration = Duration::from_secs(5);
+    const TCP_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(2);
+    const TCP_KEEPALIVE_RETRIES: u32 = 2;
+
+    let ka = TcpKeepalive::new()
+        .with_time(TCP_KEEPALIVE_TIME)
+        .with_interval(TCP_KEEPALIVE_INTERVAL);
+
+    #[cfg(not(target_os = "windows"))]
+    let ka = ka.with_retries(TCP_KEEPALIVE_RETRIES);
+
+    let sf = SockRef::from(&stream);
+    sf.set_tcp_keepalive(&ka)?;
+    if let Err(e) = sf.set_nodelay(true) {
+        tracing::warn!("set_nodelay failed, ignore it: {:?}", e);
+    }
+
+    Ok(())
+}
+
 impl ProxyTcpListener {
     pub async fn accept(&mut self) -> Result<(ProxyTcpStream, SocketAddr)> {
         match self {
             Self::KernelTcpListener(listener) => {
                 let (stream, addr) = listener.accept().await?;
+                prepare_kernel_tcp_socket(&stream)?;
                 Ok((ProxyTcpStream::KernelTcpStream(stream), addr))
             }
             #[cfg(feature = "smoltcp")]
@@ -721,6 +729,21 @@ impl<C: NatDstConnector> TcpProxy<C> {
         } else {
             nat_entry.real_dst
         };
+
+        global_ctx
+            .stats_manager()
+            .get_counter(
+                MetricName::TcpProxyConnect,
+                LabelSet::new()
+                    .with_label_type(LabelType::Protocol(
+                        connector.transport_type().as_str_name().to_string(),
+                    ))
+                    .with_label_type(LabelType::DstIp(nat_dst.ip().to_string()))
+                    .with_label_type(LabelType::MappedDstIp(
+                        nat_entry.mapped_dst.ip().to_string(),
+                    )),
+            )
+            .inc();
 
         let _guard = global_ctx.net_ns.guard();
         let Ok(dst_tcp_stream) = connector.connect(nat_entry.src, nat_dst).await else {

@@ -266,6 +266,11 @@ impl<C: NatDstConnector, T: TcpProxyForKcpSrcTrait<Connector = C>> NicPacketFilt
                 .check_dst_allow_kcp_input(&ip_packet.get_destination())
                 .await
             {
+                tracing::warn!(
+                    "{:?} proxy src: dst {} not allow kcp input",
+                    self.get_tcp_proxy().get_transport_type(),
+                    ip_packet.get_destination()
+                );
                 return false;
             }
         } else {
@@ -288,6 +293,12 @@ impl<C: NatDstConnector, T: TcpProxyForKcpSrcTrait<Connector = C>> NicPacketFilt
             if ip_packet.get_source() != my_ipv4.address()
                 && !self.get_tcp_proxy().is_smoltcp_enabled()
             {
+                tracing::warn!(
+                    "{:?} nat 2 nat packet, src: {} dst: {} not allow kcp input",
+                    self.get_tcp_proxy().get_transport_type(),
+                    ip_packet.get_source(),
+                    ip_packet.get_destination()
+                );
                 return false;
             }
         };
@@ -440,12 +451,13 @@ impl KcpProxyDst {
         }
     }
 
-    #[tracing::instrument(ret)]
+    #[tracing::instrument(ret, skip(route))]
     async fn handle_one_in_stream(
         kcp_stream: KcpStream,
         global_ctx: ArcGlobalCtx,
         proxy_entries: Arc<DashMap<ConnId, TcpProxyEntry>>,
         cidr_set: Arc<CidrSet>,
+        route: Arc<dyn crate::peers::route_trait::Route + Send + Sync + 'static>,
     ) -> Result<()> {
         let mut conn_data = kcp_stream.conn_data().clone();
         let parsed_conn_data = KcpConnData::decode(&mut conn_data)
@@ -481,6 +493,13 @@ impl KcpProxyDst {
             proxy_entries.remove(&conn_id);
         }
 
+        let src_ip = src_socket.ip();
+        let dst_ip = dst_socket.ip();
+        let (src_groups, dst_groups) = tokio::join!(
+            route.get_peer_groups_by_ip(&src_ip),
+            route.get_peer_groups_by_ip(&dst_ip)
+        );
+
         let send_to_self =
             Some(dst_socket.ip()) == global_ctx.get_ipv4().map(|ip| IpAddr::V4(ip.address()));
 
@@ -491,12 +510,14 @@ impl KcpProxyDst {
         let acl_handler = ProxyAclHandler {
             acl_filter: global_ctx.get_acl_filter().clone(),
             packet_info: PacketInfo {
-                src_ip: src_socket.ip(),
-                dst_ip: dst_socket.ip(),
+                src_ip,
+                dst_ip,
                 src_port: Some(src_socket.port()),
                 dst_port: Some(dst_socket.port()),
                 protocol: Protocol::Tcp,
                 packet_size: conn_data.len(),
+                src_groups,
+                dst_groups,
             },
             chain_type: if send_to_self {
                 ChainType::Inbound
@@ -530,6 +551,7 @@ impl KcpProxyDst {
         let global_ctx = self.peer_manager.get_global_ctx().clone();
         let proxy_entries = self.proxy_entries.clone();
         let cidr_set = self.cidr_set.clone();
+        let route = Arc::new(self.peer_manager.get_route());
         self.tasks.spawn(async move {
             while let Ok(conn) = kcp_endpoint.accept().await {
                 let stream = KcpStream::new(&kcp_endpoint, conn)
@@ -539,9 +561,16 @@ impl KcpProxyDst {
                 let global_ctx = global_ctx.clone();
                 let proxy_entries = proxy_entries.clone();
                 let cidr_set = cidr_set.clone();
+                let route = route.clone();
                 tokio::spawn(async move {
-                    let _ = Self::handle_one_in_stream(stream, global_ctx, proxy_entries, cidr_set)
-                        .await;
+                    let _ = Self::handle_one_in_stream(
+                        stream,
+                        global_ctx,
+                        proxy_entries,
+                        cidr_set,
+                        route,
+                    )
+                    .await;
                 });
             }
         });

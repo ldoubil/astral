@@ -1,4 +1,5 @@
 use std::collections::hash_map::DefaultHasher;
+use std::net::IpAddr;
 use std::{
     hash::Hasher,
     sync::{Arc, Mutex},
@@ -8,8 +9,10 @@ use crate::common::config::ProxyNetworkConfig;
 use crate::common::stats_manager::StatsManager;
 use crate::common::token_bucket::TokenBucketManager;
 use crate::peers::acl_filter::AclFilter;
+use crate::proto::acl::GroupIdentity;
 use crate::proto::cli::PeerConnInfo;
 use crate::proto::common::{PeerFeatureFlag, PortForwardConfigPb};
+use crate::proto::peer_rpc::PeerGroupInfo;
 use crossbeam::atomic::AtomicCell;
 
 use super::{
@@ -41,7 +44,8 @@ pub enum GlobalCtxEvent {
     Connecting(url::Url),
     ConnectError(String, String, String), // (dst, ip version, error message)
 
-    VpnPortalClientConnected(String, String), // (portal, client ip)
+    VpnPortalStarted(String),                    // (portal)
+    VpnPortalClientConnected(String, String),    // (portal, client ip)
     VpnPortalClientDisconnected(String, String), // (portal, client ip)
 
     DhcpIpv4Changed(Option<cidr::Ipv4Inet>, Option<cidr::Ipv4Inet>), // (old, new)
@@ -112,12 +116,21 @@ impl GlobalCtx {
 
         let (event_bus, _) = tokio::sync::broadcast::channel(8);
 
-        let stun_servers = config_fs.get_stun_servers();
-        let stun_info_collection = Arc::new(if stun_servers.is_empty() {
-            StunInfoCollector::new_with_default_servers()
+        let stun_info_collector = StunInfoCollector::new_with_default_servers();
+
+        if let Some(stun_servers) = config_fs.get_stun_servers() {
+            stun_info_collector.set_stun_servers(stun_servers);
         } else {
-            StunInfoCollector::new(stun_servers)
-        });
+            stun_info_collector.set_stun_servers(StunInfoCollector::get_default_servers());
+        }
+
+        if let Some(stun_servers) = config_fs.get_stun_servers_v6() {
+            stun_info_collector.set_stun_servers_v6(stun_servers);
+        } else {
+            stun_info_collector.set_stun_servers_v6(StunInfoCollector::get_default_servers_v6());
+        }
+
+        let stun_info_collector = Arc::new(stun_info_collector);
 
         let enable_exit_node = config_fs.get_flags().enable_exit_node || cfg!(target_env = "ohos");
         let proxy_forward_by_system = config_fs.get_flags().proxy_forward_by_system;
@@ -143,12 +156,12 @@ impl GlobalCtx {
 
             ip_collector: Mutex::new(Some(Arc::new(IPCollector::new(
                 net_ns,
-                stun_info_collection.clone(),
+                stun_info_collector.clone(),
             )))),
 
             hostname: Mutex::new(hostname),
 
-            stun_info_collection: Mutex::new(stun_info_collection),
+            stun_info_collection: Mutex::new(stun_info_collector),
 
             running_listeners: Mutex::new(Vec::new()),
 
@@ -226,6 +239,13 @@ impl GlobalCtx {
 
     pub fn get_id(&self) -> uuid::Uuid {
         self.config.get_id()
+    }
+
+    pub fn is_ip_in_same_network(&self, ip: &IpAddr) -> bool {
+        match ip {
+            IpAddr::V4(v4) => self.get_ipv4().map(|x| x.contains(v4)).unwrap_or(false),
+            IpAddr::V6(v6) => self.get_ipv6().map(|x| x.contains(v6)).unwrap_or(false),
+        }
     }
 
     pub fn get_network_identity(&self) -> NetworkIdentity {
@@ -351,6 +371,7 @@ impl GlobalCtx {
     }
 
     pub fn set_quic_proxy_port(&self, port: Option<u16>) {
+        self.acl_filter.set_quic_udp_port(port.unwrap_or(0));
         self.quic_proxy_port.store(port);
     }
 
@@ -364,6 +385,37 @@ impl GlobalCtx {
 
     pub fn get_acl_filter(&self) -> &Arc<AclFilter> {
         &self.acl_filter
+    }
+
+    pub fn get_acl_groups(&self, peer_id: PeerId) -> Vec<PeerGroupInfo> {
+        use std::collections::HashSet;
+        self.config
+            .get_acl()
+            .and_then(|acl| acl.acl_v1)
+            .and_then(|acl_v1| acl_v1.group)
+            .map_or_else(Vec::new, |group| {
+                let memberships: HashSet<_> = group.members.iter().collect();
+                group
+                    .declares
+                    .iter()
+                    .filter(|g| memberships.contains(&g.group_name))
+                    .map(|g| {
+                        PeerGroupInfo::generate_with_proof(
+                            g.group_name.clone(),
+                            g.group_secret.clone(),
+                            peer_id,
+                        )
+                    })
+                    .collect()
+            })
+    }
+
+    pub fn get_acl_group_declarations(&self) -> Vec<GroupIdentity> {
+        self.config
+            .get_acl()
+            .and_then(|acl| acl.acl_v1)
+            .and_then(|acl_v1| acl_v1.group)
+            .map_or_else(Vec::new, |group| group.declares.to_vec())
     }
 }
 

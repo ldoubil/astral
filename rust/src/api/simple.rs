@@ -32,7 +32,6 @@ use std::sync::Mutex;
 use tokio::runtime::Runtime;
 pub use tokio::task::JoinHandle;
 
-use crate::api::utils::check_sudo;
 pub static DEFAULT_ET_DNS_ZONE: &str = "as.net.";
 
 static INSTANCE: Mutex<Option<NetworkInstance>> = Mutex::new(None);
@@ -142,6 +141,11 @@ pub fn handle_event(mut events: EventBusSubscriber) -> tokio::task::JoinHandle<(
                                 "连接到节点错误。目标: {}, IP版本: {}, 错误: {}",
                                 dst, ip_version, err
                             );
+                            println!("{}", msg);
+                            let _ = send_udp_to_localhost(&msg);
+                        }
+                        GlobalCtxEvent::VpnPortalStarted(portal) => {
+                            let msg = format!("VPN 门户已启动。门户: {}", portal);
                             println!("{}", msg);
                             let _ = send_udp_to_localhost(&msg);
                         }

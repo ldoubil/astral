@@ -1,5 +1,6 @@
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/utils/version_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -232,11 +233,29 @@ class _AllUserCardState extends State<AllUserCard> {
           ),
         const SizedBox(height: 8),
 
-        _buildInfoRow(
-          Icons.memory_outlined, // Changed icon
-          'ET版本',
-          player.version,
-          colorScheme,
+        Row(
+          children: [
+            Icon(Icons.memory_outlined, size: 20, color: colorScheme.primary),
+            const SizedBox(width: 12),
+            Text('ET版本:', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            Icon(
+              VersionUtil.getPlatformIcon(VersionUtil.parseVersion(player.version).$2),
+              size: 16,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                VersionUtil.getVersionText(player.version),
+                style: TextStyle(
+                  color: colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 
@@ -518,14 +537,13 @@ class _AllUserCardState extends State<AllUserCard> {
   }
 
   // 如果传入数值=1就是p2p 否则是relay 最后判断是不是等于本机IP如果等于就是direct 本机ip传入
-  String _mapConnectionType(int connType, String ip, String thisip) {
+  String _mapConnectionType(int connType, String ip, String? thisip) {
     // 新增服务器IP判断
     if (ip == "0.0.0.0") {
       return '服务器';
     }
     // 如果是本机IP，返回direct
-    if (thisip != null && ip == thisip) {
-      // 检查 thisip 是否为 null
+    if (thisip != null && thisip.isNotEmpty && ip == thisip) {
       return '本机';
     }
     // 根据连接成本判断连接类型
