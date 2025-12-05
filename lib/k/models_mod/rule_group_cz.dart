@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/k/models/rule_group.dart';
 
 /// 规则组仓库类

@@ -12,7 +12,7 @@ import file_picker
 import file_selector_macos
 import flutter_local_notifications
 import flutter_localization
-import isar_flutter_libs
+import isar_community_flutter_libs
 import open_file_mac
 import package_info_plus
 import path_provider_foundation

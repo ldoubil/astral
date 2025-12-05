@@ -1,7 +1,7 @@
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 // 显示添加服务器对话框
 Future<void> showAddServerDialog(BuildContext context) async {

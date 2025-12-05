@@ -7,7 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   file_selector_windows
   flutter_localization
-  isar_flutter_libs
+  isar_community_flutter_libs
   permission_handler_windows
   screen_retriever_windows
   tray_manager

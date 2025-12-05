@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 part 'net_config.g.dart';
 
 @embedded

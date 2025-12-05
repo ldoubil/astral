@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:astral/k/models/all_settings.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 class AllSettingsCz {
   final Isar _isar;

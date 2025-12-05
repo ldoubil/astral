@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/widgets/server_reorder_sheet.dart';
 import 'package:astral/widgets/public_servers_dialog.dart'; // 新增公共服务器对话框导入
 import 'dart:async'; // 添加Timer导入

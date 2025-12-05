@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/k/models/net_config.dart';
 
 class NetConfigRepository {

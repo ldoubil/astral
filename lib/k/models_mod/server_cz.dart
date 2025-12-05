@@ -1,5 +1,5 @@
 import 'package:astral/k/models/server_mod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 class ServerCz {
   final Isar _isar;

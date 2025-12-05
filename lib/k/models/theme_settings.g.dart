@@ -27,8 +27,9 @@ const ThemeSettingsSchema = CollectionSchema(
       name: r'themeModeValue',
       type: IsarType.byte,
       enumMap: _ThemeSettingsthemeModeValueEnumValueMap,
-    )
+    ),
   },
+
   estimateSize: _themeSettingsEstimateSize,
   serialize: _themeSettingsSerialize,
   deserialize: _themeSettingsDeserialize,
@@ -37,10 +38,11 @@ const ThemeSettingsSchema = CollectionSchema(
   indexes: {},
   links: {},
   embeddedSchemas: {},
+
   getId: _themeSettingsGetId,
   getLinks: _themeSettingsGetLinks,
   attach: _themeSettingsAttach,
-  version: '3.1.8',
+  version: '3.3.0',
 );
 
 int _themeSettingsEstimateSize(
@@ -70,8 +72,10 @@ ThemeSettings _themeSettingsDeserialize(
 ) {
   final object = ThemeSettings(
     colorValue: reader.readLongOrNull(offsets[0]) ?? 0xFFFF5722,
-    themeModeValue: _ThemeSettingsthemeModeValueValueEnumMap[
-            reader.readByteOrNull(offsets[1])] ??
+    themeModeValue:
+        _ThemeSettingsthemeModeValueValueEnumMap[reader.readByteOrNull(
+          offsets[1],
+        )] ??
         ThemeMode.system,
   );
   object.id = id;
@@ -88,9 +92,11 @@ P _themeSettingsDeserializeProp<P>(
     case 0:
       return (reader.readLongOrNull(offset) ?? 0xFFFF5722) as P;
     case 1:
-      return (_ThemeSettingsthemeModeValueValueEnumMap[
-              reader.readByteOrNull(offset)] ??
-          ThemeMode.system) as P;
+      return (_ThemeSettingsthemeModeValueValueEnumMap[reader.readByteOrNull(
+                offset,
+              )] ??
+              ThemeMode.system)
+          as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -116,7 +122,10 @@ List<IsarLinkBase<dynamic>> _themeSettingsGetLinks(ThemeSettings object) {
 }
 
 void _themeSettingsAttach(
-    IsarCollection<dynamic> col, Id id, ThemeSettings object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  ThemeSettings object,
+) {
   object.id = id;
 }
 
@@ -132,17 +141,16 @@ extension ThemeSettingsQueryWhereSort
 extension ThemeSettingsQueryWhere
     on QueryBuilder<ThemeSettings, ThemeSettings, QWhereClause> {
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterWhereClause> idEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -165,8 +173,9 @@ extension ThemeSettingsQueryWhere
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterWhereClause> idGreaterThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -175,8 +184,9 @@ extension ThemeSettingsQueryWhere
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterWhereClause> idLessThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -191,12 +201,14 @@ extension ThemeSettingsQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -204,82 +216,80 @@ extension ThemeSettingsQueryWhere
 extension ThemeSettingsQueryFilter
     on QueryBuilder<ThemeSettings, ThemeSettings, QFilterCondition> {
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      colorValueEqualTo(int value) {
+  colorValueEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'colorValue', value: value),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      colorValueGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  colorValueGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'colorValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      colorValueLessThan(
-    int value, {
-    bool include = false,
-  }) {
+  colorValueLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'colorValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'colorValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      colorValueBetween(
+  colorValueBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'colorValue',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'colorValue',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -288,11 +298,13 @@ extension ThemeSettingsQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -303,69 +315,70 @@ extension ThemeSettingsQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      themeModeValueEqualTo(ThemeMode value) {
+  themeModeValueEqualTo(ThemeMode value) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'themeModeValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'themeModeValue', value: value),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      themeModeValueGreaterThan(
-    ThemeMode value, {
-    bool include = false,
-  }) {
+  themeModeValueGreaterThan(ThemeMode value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'themeModeValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'themeModeValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      themeModeValueLessThan(
-    ThemeMode value, {
-    bool include = false,
-  }) {
+  themeModeValueLessThan(ThemeMode value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'themeModeValue',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'themeModeValue',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterFilterCondition>
-      themeModeValueBetween(
+  themeModeValueBetween(
     ThemeMode lower,
     ThemeMode upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'themeModeValue',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'themeModeValue',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -385,21 +398,21 @@ extension ThemeSettingsQuerySortBy
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      sortByColorValueDesc() {
+  sortByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      sortByThemeModeValue() {
+  sortByThemeModeValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'themeModeValue', Sort.asc);
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      sortByThemeModeValueDesc() {
+  sortByThemeModeValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'themeModeValue', Sort.desc);
     });
@@ -415,7 +428,7 @@ extension ThemeSettingsQuerySortThenBy
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      thenByColorValueDesc() {
+  thenByColorValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'colorValue', Sort.desc);
     });
@@ -434,14 +447,14 @@ extension ThemeSettingsQuerySortThenBy
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      thenByThemeModeValue() {
+  thenByThemeModeValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'themeModeValue', Sort.asc);
     });
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QAfterSortBy>
-      thenByThemeModeValueDesc() {
+  thenByThemeModeValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'themeModeValue', Sort.desc);
     });
@@ -457,7 +470,7 @@ extension ThemeSettingsQueryWhereDistinct
   }
 
   QueryBuilder<ThemeSettings, ThemeSettings, QDistinct>
-      distinctByThemeModeValue() {
+  distinctByThemeModeValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'themeModeValue');
     });
@@ -479,7 +492,7 @@ extension ThemeSettingsQueryProperty
   }
 
   QueryBuilder<ThemeSettings, ThemeMode, QQueryOperations>
-      themeModeValueProperty() {
+  themeModeValueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'themeModeValue');
     });
