@@ -2,7 +2,7 @@ name: astral
 description: 'astral'
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.4.1
+version: 2.4.2
 
 isar_version: &isar_version 3.3.0 # define the version to be used
 
@@ -62,7 +62,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   build_runner: any
-  json_serializable: ^6.7.1
+  json_serializable: ^6.11.0
   integration_test:
     sdk: flutter
   isar_community_generator:
