@@ -20,7 +20,7 @@ android {
     namespace = "com.kevin.astral"
     compileSdk = flutter.compileSdkVersion
     // ndkVersion = flutter.ndkVersion
-    ndkVersion = "27.2.12479018"
+    ndkVersion = "28.2"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
