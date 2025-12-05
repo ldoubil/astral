@@ -53,8 +53,8 @@ jobs:
 
           # 1) Upgrade gradle wrapper distribution to 8.11 (works for both groovy/kts projects)
           if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
-            echo "Patching gradle-wrapper.properties -> gradle-8.11-all.zip"
-            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+            echo "Patching gradle-wrapper.properties -> gradle-8.11.1-all.zip"
+            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
             echo "---- gradle-wrapper.properties (head) ----"
             head -n 5 android/gradle/wrapper/gradle-wrapper.properties || true
           else
