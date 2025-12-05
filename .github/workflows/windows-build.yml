@@ -29,7 +29,7 @@ jobs:
       - name: 🐦 安装Flutter
         run: |
           echo "正在克隆Flutter稳定分支..."
-          git clone https://github.com/flutter/flutter.git --branch 3.29.3 $env:GITHUB_WORKSPACE/flutter --depth 1
+          git clone https://github.com/flutter/flutter.git --branch 3.38.4 $env:GITHUB_WORKSPACE/flutter --depth 1
 
           echo "正在将Flutter添加到PATH..."
           echo "$env:GITHUB_WORKSPACE/flutter/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
