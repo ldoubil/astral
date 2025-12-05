@@ -147,8 +147,6 @@ jobs:
           sed -n '1,40p' android/build.gradle.kts || true
 
       - name: 🛠️ Build arm64-v8a release APK
-        env:
-          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.*/x64
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter clean
