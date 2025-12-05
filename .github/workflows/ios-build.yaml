@@ -39,7 +39,7 @@ jobs:
 
       - name: 🐦 安装 Flutter
         run: |
-          [ ! -d "$HOME/flutter" ] && git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
+          [ ! -d "$HOME/flutter" ] && git clone https://github.com/flutter/flutter.git -b 3.38.4 --depth $HOME/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           chmod +x $HOME/flutter/bin/flutter

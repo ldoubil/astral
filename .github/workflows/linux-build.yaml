@@ -41,9 +41,9 @@ jobs:
           sudo gem install --no-document fpm
           sudo apt-get install -y fuse libfuse2
 
-      - name: 🐦 安装 Flutter
+      - name: 🐦 安装 Flutter 3.38.4
         run: |
-          git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
+          git clone https://github.com/flutter/flutter.git -b 3.38.4 --depth 1 $HOME/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           chmod +x $HOME/flutter/bin/flutter

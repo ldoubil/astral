@@ -53,7 +53,7 @@ jobs:
           
       - name: 🐦 安装 Flutter
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.29.3 $HOME/flutter --depth 1
+          git clone https://github.com/flutter/flutter.git --branch 3.38.4 $HOME/flutter --depth 1
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           chmod +x $HOME/flutter/bin/flutter
