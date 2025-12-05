@@ -131,22 +131,40 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 处理加入房间
-  Future<void> _handleJoinRoom(RoomInfo room) async {
-    try {
-      // 创建 NetNode
-      NetNode netNode = NetNode();
-      ServerNode serverNode = ServerNode();
-      serverNode.host = 'turn.bj.629957.xyz';
-      serverNode.port = 11010;
-      serverNode.protocolSwitch = ServerProtocolSwitch.tcp;
-      room.servers.add(serverNode);
-      // 调用全局连接服务连接房间，传入context用于显示对话框
-      await AppState().v2ConnectionService.connectToRoom(
-        room,
-        netNode,
-        context: context,
-      );
+  // 定义导航项列表
+  List<NavigationItem> get navigationItems => [
+    NavigationItem(
+      icon: Icons.home_outlined, // 未选中时的图标
+      activeIcon: Icons.home, // 选中时的图标
+      label: LocaleKeys.nav_home.tr(), // 导航项标签
+      page: const HomePage(), // 对应的页面
+    ),
+    NavigationItem(
+      icon: Icons.room_preferences_outlined, // 未选中时的图标
+      activeIcon: Icons.room_preferences, // 选中时的图标Icon(Icons.room_preferences)
+      label: LocaleKeys.nav_room.tr(), // 导航项标签
+      page: const RoomPage(), // 对应的页面
+    ),
+    // if (Platform.isWindows)
+    //   NavigationItem(
+    //     icon: Icons.shield_outlined, // 未选中时的图标（防火墙）
+    //     activeIcon: Icons.shield, // 选中时的图标（防火墙）
+    //     label: LocaleKeys.nav_firewall.tr(), // 导航项标签
+    //     page: const WfpPage(), // 对应的页面
+    //   ),
+    NavigationItem(
+      icon: Icons.dns_outlined, // 未选中时的图标
+      activeIcon: Icons.dns, // 选中时的图标Icon(Icons.room_preferences)
+      label: LocaleKeys.nav_server.tr(), // 导航项标签
+      page: const ServerPage(), // 对应的页面
+    ),
+    NavigationItem(
+      icon: Icons.settings_outlined, // 未选中时的图标
+      activeIcon: Icons.settings, // 选中时的图标
+      label: LocaleKeys.nav_settings.tr(), // 导航项标签
+      page: const SettingsPage(), // 对应的页面
+    ),
+  ];
 
       // 连接成功后更新UI状态
       setState(() {

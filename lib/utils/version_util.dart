@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 
 /// 版本工具类
 class VersionUtil {
@@ -51,5 +52,49 @@ class VersionUtil {
     }
 
     return 0; // 版本号相同
+  }
+
+  /// 解析版本字符串，提取版本号和系统标识
+  /// 返回 (版本号, 系统标识)
+  /// 例如: "2.4.5|Windows" -> ("2.4.5", "Windows")
+  ///       "2.4.5" -> ("2.4.5", null)
+  static (String version, String? platform) parseVersion(String versionString) {
+    if (versionString.contains('|')) {
+      final parts = versionString.split('|');
+      if (parts.length == 2) {
+        return (parts[0].trim(), parts[1].trim());
+      }
+    }
+    return (versionString.trim(), null);
+  }
+
+  /// 根据系统标识获取对应的图标
+  /// 如果系统标识为 null 或未知，返回问号图标
+  static IconData getPlatformIcon(String? platform) {
+    if (platform == null) {
+      return Icons.help_outline;
+    }
+
+    final lowerPlatform = platform.toLowerCase();
+    
+    if (lowerPlatform.contains('windows')) {
+      return Icons.desktop_windows;
+    } else if (lowerPlatform.contains('linux')) {
+      return Icons.code; // Linux 使用代码图标
+    } else if (lowerPlatform.contains('macos') || lowerPlatform.contains('mac')) {
+      return Icons.desktop_mac;
+    } else if (lowerPlatform.contains('android')) {
+      return Icons.android;
+    } else if (lowerPlatform.contains('ios')) {
+      return Icons.phone_iphone;
+    } else {
+      return Icons.help_outline;
+    }
+  }
+
+  /// 获取版本显示文本（仅版本号，不包含系统标识）
+  static String getVersionText(String versionString) {
+    final (version, _) = parseVersion(versionString);
+    return version;
   }
 }

@@ -3,6 +3,7 @@ import 'package:astral/utils/reg.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class WindowManagerUtils {
@@ -47,8 +48,28 @@ class WindowManagerUtils {
         }
       });
 
-      if (AppState().startupState.startup.value) {
-        handleStartupSetting(true);
+      // Windows平台：验证并修复计划任务路径
+      if (Platform.isWindows) {
+        try {
+          // 无论启动设置是否启用，都验证计划任务路径
+          // 如果计划任务存在但路径不匹配，自动更新
+          await verifyAndFixStartupTask();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('验证计划任务路径失败: $e');
+          }
+        }
+        
+        // 启动时同步计划任务状态（如果设置已启用）
+        if (Aps().startup.value) {
+          try {
+            await handleStartupSetting(true);
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('初始化时设置开机自启失败: $e');
+            }
+          }
+        }
       }
     }
   }
