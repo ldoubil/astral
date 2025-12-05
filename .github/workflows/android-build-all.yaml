@@ -52,7 +52,7 @@ jobs:
       # ✅ 强制 Gradle 8.11（匹配 AGP 8.9.1）
       - name: ⚙️ 升级 Gradle Wrapper
         run: |
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
           cat android/gradle/wrapper/gradle-wrapper.properties
 
       - name: 🦀 设置 Rust 工具链 1.89.0
