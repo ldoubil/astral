@@ -21,10 +21,11 @@ jobs:
           lfs: true
 
       - name: ☕ 设置 JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: '17'
-          distribution: 'adopt'
+          cache: gradle
 
       - name: 📦 安装系统依赖
         run: |
