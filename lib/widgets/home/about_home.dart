@@ -4,7 +4,6 @@ import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 
@@ -110,7 +109,15 @@ class _AboutHomeState extends State<AboutHome> {
                 '${LocaleKeys.kernel_version.tr()}: ',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              Text(version, style: TextStyle(color: colorScheme.secondary)),
+              Icon(
+                VersionUtil.getPlatformIcon(VersionUtil.parseVersion(version).$2),
+                size: 16,
+                color: colorScheme.primary,
+              ),
+              Text(
+                VersionUtil.getVersionText(version),
+                style: TextStyle(color: colorScheme.secondary),
+              ),
             ],
           ),
         ],

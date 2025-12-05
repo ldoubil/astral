@@ -3,10 +3,13 @@ use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
+use std::time::Duration;
 
 use anyhow::Context;
 use cidr::{IpCidr, Ipv4Inet};
 
+use futures::FutureExt;
+use tokio::sync::{oneshot, Notify};
 use tokio::{sync::Mutex, task::JoinSet};
 use tokio_util::sync::CancellationToken;
 
@@ -425,6 +428,7 @@ impl Instance {
             let default_ipv4_addr = Ipv4Inet::new(Ipv4Addr::new(10, 126, 126, 0), 24).unwrap();
             let mut current_dhcp_ip: Option<Ipv4Inet> = None;
             let mut next_sleep_time = 0;
+            let nic_closed_notifier = Arc::new(Notify::new());
             loop {
                 tokio::time::sleep(std::time::Duration::from_secs(next_sleep_time)).await;
 
@@ -432,6 +436,11 @@ impl Instance {
                     tracing::warn!("peer manager is dropped, stop dhcp check.");
                     return;
                 };
+
+                if nic_closed_notifier.notified().now_or_never().is_some() {
+                    tracing::debug!("nic ctx is closed, try recreate it");
+                    current_dhcp_ip = None;
+                }
 
                 // do not allocate ip if no peer connected
                 let routes = peer_manager_c.list_routes().await;
@@ -494,6 +503,7 @@ impl Instance {
                             global_ctx_c.clone(),
                             &peer_manager_c,
                             _peer_packet_receiver.clone(),
+                            nic_closed_notifier.clone(),
                         );
                         if let Err(e) = new_nic_ctx.run(Some(ip), global_ctx_c.get_ipv6()).await {
                             tracing::error!(
@@ -526,12 +536,82 @@ impl Instance {
         });
     }
 
+    fn check_for_static_ip(&self, first_round_output: oneshot::Sender<Result<(), Error>>) {
+        let ipv4_addr = self.global_ctx.get_ipv4();
+        let ipv6_addr = self.global_ctx.get_ipv6();
+
+        // Only run if we have at least one IP address (IPv4 or IPv6)
+        if ipv4_addr.is_none() && ipv6_addr.is_none() {
+            let _ = first_round_output.send(Ok(()));
+            return;
+        }
+
+        let nic_ctx = self.nic_ctx.clone();
+        let peer_mgr = Arc::downgrade(&self.peer_manager);
+        let peer_packet_receiver = self.peer_packet_receiver.clone();
+
+        tokio::spawn(async move {
+            let mut output_tx = Some(first_round_output);
+            loop {
+                let Some(peer_manager) = peer_mgr.upgrade() else {
+                    tracing::warn!("peer manager is dropped, stop static ip check.");
+                    if let Some(output_tx) = output_tx.take() {
+                        let _ = output_tx.send(Err(Error::Unknown));
+                        return;
+                    }
+                    return;
+                };
+
+                let close_notifier = Arc::new(Notify::new());
+                let mut new_nic_ctx = NicCtx::new(
+                    peer_manager.get_global_ctx(),
+                    &peer_manager,
+                    peer_packet_receiver.clone(),
+                    close_notifier.clone(),
+                );
+
+                if let Err(e) = new_nic_ctx.run(ipv4_addr, ipv6_addr).await {
+                    if let Some(output_tx) = output_tx.take() {
+                        let _ = output_tx.send(Err(e));
+                        return;
+                    }
+                    tracing::error!("failed to create new nic ctx, err: {:?}", e);
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+                let ifname = new_nic_ctx.ifname().await;
+
+                // Create Magic DNS runner only if we have IPv4
+                let dns_runner = if let Some(ipv4) = ipv4_addr {
+                    Self::create_magic_dns_runner(peer_manager, ifname, ipv4)
+                } else {
+                    None
+                };
+                Self::use_new_nic_ctx(nic_ctx.clone(), new_nic_ctx, dns_runner).await;
+
+                if let Some(output_tx) = output_tx.take() {
+                    let _ = output_tx.send(Ok(()));
+                }
+
+                // NOTICE: make sure we do not hold the peer manager here,
+                while close_notifier.notified().now_or_never().is_none() {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    if peer_mgr.strong_count() == 0 {
+                        tracing::warn!("peer manager is dropped, stop static ip check.");
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
     async fn run_quic_dst(&mut self) -> Result<(), Error> {
-        if !self.global_ctx.get_flags().enable_quic_proxy {
+        if self.global_ctx.get_flags().disable_quic_input {
             return Ok(());
         }
 
-        let quic_dst = QUICProxyDst::new(self.global_ctx.clone())?;
+        let route = Arc::new(self.peer_manager.get_route());
+        let quic_dst = QUICProxyDst::new(self.global_ctx.clone(), route)?;
         quic_dst.start().await?;
         self.global_ctx
             .set_quic_proxy_port(Some(quic_dst.local_addr()?.port()));
@@ -553,28 +633,9 @@ impl Instance {
         if !self.global_ctx.config.get_flags().no_tun {
             #[cfg(not(any(target_os = "android", target_env = "ohos")))]
             {
-                let ipv4_addr = self.global_ctx.get_ipv4();
-                let ipv6_addr = self.global_ctx.get_ipv6();
-
-                // Only run if we have at least one IP address (IPv4 or IPv6)
-                if ipv4_addr.is_some() || ipv6_addr.is_some() {
-                    let mut new_nic_ctx = NicCtx::new(
-                        self.global_ctx.clone(),
-                        &self.peer_manager,
-                        self.peer_packet_receiver.clone(),
-                    );
-
-                    new_nic_ctx.run(ipv4_addr, ipv6_addr).await?;
-                    let ifname = new_nic_ctx.ifname().await;
-
-                    // Create Magic DNS runner only if we have IPv4
-                    let dns_runner = if let Some(ipv4) = ipv4_addr {
-                        Self::create_magic_dns_runner(self.peer_manager.clone(), ifname, ipv4)
-                    } else {
-                        None
-                    };
-                    Self::use_new_nic_ctx(self.nic_ctx.clone(), new_nic_ctx, dns_runner).await;
-                }
+                let (output_tx, output_rx) = oneshot::channel();
+                self.check_for_static_ip(output_tx);
+                output_rx.await.unwrap()?;
             }
         }
 
@@ -929,6 +990,7 @@ impl Instance {
             return Ok(());
         };
 
+        use crate::instance::logger_rpc_service::LoggerRpcService;
         use crate::proto::cli::*;
 
         let peer_mgr = self.peer_manager.clone();
@@ -938,6 +1000,7 @@ impl Instance {
         let mapped_listener_manager_rpc = self.get_mapped_listener_manager_rpc_service();
         let port_forward_manager_rpc = self.get_port_forward_manager_rpc_service();
         let stats_rpc_service = self.get_stats_rpc_service();
+        let logger_rpc_service = LoggerRpcService::new();
 
         let s = self.rpc_server.as_mut().unwrap();
         let peer_mgr_rpc_service = PeerManagerRpcService::new(peer_mgr.clone());
@@ -966,6 +1029,8 @@ impl Instance {
             crate::proto::cli::StatsRpcServer::new(stats_rpc_service),
             "",
         );
+        s.registry()
+            .register(LoggerRpcServer::new(logger_rpc_service), "");
 
         if let Some(ip_proxy) = self.ip_proxy.as_ref() {
             s.registry().register(
@@ -1038,10 +1103,12 @@ impl Instance {
         if fd <= 0 {
             return Ok(());
         }
+        let close_notifier = Arc::new(Notify::new());
         let mut new_nic_ctx = NicCtx::new(
             global_ctx.clone(),
             &peer_manager,
             peer_packet_receiver.clone(),
+            close_notifier.clone(),
         );
         new_nic_ctx
             .run_for_android(fd)

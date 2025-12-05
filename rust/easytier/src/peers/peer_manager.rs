@@ -32,7 +32,7 @@ use crate::{
         peer_conn::PeerConn,
         peer_rpc::PeerRpcManagerTransport,
         recv_packet_from_chan,
-        route_trait::{ForeignNetworkRouteInfoMap, NextHopPolicy, RouteInterface},
+        route_trait::{ForeignNetworkRouteInfoMap, MockRoute, NextHopPolicy, RouteInterface},
         PeerPacketFilter,
     },
     proto::{
@@ -40,7 +40,9 @@ use crate::{
             self, list_global_foreign_network_response::OneForeignNetwork,
             ListGlobalForeignNetworkResponse,
         },
-        peer_rpc::{ForeignNetworkRouteInfoEntry, ForeignNetworkRouteInfoKey},
+        peer_rpc::{
+            ForeignNetworkRouteInfoEntry, ForeignNetworkRouteInfoKey, RouteForeignNetworkSummary,
+        },
     },
     tunnel::{
         self,
@@ -632,6 +634,7 @@ impl PeerManager {
         let acl_filter = self.global_ctx.get_acl_filter().clone();
         let global_ctx = self.global_ctx.clone();
         let stats_mgr = self.global_ctx.stats_manager().clone();
+        let route = self.get_route();
 
         let label_set =
             LabelSet::new().with_label_type(LabelType::NetworkName(global_ctx.get_network_name()));
@@ -735,6 +738,7 @@ impl PeerManager {
                         true,
                         global_ctx.get_ipv4().map(|x| x.address()),
                         global_ctx.get_ipv6().map(|x| x.address()),
+                        &route,
                     ) {
                         continue;
                     }
@@ -912,7 +916,7 @@ impl PeerManager {
     pub fn get_route(&self) -> Box<dyn Route + Send + Sync + 'static> {
         match &self.route_algo_inst {
             RouteAlgoInst::Ospf(route) => Box::new(route.clone()),
-            RouteAlgoInst::None => panic!("no route"),
+            RouteAlgoInst::None => Box::new(MockRoute {}),
         }
     }
 
@@ -953,12 +957,18 @@ impl PeerManager {
         resp
     }
 
+    pub async fn get_foreign_network_summary(&self) -> RouteForeignNetworkSummary {
+        self.get_route().get_foreign_network_summary().await
+    }
+
     async fn run_nic_packet_process_pipeline(&self, data: &mut ZCPacket) {
-        if !self
-            .global_ctx
-            .get_acl_filter()
-            .process_packet_with_acl(data, false, None, None)
-        {
+        if !self.global_ctx.get_acl_filter().process_packet_with_acl(
+            data,
+            false,
+            None,
+            None,
+            &self.get_route(),
+        ) {
             return;
         }
 
@@ -1045,10 +1055,19 @@ impl PeerManager {
             || ipv4_addr.is_multicast()
             || *ipv4_addr == ipv4_inet.last_address()
         {
-            dst_peers.extend(self.peers.list_routes().await.iter().map(|x| *x.key()));
+            dst_peers.extend(self.peers.list_routes().await.iter().filter_map(|x| {
+                if *x.key() != self.my_peer_id {
+                    Some(*x.key())
+                } else {
+                    None
+                }
+            }));
         } else if let Some(peer_id) = self.peers.get_peer_id_by_ipv4(ipv4_addr).await {
             dst_peers.push(peer_id);
-        } else {
+        } else if !self
+            .global_ctx
+            .is_ip_in_same_network(&std::net::IpAddr::V4(*ipv4_addr))
+        {
             for exit_node in &self.exit_nodes {
                 let IpAddr::V4(exit_node) = exit_node else {
                     continue;
@@ -1062,8 +1081,12 @@ impl PeerManager {
         }
         #[cfg(target_env = "ohos")]
         {
-            if dst_peers.is_empty() {
-                tracing::info!("no peer id for ipv4: {}, set exit_node for ohos", ipv4_addr);
+            if dst_peers.is_empty()
+                && !self
+                    .global_ctx
+                    .is_ip_in_same_network(&std::net::IpAddr::V4(*ipv4_addr))
+            {
+                tracing::trace!("no peer id for ipv4: {}, set exit_node for ohos", ipv4_addr);
                 dst_peers.push(self.my_peer_id.clone());
                 is_exit_node = true;
             }
@@ -1375,6 +1398,11 @@ impl PeerManager {
         else {
             return false;
         };
+
+        if next_hop_id == dst_peer_id {
+            // dst p2p, no need to relay
+            return true;
+        }
 
         let Some(next_hop_info) = route.get_peer_info(next_hop_id).await else {
             return false;

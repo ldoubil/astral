@@ -1,7 +1,7 @@
 import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/utils/version_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/k/app_s/aps.dart';
 
 // 将列表项卡片抽取为独立的StatefulWidget
 class MiniUserCard extends StatefulWidget {
@@ -166,12 +166,12 @@ class _MiniUserCardState extends State<MiniUserCard> {
                     ),
                     const SizedBox(width: 10),
                     Icon(
-                      Icons.memory_outlined,
+                      VersionUtil.getPlatformIcon(VersionUtil.parseVersion(player.version).$2),
                       size: 16,
                       color: colorScheme.primary,
                     ),
                     Text(
-                      player.version,
+                      VersionUtil.getVersionText(player.version),
                       style: TextStyle(
                         color: colorScheme.secondary,
                         fontSize: 13,
@@ -297,8 +297,7 @@ String _mapConnectionType(int connType, String ip, String thisip) {
     return '服务器';
   }
   // 如果是本机IP，返回direct
-  if (thisip != null && ip == thisip) {
-    // 检查 thisip 是否为 null
+  if (thisip.isNotEmpty && ip == thisip) {
     return '本机';
   }
   // 根据连接成本判断连接类型
