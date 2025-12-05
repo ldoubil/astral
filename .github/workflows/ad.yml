@@ -1,0 +1,140 @@
+name: 📲 Android 构建 arm64-v8a 架构 APK (Flutter 3.38.4, AGP 8.9.1)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: 🛠️ Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: ☕ Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: 📦 Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libc6-dev clang llvm libclang-dev protobuf-compiler unzip
+
+      - name: 🤖 Setup Android SDK (with NDK 28.2)
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: '28.2.13676358'
+          cmake-version: '3.22.1'
+
+      - name: 🐦 Install Flutter 3.38.4
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch 3.38.4 --depth 1 $HOME/flutter
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
+          chmod +x $HOME/flutter/bin/flutter
+          flutter --version
+
+      - name: 🔍 Detect and patch Gradle/Kotlin/AGP/ndkVersion (automatic)
+        run: |
+          set -eux
+
+          # 1) Upgrade gradle wrapper distribution to 8.11 (works for both groovy/kts projects)
+          if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
+            echo "Patching gradle-wrapper.properties -> gradle-8.11.1-all.zip"
+            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+            echo "---- gradle-wrapper.properties (head) ----"
+            head -n 5 android/gradle/wrapper/gradle-wrapper.properties || true
+          else
+            echo "No gradle-wrapper.properties found at android/gradle/wrapper/ - skipping wrapper patch"
+          fi
+
+          # 2) Try to patch AGP version in android/build.gradle (Groovy) or build.gradle.kts (Kotlin DSL)
+          if [ -f android/build.gradle ]; then
+            echo "Patching android/build.gradle (Groovy) for AGP -> 8.9.1"
+            sed -i -E "s|(com.android.tools.build:gradle:)[0-9]+\.[0-9]+(\.[0-9]+)?|\18.9.1|g" android/build.gradle || true
+            sed -i -E "s/(ext.kotlin_version\\s*=\\s*')[^']+(')/\\12.1.0\\2/g" android/build.gradle || true
+            sed -i -E "s|(org.jetbrains.kotlin:kotlin-gradle-plugin:)[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/build.gradle || true
+          fi
+
+          if [ -f android/build.gradle.kts ]; then
+            echo "Patching android/build.gradle.kts (Kotlin DSL) for AGP -> 8.9.1"
+            sed -i -E "s|(com.android.tools.build:gradle:)[0-9]+\.[0-9]+(\.[0-9]+)?|\18.9.1|g" android/build.gradle.kts || true
+            sed -i -E "s|(org.jetbrains.kotlin.android\"\\s*version\\s*\")[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/build.gradle.kts || true
+            sed -i -E "s|(id\\(\"org.jetbrains.kotlin.android\"\\)\\s*version\\s*\")[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/settings.gradle.kts || true || true
+          fi
+
+          # 3) Patch settings.gradle / settings.gradle.kts if it contains plugin management with kotlin plugin
+          if [ -f android/settings.gradle ]; then
+            sed -i -E "s|(id 'org.jetbrains.kotlin.android' version ')[^']+(')|\\12.1.0\\2|g" android/settings.gradle || true
+          fi
+          if [ -f android/settings.gradle.kts ]; then
+            sed -i -E "s|(id\\(\"org.jetbrains.kotlin.android\"\\)\\s*version\\s*\\\")[0-9]+\.[0-9]+(\.[0-9]+)?(\\\")|\\12.1.0\\3|g" android/settings.gradle.kts || true
+          fi
+
+          # 4) Ensure android/app has ndkVersion setting (handle both Groovy and Kotlin DSL)
+          if [ -f android/app/build.gradle ]; then
+            if grep -q "ndkVersion" android/app/build.gradle; then
+              echo "android/app/build.gradle already contains ndkVersion - replacing value"
+              sed -i -E "s|(ndkVersion\\s+\\\"?)[0-9]+\\.[0-9]+\\.[0-9]+[0-9]*\\\"?/|\\1 28.2.13676358/ |g" android/app/build.gradle || true
+            else
+              echo "Inserting ndkVersion into android/app/build.gradle"
+              awk 'BEGIN{added=0} /android[[:space:]]*{/{print; if(!added){print "    ndkVersion \"28.2.13676358\""; added=1; } next} {print}' android/app/build.gradle > android/app/build.gradle.tmp && mv android/app/build.gradle.tmp android/app/build.gradle || true
+            fi
+          fi
+
+          if [ -f android/app/build.gradle.kts ]; then
+            if grep -q "ndkVersion" android/app/build.gradle.kts; then
+              echo "android/app/build.gradle.kts already contains ndkVersion - replacing value"
+              sed -i -E 's|ndkVersion\\s*=\\s*".*"|ndkVersion = "28.2.13676358"|g' android/app/build.gradle.kts || true
+            else
+              echo "Inserting ndkVersion into android/app/build.gradle.kts"
+              awk 'BEGIN{added=0} /android[[:space:]]*\\{/ {print; if(!added){print "    ndkVersion = \"28.2.13676358\""; added=1;} next} {print}' android/app/build.gradle.kts > android/app/build.gradle.kts.tmp && mv android/app/build.gradle.kts.tmp android/app/build.gradle.kts || true
+            fi
+          fi
+
+          echo "---- git status (show modified files) ----"
+          git status --porcelain || true
+          echo "---- patched files head ----"
+          for f in android/gradle/wrapper/gradle-wrapper.properties android/build.gradle android/build.gradle.kts android/settings.gradle android/settings.gradle.kts android/app/build.gradle android/app/build.gradle.kts; do
+            if [ -f "$f" ]; do
+              echo "---- $f ----"
+              sed -n '1,120p' "$f" || true
+            fi
+          done
+
+      - name: 📚 Flutter pub get
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter pub get
+
+      - name: ⚙️ Verify Gradle / AGP / Kotlin versions (print)
+        run: |
+          echo "gradle-wrapper.properties head:"
+          sed -n '1,20p' android/gradle/wrapper/gradle-wrapper.properties || true
+          echo "android/build.gradle head (if exists):"
+          sed -n '1,40p' android/build.gradle || true
+          echo "android/build.gradle.kts head (if exists):"
+          sed -n '1,40p' android/build.gradle.kts || true
+
+      - name: 🛠️ Build arm64-v8a debug APK
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter clean
+          flutter build apk --debug --target-platform android-arm64 --no-tree-shake-icons
+
+      - name: 📤 Upload arm64 debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: astral-arm64-v8a-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
