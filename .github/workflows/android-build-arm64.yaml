@@ -1,99 +1,160 @@
-name: 📲 Android 构建 arm64-v8a 架构 APK
+name: 📲 Android 构建 arm64-v8a 架构 APK (Flutter 3.38.4, AGP 8.9.1)
 
 on:
   workflow_dispatch:
-  push:  # 每次 push 到仓库时触发
+  push:
     tags:
-      - 'v*'  # 指定触发分支
+      - "v*"
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 确保有写入权限
+      contents: write
       packages: write
+
     steps:
-      - name: 🛠️ 检出代码仓库
+      - name: 🛠️ Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
-          $GITHUB_WORKSPACE/scripts/install_rust.sh
-
-      - name: 📦 安装系统依赖
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libc6-dev
-          sudo apt-get install -y libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-          sudo apt-get install -y clang llvm libclang-dev
-          sudo apt-get install -y libc-dev
-          sudo apt-get install -y libc6-dev-i386 gcc-multilib g++-multilib
-          sudo apt-get install -y protobuf-compiler
-
-      - name: 🎯 配置 Rust 目标架构
-        run: |
-          rustup target add armv7-linux-androideabi
-          rustup target add aarch64-linux-android
-
-      - name: ☕ 设置 JDK 17
+      - name: ☕ Setup JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
           distribution: 'adopt'
+          java-version: '17'
 
-      - name: 🤖 设置 Android SDK
+      - name: 📦 Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libc6-dev clang llvm libclang-dev protobuf-compiler unzip
+
+      - name: 🤖 Setup Android SDK (with NDK 28.2)
         uses: android-actions/setup-android@v3
         with:
-          ndk-version: '27.2.12479018'
-          cmake-version: '3.18.1'
-          
-      - name: 🐦 安装 Flutter
+          ndk-version: '28.2.13676358'
+          cmake-version: '3.22.1'
+
+      - name: 🐦 Install Flutter 3.38.4
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.38.4 $HOME/flutter --depth 1
+          git clone https://github.com/flutter/flutter.git --branch 3.38.4 --depth 1 $HOME/flutter
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           chmod +x $HOME/flutter/bin/flutter
           flutter --version
 
-      - name: 📚 安装 Flutter 依赖
+      - name: 🔍 Detect and patch Gradle/Kotlin/AGP/ndkVersion (automatic)
+        # This step attempts to upgrade AGP -> 8.9.1, Gradle wrapper -> 8.11, Kotlin -> 2.1.0
+        # and ensure android/app has ndkVersion = "28.2.13676358"
         run: |
-          flutter pub get
-          
-      - name: 🔐 设置签名配置
+          set -eux
+
+          # 1) Upgrade gradle wrapper distribution to 8.11 (works for both groovy/kts projects)
+          if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
+            echo "Patching gradle-wrapper.properties -> gradle-8.11-all.zip"
+            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+            echo "---- gradle-wrapper.properties (head) ----"
+            head -n 5 android/gradle/wrapper/gradle-wrapper.properties || true
+          else
+            echo "No gradle-wrapper.properties found at android/gradle/wrapper/ - skipping wrapper patch"
+          fi
+
+          # 2) Try to patch AGP version in android/build.gradle (Groovy) or build.gradle.kts (Kotlin DSL)
+          if [ -f android/build.gradle ]; then
+            echo "Patching android/build.gradle (Groovy) for AGP -> 8.9.1"
+            # replace classpath com.android.tools.build:gradle:*
+            sed -i -E "s|(com.android.tools.build:gradle:)[0-9]+\.[0-9]+(\.[0-9]+)?|\18.9.1|g" android/build.gradle || true
+
+            # replace ext.kotlin_version or kotlin plugin version
+            sed -i -E "s/(ext.kotlin_version\\s*=\\s*')[^']+(')/\\12.1.0\\2/g" android/build.gradle || true
+            sed -i -E "s|(org.jetbrains.kotlin:kotlin-gradle-plugin:)[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/build.gradle || true
+          fi
+
+          if [ -f android/build.gradle.kts ]; then
+            echo "Patching android/build.gradle.kts (Kotlin DSL) for AGP -> 8.9.1"
+            sed -i -E "s|(com.android.tools.build:gradle:)[0-9]+\.[0-9]+(\.[0-9]+)?|\18.9.1|g" android/build.gradle.kts || true
+            sed -i -E "s|(org.jetbrains.kotlin.android\"\\s*version\\s*\")[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/build.gradle.kts || true
+            sed -i -E "s|(id\\(\"org.jetbrains.kotlin.android\"\\)\\s*version\\s*\")[0-9]+\.[0-9]+(\.[0-9]+)?|\12.1.0|g" android/settings.gradle.kts || true || true
+          fi
+
+          # 3) Patch settings.gradle / settings.gradle.kts if it contains plugin management with kotlin plugin
+          if [ -f android/settings.gradle ]; then
+            sed -i -E "s|(id 'org.jetbrains.kotlin.android' version ')[^']+(')|\\12.1.0\\2|g" android/settings.gradle || true
+          fi
+          if [ -f android/settings.gradle.kts ]; then
+            sed -i -E "s|(id\\(\"org.jetbrains.kotlin.android\"\\)\\s*version\\s*\\\")[0-9]+\.[0-9]+(\.[0-9]+)?(\\\")|\\12.1.0\\3|g" android/settings.gradle.kts || true
+          fi
+
+          # 4) Ensure android/app has ndkVersion setting (handle both Groovy and Kotlin DSL)
+          if [ -f android/app/build.gradle ]; then
+            if grep -q "ndkVersion" android/app/build.gradle; then
+              echo "android/app/build.gradle already contains ndkVersion - replacing value"
+              sed -i -E "s|(ndkVersion\\s+\\\"?)[0-9]+\\.[0-9]+\\.[0-9]+[0-9]*\\\"?/|\\1 28.2.13676358/ |g" android/app/build.gradle || true
+            else
+              echo "Inserting ndkVersion into android/app/build.gradle"
+              # insert ndkVersion after the first 'android {' line
+              awk 'BEGIN{added=0} /android[[:space:]]*{/{print; if(!added){print "    ndkVersion \"28.2.13676358\""; added=1; } next} {print}' android/app/build.gradle > android/app/build.gradle.tmp && mv android/app/build.gradle.tmp android/app/build.gradle || true
+            fi
+          fi
+
+          if [ -f android/app/build.gradle.kts ]; then
+            if grep -q "ndkVersion" android/app/build.gradle.kts; then
+              echo "android/app/build.gradle.kts already contains ndkVersion - replacing value"
+              sed -i -E 's|ndkVersion\\s*=\\s*".*"|ndkVersion = "28.2.13676358"|g' android/app/build.gradle.kts || true
+            else
+              echo "Inserting ndkVersion into android/app/build.gradle.kts"
+              awk 'BEGIN{added=0} /android[[:space:]]*\\{/ {print; if(!added){print "    ndkVersion = \"28.2.13676358\""; added=1;} next} {print}' android/app/build.gradle.kts > android/app/build.gradle.kts.tmp && mv android/app/build.gradle.kts.tmp android/app/build.gradle.kts || true
+            fi
+          fi
+
+          echo "---- git status (show modified files) ----"
+          git status --porcelain || true
+          echo "---- patched files head ----"
+          for f in android/gradle/wrapper/gradle-wrapper.properties android/build.gradle android/build.gradle.kts android/settings.gradle android/settings.gradle.kts android/app/build.gradle android/app/build.gradle.kts; do
+            if [ -f "$f" ]; then
+              echo "---- $f ----"
+              sed -n '1,120p' "$f" || true
+            fi
+          done
+
+      - name: 🔐 Setup signing (from secrets)
         run: |
+          mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          # 调试信息（不会显示敏感内容）
-          echo "检查 key.properties 是否创建成功:"
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
           ls -la android/key.properties
-          echo "检查 keystore 是否创建成功:"
           ls -la android/app/upload-keystore.jks
 
-      - name: 🐦 设置 Flutter
+      - name: 📚 Flutter pub get
         run: |
-          flutter --version
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter pub get
 
-      - name: 🦀 安装 cargo-ndk
+      - name: ⚙️ Verify Gradle / AGP / Kotlin versions (print)
         run: |
-          cargo install cargo-ndk
+          echo "gradle-wrapper.properties head:"
+          sed -n '1,20p' android/gradle/wrapper/gradle-wrapper.properties || true
+          echo "android/build.gradle head (if exists):"
+          sed -n '1,40p' android/build.gradle || true
+          echo "android/build.gradle.kts head (if exists):"
+          sed -n '1,40p' android/build.gradle.kts || true
 
-      - name: 🔧 设置 bindgen 环境变量
+      - name: 🛠️ Build arm64-v8a release APK
+        env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.*/x64
         run: |
-          echo "BINDGEN_EXTRA_CLANG_ARGS=-I/usr/include -I/usr/include/x86_64-linux-gnu" >> $GITHUB_ENV
-          echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter clean
+          flutter build apk --release --target-platform android-arm64 --no-tree-shake-icons
 
-      - name: 🛠️ 构建 arm64-v8a 架构 APK
-        run: |
-          flutter build apk --release --target-platform android-arm64
-
-      - name: 📤 上传 arm64-v8a 架构 APK 到 Artifacts
+      - name: 📤 Upload arm64 APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: astral-arm64-v8a-apk
