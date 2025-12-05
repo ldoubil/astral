@@ -155,7 +155,7 @@ jobs:
                   sys.exit(0)
               
               # 设置模型和生成参数
-              model = genai.GenerativeModel('gemini-1.0-pro')
+              model = genai.GenerativeModel('gemini-1.5-pro')
               prompt = f"""
               请根据以下Git提交记录生成规范的更新日志文档：
 
