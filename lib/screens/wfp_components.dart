@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:astral/k/models/wfp_model.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/k/app_s/aps.dart';
 
 // 中文选项常量

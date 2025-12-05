@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 part 'rule_group.g.dart';
 
 // 操作类型枚举

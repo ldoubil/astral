@@ -97,6 +97,7 @@ const AllSettingsSchema = CollectionSchema(
       type: IsarType.bool,
     ),
   },
+
   estimateSize: _allSettingsEstimateSize,
   serialize: _allSettingsSerialize,
   deserialize: _allSettingsDeserialize,
@@ -105,10 +106,11 @@ const AllSettingsSchema = CollectionSchema(
   indexes: {},
   links: {},
   embeddedSchemas: {},
+
   getId: _allSettingsGetId,
   getLinks: _allSettingsGetLinks,
   attach: _allSettingsAttach,
-  version: '3.1.8',
+  version: '3.3.0',
 );
 
 int _allSettingsEstimateSize(

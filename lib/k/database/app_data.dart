@@ -9,7 +9,7 @@ import 'package:astral/k/models_mod/net_config_cz.dart';
 import 'package:astral/k/models_mod/room_cz.dart';
 import 'package:astral/k/models_mod/server_cz.dart';
 import 'package:astral/k/models_mod/wfp_model_cz.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/k/models/theme_settings.dart';
 import 'package:astral/k/models_mod/theme_settings_cz.dart';
 import 'package:path_provider/path_provider.dart';
