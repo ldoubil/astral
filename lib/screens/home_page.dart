@@ -15,7 +15,11 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   // 根据宽度计算列数
   int _getColumnCount(double width) {
     if (width >= 1200) {
@@ -30,38 +34,42 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin 需要
     final width = MediaQuery.of(context).size.width;
     final columnCount = _getColumnCount(width);
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: StaggeredGrid.count(
-                      crossAxisCount: columnCount,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      children: [
-                        VirtualIpBox(),
-                        UserIpBox(),
-                        ServersHome(),
-                        // UdpLog(),
-                        AboutHome(),
-                        HitokotoCard(),
-                      ],
+    return RepaintBoundary(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(), // 更流畅的滚动物理效果
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: StaggeredGrid.count(
+                        crossAxisCount: columnCount,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        children: const [
+                          VirtualIpBox(),
+                          UserIpBox(),
+                          ServersHome(),
+                          // UdpLog(),
+                          AboutHome(),
+                          HitokotoCard(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
+        floatingActionButton: const ConnectButton(),
       ),
-      floatingActionButton: const ConnectButton(),
     );
   }
 }
