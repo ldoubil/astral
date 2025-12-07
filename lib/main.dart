@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/scheduler.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -32,7 +33,19 @@ void main() async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // 启用高性能渲染模式
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    // 设置最大帧率
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!kDebugMode) {
+        // Release模式下启用高帧率
+        SchedulerBinding.instance.platformDispatcher.onBeginFrame = null;
+        SchedulerBinding.instance.scheduleFrame();
+      }
+    });
+  }
+
   if (Platform.isMacOS) {
     checkSudo().then((elevated) {
       if (!elevated) {
@@ -43,7 +56,7 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await AppDatabase().init();
   AppInfoUtil.init();
-  
+
   await LogCapture().startCapture();
   await UrlSchemeRegistrar.registerUrlScheme();
   await _initAppLinks();
@@ -73,7 +86,6 @@ void _runApp() {
     ),
   );
 }
-
 
 Future<void> _initAppLinks() async {
   final registry = AppLinkRegistry();
