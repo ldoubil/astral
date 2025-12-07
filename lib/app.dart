@@ -22,7 +22,6 @@ class _KevinAppState extends State<KevinApp> {
     super.initState();
     getIpv4AndIpV6Addresses();
     // 初始化链接服务
-      
   }
 
   @override
@@ -33,6 +32,8 @@ class _KevinAppState extends State<KevinApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // 禁用调试横幅
+      showPerformanceOverlay: false, // 禁用性能叠加层
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
@@ -55,6 +56,15 @@ class _KevinAppState extends State<KevinApp> {
         useMaterial3: true,
         colorSchemeSeed: _aps.themeColor.watch(context), // 设置当前主题颜色,
         brightness: Brightness.light,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
       ).copyWith(
         textTheme: Typography.material2021().black.apply(fontFamily: 'MiSans'),
         primaryTextTheme: Typography.material2021().black.apply(
@@ -65,6 +75,15 @@ class _KevinAppState extends State<KevinApp> {
         useMaterial3: true,
         colorSchemeSeed: _aps.themeColor.watch(context),
         brightness: Brightness.dark,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
       ).copyWith(
         textTheme: Typography.material2021().white.apply(fontFamily: 'MiSans'),
         primaryTextTheme: Typography.material2021().white.apply(

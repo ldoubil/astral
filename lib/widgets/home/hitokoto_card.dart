@@ -21,17 +21,27 @@ class _HitokotoCardState extends State<HitokotoCard> {
     _fetchHitokoto();
   }
 
+  @override
+  void dispose() {
+    // 清理资源，防止内存泄漏
+    super.dispose();
+  }
+
   Future<void> _fetchHitokoto() async {
     try {
       final response = await http.get(Uri.parse('https://v1.hitokoto.cn/'));
+      if (!mounted) return; // 检查 widget 是否还在树中
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return; // 再次检查
         setState(() {
           hitokoto = data['hitokoto'] ?? '暂无内容';
           hitokotoFrom = data['from'] ?? '未知来源';
           isLoadingHitokoto = false;
         });
       } else {
+        if (!mounted) return;
         setState(() {
           hitokoto = '获取失败';
           hitokotoFrom = '';
@@ -39,6 +49,7 @@ class _HitokotoCardState extends State<HitokotoCard> {
         });
       }
     } catch (e) {
+      if (!mounted) return; // 捕获异常后也要检查
       setState(() {
         hitokoto = '网络错误';
         hitokotoFrom = '';
@@ -57,34 +68,26 @@ class _HitokotoCardState extends State<HitokotoCard> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.format_quote,
-                color: colorScheme.primary,
-                size: 22,
-              ),
+              Icon(Icons.format_quote, color: colorScheme.primary, size: 22),
               const SizedBox(width: 8),
               Text(
                 '一言',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
               ),
               const Spacer(),
               IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-                onPressed: isLoadingHitokoto ? null : () {
-                  setState(() {
-                    isLoadingHitokoto = true;
-                    hitokoto = '加载中...';
-                    hitokotoFrom = '';
-                  });
-                  _fetchHitokoto();
-                },
+                icon: Icon(Icons.refresh, size: 18, color: colorScheme.primary),
+                onPressed:
+                    isLoadingHitokoto
+                        ? null
+                        : () {
+                          setState(() {
+                            isLoadingHitokoto = true;
+                            hitokoto = '加载中...';
+                            hitokotoFrom = '';
+                          });
+                          _fetchHitokoto();
+                        },
                 tooltip: '刷新一言',
               ),
             ],

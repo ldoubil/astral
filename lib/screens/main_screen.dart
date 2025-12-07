@@ -11,7 +11,6 @@ import 'package:astral/screens/settings_page.dart';
 import 'package:astral/screens/wfp_page.dart';
 import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
-import 'package:astral/widgets/desktop_sidebar.dart';
 import 'package:astral/widgets/status_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/k/navigtion.dart';
@@ -29,18 +28,9 @@ class MainScreen extends StatefulWidget {
 // MainScreen的状态管理类
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  
   @override
   void initState() {
     super.initState();
-    
-    // 启用高性能渲染模式
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        // 禁用调试信息显示
-        WidgetsBinding.instance.reassembleApplication();
-      }
-    });
 
     WidgetsBinding.instance.addObserver(this); // 监听屏幕等状态变化
     // 在第一帧渲染完成后获取屏幕宽度并更新分割宽度
@@ -144,10 +134,6 @@ class _MainScreenState extends State<MainScreen>
     // 获取当前主题的颜色方案
     final colorScheme = Theme.of(context).colorScheme;
     final isSmallWindow = SmallWindowAdapter.shouldApplyAdapter(context);
-    
-    // 缓存经常使用的状态，避免多次watch调用
-    final selectedIndex = Aps().selectedIndex.watch(context);
-    final isDesktop = Aps().isDesktop.watch(context);
 
     // 构建Scaffold组件
     return Scaffold(
@@ -157,11 +143,8 @@ class _MainScreenState extends State<MainScreen>
       body: Row(
         children: [
           // 根据是否为桌面端决定是否显示左侧导航
-          if (isDesktop && !isSmallWindow)
-            DesktopSidebar(
-              items: navigationItems,
-              colorScheme: colorScheme,
-            ),
+          if (Aps().isDesktop.watch(context) && !isSmallWindow)
+            LeftNav(items: navigationItems, colorScheme: colorScheme),
           // 主要内容区域
           Expanded(
             child: Column(
@@ -174,7 +157,7 @@ class _MainScreenState extends State<MainScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      navigationItems[selectedIndex].label,
+                      navigationItems[Aps().selectedIndex.watch(context)].label,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -184,9 +167,21 @@ class _MainScreenState extends State<MainScreen>
                   ),
                 // 主内容区域
                 Expanded(
-                  child: IndexedStack(
-                    index: selectedIndex,
-                    children: _pages,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300), // 动画持续时间
+                    switchInCurve: Curves.easeInOut, // 进入动画曲线
+                    switchOutCurve: Curves.easeInOut, // 退出动画曲线
+                    transitionBuilder: (
+                      Widget child,
+                      Animation<double> animation,
+                    ) {
+                      // 使用渐变动画
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey<int>(Aps().selectedIndex.watch(context)),
+                      child: _pages[Aps().selectedIndex.watch(context)],
+                    ),
                   ),
                 ),
               ],
@@ -196,7 +191,7 @@ class _MainScreenState extends State<MainScreen>
       ),
       // 底部导航栏：在非桌面端或小窗口模式下显示
       bottomNavigationBar:
-          (isDesktop && !isSmallWindow)
+          (Aps().isDesktop.watch(context) && !isSmallWindow)
               ? null
               : BottomNav(
                 navigationItems: navigationItems,
