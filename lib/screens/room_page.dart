@@ -19,7 +19,11 @@ class RoomPage extends StatefulWidget {
 }
 
 // 在_RoomPageState类中添加排序相关方法
-class _RoomPageState extends State<RoomPage> {
+class _RoomPageState extends State<RoomPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final _aps = Aps();
   bool isHovered = false;
   bool _isReorderMode = false; // 添加重排序模式标志
@@ -173,6 +177,7 @@ class _RoomPageState extends State<RoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin 需要
     // 监听连接状态
     final isConnected = _aps.Connec_state.watch(context);
     // 获取当前选中房间（如无此逻辑请替换为你的实际选中房间变量）

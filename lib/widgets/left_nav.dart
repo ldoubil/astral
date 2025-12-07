@@ -5,8 +5,14 @@ import 'package:flutter/material.dart';
 class LeftNav extends StatelessWidget {
   final List<NavigationItem> items;
   final ColorScheme colorScheme;
+  final PageController? pageController;
 
-  const LeftNav({super.key, required this.items, required this.colorScheme});
+  const LeftNav({
+    super.key,
+    required this.items,
+    required this.colorScheme,
+    this.pageController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +35,15 @@ class LeftNav extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             onTap: () {
               if (Aps().selectedIndex.watch(context) != index) {
-                Aps().selectedIndex.set(index);
+                if (pageController != null) {
+                  pageController!.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                  );
+                } else {
+                  Aps().selectedIndex.set(index);
+                }
               }
             },
             child: Center(
@@ -101,44 +115,44 @@ class LeftNav extends StatelessWidget {
                 );
               },
             ), //
-          // 鼠标悬停指示器
-          if (Aps().hoveredIndex.watch(context) != null &&
-              Aps().hoveredIndex.watch(context) !=
-                  Aps().selectedIndex.watch(context))
-            Positioned(
-              top: 4.0 + (Aps().hoveredIndex.watch(context)! * 72.0),
-              left: 8,
-              right: 8,
-              height: 64,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.5,
+            // 鼠标悬停指示器
+            if (Aps().hoveredIndex.watch(context) != null &&
+                Aps().hoveredIndex.watch(context) !=
+                    Aps().selectedIndex.watch(context))
+              Positioned(
+                top: 4.0 + (Aps().hoveredIndex.watch(context)! * 72.0),
+                left: 8,
+                right: 8,
+                height: 64,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
+            // 导航项列表
+            Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return buildNavItem(
+                        item.icon,
+                        item.label,
+                        index,
+                        colorScheme,
+                        item,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          // 导航项列表
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return buildNavItem(
-                      item.icon,
-                      item.label,
-                      index,
-                      colorScheme,
-                      item,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
           ],
         ),
       ),
