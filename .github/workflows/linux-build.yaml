@@ -20,10 +20,11 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
-          $GITHUB_WORKSPACE/scripts/install_rust.sh
+      - name: 🚀 设置开发环境
+        uses: ./.github/actions/setup-flutter-rust
+        with:
+          platform: linux
+          flutter-version: '3.38.4'
 
       - name: 📦 安装系统依赖
         run: |
@@ -41,22 +42,10 @@ jobs:
           sudo gem install --no-document fpm
           sudo apt-get install -y fuse libfuse2
 
-      - name: 🐦 安装 Flutter
-        run: |
-          git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          export PATH="$HOME/flutter/bin:$PATH"
-          chmod +x $HOME/flutter/bin/flutter
-          flutter --version
-
       - name: 🎯 启用 Linux 桌面支持
         run: |
           flutter config --enable-linux-desktop
           flutter create --platforms=linux .
-
-      - name: 📚 安装 Flutter 依赖
-        run: |
-          flutter pub get
 
       - name: 🛠️ 构建 Linux 应用
         run: |

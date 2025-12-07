@@ -19,10 +19,11 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 1.89.0
-        run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
-          $GITHUB_WORKSPACE/scripts/install_rust.sh
+      - name: 🚀 设置开发环境
+        uses: ./.github/actions/setup-flutter-rust
+        with:
+          platform: android
+          flutter-version: '3.38.4'
 
       - name: 📦 安装系统依赖
         run: |
@@ -53,43 +54,13 @@ jobs:
           ndk-version: '28.2.13676358'
           cmake-version: '3.18.1'
 
-
-      - name: 🐦 安装 Flutter
-        run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.38.4 $HOME/flutter --depth 1
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          export PATH="$HOME/flutter/bin:$PATH"
-          chmod +x $HOME/flutter/bin/flutter
-          flutter --version
-
-      - name: 📚 安装 Flutter 依赖
-        run: |
-          flutter pub get
-
-      - name: 🦀 安装 cargo-ndk
-        run: |
-          cargo install cargo-ndk
+      - name: 🔐 设置签名配置
+        uses: ./.github/actions/android-signing
 
       - name: 🔧 设置 bindgen 环境变量
         run: |
           echo "BINDGEN_EXTRA_CLANG_ARGS=-I/usr/include -I/usr/include/x86_64-linux-gnu" >> $GITHUB_ENV
           echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
-      - name: 🔐 设置签名配置
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          # 调试信息（不会显示敏感内容）
-          echo "检查 key.properties 是否创建成功:"
-          ls -la android/key.properties
-          echo "检查 keystore 是否创建成功:"
-          ls -la android/app/upload-keystore.jks
-
-      - name: 🐦 设置 Flutter
-        run: |
-          flutter --version
 
       - name: 🛠️ 构建 x86_64 架构 APK
         run: |
