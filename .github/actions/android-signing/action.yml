@@ -1,0 +1,36 @@
+name: 'Android App Signing'
+description: '配置 Android 应用签名的可复用 Action'
+
+inputs:
+  keystore-base64:
+    description: 'Base64 编码的 keystore 文件'
+    required: true
+  
+  key-alias:
+    description: '密钥别名'
+    required: true
+  
+  store-password:
+    description: 'Keystore 密码'
+    required: true
+  
+  key-password:
+    description: '密钥密码'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔐 设置签名配置
+      shell: bash
+      run: |
+        echo "${{ inputs.keystore-base64 }}" | base64 --decode > android/app/upload-keystore.jks
+        echo "storeFile=upload-keystore.jks" >> android/key.properties
+        echo "keyAlias=${{ inputs.key-alias }}" >> android/key.properties
+        echo "storePassword=${{ inputs.store-password }}" >> android/key.properties
+        echo "keyPassword=${{ inputs.key-password }}" >> android/key.properties
+        # 调试信息（不会显示敏感内容）
+        echo "检查 key.properties 是否创建成功:"
+        ls -la android/key.properties
+        echo "检查 keystore 是否创建成功:"
+        ls -la android/app/upload-keystore.jks
