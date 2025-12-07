@@ -50,13 +50,13 @@ jobs:
       - name: 🤖 设置 Android SDK
         uses: android-actions/setup-android@v3
         with:
-          ndk-version: '27.2.12479018'
+          ndk-version: '28.2.13676358'
           cmake-version: '3.18.1'
 
 
       - name: 🐦 安装 Flutter
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.29.3 $HOME/flutter --depth 1
+          git clone https://github.com/flutter/flutter.git --branch 3.38.4 $HOME/flutter --depth 1
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           chmod +x $HOME/flutter/bin/flutter
@@ -95,7 +95,7 @@ jobs:
           cd rust && cargo clean && cd ..
           
           # 构建全架构 APK
-          flutter build apk --release
+          flutter build apk --release --android-skip-build-dependency-validation
 
       - name: 📤 上传全架构 APK 到 Artifacts
         uses: actions/upload-artifact@v4
