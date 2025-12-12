@@ -25,39 +25,35 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_EventBusSubscriberPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriberPtr;
+  get rust_arc_decrement_strong_count_EventBusSubscriberPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriberPtr;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_FilterRulePtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRulePtr;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_GuidPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUIDPtr;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_IpAddrPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddrPtr;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_IpNetworkPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetworkPtr;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_JoinHandlePtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandlePtr;
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_FilterRulePtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRulePtr;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_GuidPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUIDPtr;
+  get rust_arc_decrement_strong_count_JoinHandleResultStringPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultStringPtr;
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_IpAddrPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddrPtr;
+  get rust_arc_decrement_strong_count_PeerRoutePairPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePairPtr;
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_IpNetworkPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetworkPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_JoinHandlePtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandlePtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_JoinHandleResultStringPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultStringPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_PeerRoutePairPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePairPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_WfpControllerPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpControllerPtr;
+  get rust_arc_decrement_strong_count_WfpControllerPtr =>
+      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpControllerPtr;
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);

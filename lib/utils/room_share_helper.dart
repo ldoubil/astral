@@ -195,7 +195,8 @@ $roomSummary
     }
   }
 
-  /// 显示房间分享选项对话框
+  /// 显示房间分享对话框
+  /// 简化为单一分享链接选项，直接复制深链接
   ///
   /// [context] 上下文
   /// [room] 要分享的房间对象
@@ -203,6 +204,7 @@ $roomSummary
     await showDialog(
       context: context,
       builder: (BuildContext context) {
+        final shareLink = generateShareLink(room);
         return AlertDialog(
           title: Row(
             children: [
@@ -214,39 +216,47 @@ $roomSummary
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.link),
-                title: const Text('复制分享链接'),
-                subtitle: const Text('复制房间链接到剪贴板'),
-                onTap: () {
-                  Navigator.pop(context);
-                  copyShareLink(context, room, linkOnly: true);
-                },
+              const SizedBox(height: 8),
+              Text(
+                '分享链接已生成，点击下方按钮复制',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              ListTile(
-                leading: const Icon(Icons.description),
-                title: const Text('复制详细信息'),
-                subtitle: const Text('复制包含说明的完整分享信息'),
-                onTap: () {
-                  Navigator.pop(context);
-                  copyShareLink(context, room, linkOnly: false);
-                },
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  shareLink,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.share),
-                title: const Text('分享给好友'),
-                subtitle: const Text('使用系统分享功能'),
-                onTap: () {
-                  Navigator.pop(context);
-                  shareRoom(context, room);
-                },
+              const SizedBox(height: 16),
+              Text(
+                '有效期：30天',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: const Text('关闭'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                copyShareLink(context, room, linkOnly: true);
+              },
+              child: const Text('复制链接'),
             ),
           ],
         );

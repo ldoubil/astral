@@ -31,6 +31,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
+    // create_overlay_window
 
     WidgetsBinding.instance.addObserver(this); // 监听屏幕等状态变化
     // 在第一帧渲染完成后获取屏幕宽度并更新分割宽度

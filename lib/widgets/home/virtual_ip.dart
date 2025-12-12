@@ -4,6 +4,7 @@ import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+
 // 添加模拟数据模型
 class NetworkNode {
   final String id;
@@ -48,7 +49,7 @@ class VirtualIpBox extends StatelessWidget {
               const Spacer(),
               // 添加状态指示器
               Container(
-                margin: const EdgeInsets.only(right: 4), 
+                margin: const EdgeInsets.only(right: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _getStatusColor(
@@ -81,7 +82,9 @@ class VirtualIpBox extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      Aps().firewallStatus.watch(context) ? LocaleKeys.firewall_enabled.tr() : LocaleKeys.firewall_disabled.tr(),
+                      Aps().firewallStatus.watch(context)
+                          ? LocaleKeys.firewall_enabled.tr()
+                          : LocaleKeys.firewall_disabled.tr(),
                       style: TextStyle(color: colorScheme.secondary),
                     ),
                   ],

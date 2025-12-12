@@ -2450,76 +2450,74 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "to_wide_string", argNames: ["s"]);
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_EventBusSubscriber => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriber;
+  get rust_arc_increment_strong_count_EventBusSubscriber =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriber;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_EventBusSubscriber => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriber;
+  get rust_arc_decrement_strong_count_EventBusSubscriber =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerEventBusSubscriber;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_FilterRule => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRule;
+  get rust_arc_increment_strong_count_FilterRule =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRule;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_FilterRule => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRule;
+  get rust_arc_decrement_strong_count_FilterRule =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerFilterRule;
+
+  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Guid =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUID;
+
+  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Guid =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUID;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_Guid => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUID;
+  get rust_arc_increment_strong_count_IpAddr =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddr;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_Guid => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerGUID;
+  get rust_arc_decrement_strong_count_IpAddr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddr;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_IpAddr => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddr;
+  get rust_arc_increment_strong_count_IpNetwork =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetwork;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_IpAddr => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpAddr;
+  get rust_arc_decrement_strong_count_IpNetwork =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetwork;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_IpNetwork => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetwork;
+  get rust_arc_increment_strong_count_JoinHandle =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_IpNetwork => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerIpNetwork;
+  get rust_arc_decrement_strong_count_JoinHandle =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_JoinHandle => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle;
+  get rust_arc_increment_strong_count_JoinHandleResultString =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultString;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_JoinHandle => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle;
+  get rust_arc_decrement_strong_count_JoinHandleResultString =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultString;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_JoinHandleResultString => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultString;
+  get rust_arc_increment_strong_count_PeerRoutePair =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePair;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_JoinHandleResultString => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandleResultString;
+  get rust_arc_decrement_strong_count_PeerRoutePair =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePair;
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_PeerRoutePair => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePair;
+  get rust_arc_increment_strong_count_WfpController =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpController;
 
   RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_PeerRoutePair => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPeerRoutePair;
-
-  RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_WfpController => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpController;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_WfpController => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpController;
+  get rust_arc_decrement_strong_count_WfpController =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWfpController;
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
@@ -4621,10 +4619,11 @@ class EventBusSubscriberImpl extends RustOpaque implements EventBusSubscriber {
         RustLib.instance.api.rust_arc_increment_strong_count_EventBusSubscriber,
     rustArcDecrementStrongCount:
         RustLib.instance.api.rust_arc_decrement_strong_count_EventBusSubscriber,
-    rustArcDecrementStrongCountPtr: RustLib
-        .instance
-        .api
-        .rust_arc_decrement_strong_count_EventBusSubscriberPtr,
+    rustArcDecrementStrongCountPtr:
+        RustLib
+            .instance
+            .api
+            .rust_arc_decrement_strong_count_EventBusSubscriberPtr,
   );
 }
 
@@ -4874,18 +4873,21 @@ class JoinHandleResultStringImpl extends RustOpaque
   ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
 
   static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount: RustLib
-        .instance
-        .api
-        .rust_arc_increment_strong_count_JoinHandleResultString,
-    rustArcDecrementStrongCount: RustLib
-        .instance
-        .api
-        .rust_arc_decrement_strong_count_JoinHandleResultString,
-    rustArcDecrementStrongCountPtr: RustLib
-        .instance
-        .api
-        .rust_arc_decrement_strong_count_JoinHandleResultStringPtr,
+    rustArcIncrementStrongCount:
+        RustLib
+            .instance
+            .api
+            .rust_arc_increment_strong_count_JoinHandleResultString,
+    rustArcDecrementStrongCount:
+        RustLib
+            .instance
+            .api
+            .rust_arc_decrement_strong_count_JoinHandleResultString,
+    rustArcDecrementStrongCountPtr:
+        RustLib
+            .instance
+            .api
+            .rust_arc_decrement_strong_count_JoinHandleResultStringPtr,
   );
 }
 

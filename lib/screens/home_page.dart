@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:astral/widgets/home/about_home.dart';
 import 'package:astral/widgets/home/contributors.dart'; // 添加这行
 import 'package:astral/widgets/home/servers_home.dart';
@@ -47,7 +48,7 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                       children: [
-                        VirtualIpBox(),
+                        if (!Platform.isAndroid) VirtualIpBox(),
                         UserIpBox(),
                         // TrafficStats(),
                         ServersHome(),
