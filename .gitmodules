@@ -2,3 +2,6 @@
 [submodule "external/third_party/lss"]
     path = external/third_party/lss
     url = https://mirrors.tuna.tsinghua.edu.cn/git/chromium/linux-syscall-support.git
+[submodule "rust/bare-kit"]
+	path = rust/bare-kit
+	url = https://github.com/holepunchto/bare-kit.git

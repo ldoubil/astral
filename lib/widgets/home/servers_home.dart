@@ -135,35 +135,6 @@ class ServersHome extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            // 延迟显示
-                            if (pingValue != null && pingValue != -1)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    pingValue,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: _getStatusColor(
-                                      pingValue,
-                                    ).withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${pingValue}ms',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getStatusColor(pingValue),
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       );
