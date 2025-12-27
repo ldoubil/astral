@@ -115,7 +115,6 @@ class _BannerCarouselState extends State<BannerCarousel> {
               _pageController = PageController(initialPage: _initialPage);
               _currentPage = _initialPage;
               _startAutoPlay();
-              _checkAndShowFirstTimeTip();
             }
           });
         }
@@ -138,63 +137,6 @@ class _BannerCarouselState extends State<BannerCarousel> {
         });
       }
     }
-  }
-
-  Future<void> _checkAndShowFirstTimeTip() async {
-    await Aps().loadHasShownBannerTip();
-    if (!Aps().hasShownBannerTip.value && mounted) {
-      // 延迟一下再显示，让界面先加载完成
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        _showFirstTimeTip();
-      }
-    }
-  }
-
-  void _showFirstTimeTip() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                Icons.volunteer_activism,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              const Text('感谢金主'),
-            ],
-          ),
-          content: const Text(
-            '首先感谢金主的支持！\n'
-            '如果没有金主，无论是网站还是服务器都无法持续运行下去。\n'
-            '不过呢，如果实在不喜欢的话，\n'
-            '可以在 设置 → 软件设置 中关闭轮播图 ～',
-            style: TextStyle(height: 1.5),
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: () {
-                Aps().updateEnableBannerCarousel(false);
-                Aps().updateHasShownBannerTip(true);
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.visibility_off),
-              label: const Text('隐藏轮播图'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Aps().updateHasShownBannerTip(true);
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.thumb_up),
-              label: const Text('朕知道了'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -338,54 +280,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                     ),
                   ),
                 ),
-                // 金主位置标签
-                Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: IgnorePointer(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.amber.shade300,
-                            Colors.amber.shade600,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.star,
-                            size: 14,
-                            color: Colors.brown.shade800,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '金主',
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+
                 // 帮助按钮
                 Positioned(
                   top: 8,
@@ -406,13 +301,10 @@ class _BannerCarouselState extends State<BannerCarousel> {
                                         Theme.of(context).colorScheme.primary,
                                   ),
                                   const SizedBox(width: 8),
-                                  const Text('恰饭时间 ～'),
+                                  const Text('首页轮播图'),
                                 ],
                               ),
                               content: const Text(
-                                '首先感谢金主的支持！\n'
-                                '如果没有金主无论是网站还是服务器都无法持续运行下去。\n'
-                                '不过呢如果实在不喜欢的话。\n'
                                 '可以在 设置 → 软件设置 中关闭轮播图 ～',
                                 style: TextStyle(height: 1.5),
                               ),
