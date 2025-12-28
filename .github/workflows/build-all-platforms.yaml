@@ -128,8 +128,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libc6-dev \
-            libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
-            clang llvm libclang-dev libc6-dev-i386 gcc-multilib g++-multilib \
+            clang llvm libclang-dev \
             protobuf-compiler
             
       - name: ☕ 设置 JDK
