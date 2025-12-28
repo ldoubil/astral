@@ -4,6 +4,7 @@ import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/home_page.dart';
 import 'package:astral/screens/room_page.dart';
+import 'package:astral/screens/explore_page.dart';
 import 'package:astral/screens/settings_page.dart';
 import 'package:astral/widgets/bottom_nav.dart';
 import 'package:astral/widgets/left_nav.dart';
@@ -103,6 +104,14 @@ class _MainScreenState extends State<MainScreen>
       label: LocaleKeys.nav_room.tr(),
       page: const RoomPage(),
     ),
+
+    NavigationItem(
+      icon: Icons.explore_outlined,
+      activeIcon: Icons.explore,
+      label: '探索',
+      page: const ExplorePage(),
+    ),
+
     NavigationItem(
       icon: Icons.settings_outlined,
       activeIcon: Icons.settings,
