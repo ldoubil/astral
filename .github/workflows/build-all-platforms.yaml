@@ -1,0 +1,320 @@
+name: 🚀 多平台构建
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Android 构建
+          - os: ubuntu-24.04
+            platform: android
+            arch: arm64-v8a
+            rust_target: aarch64-linux-android
+            artifact_name: astral-android-arm64-v8a
+            build_cmd: flutter build apk --release --target-platform android-arm64
+            artifact_path: build/app/outputs/flutter-apk/app-release.apk
+            
+          - os: ubuntu-24.04
+            platform: android
+            arch: armeabi-v7a
+            rust_target: armv7-linux-androideabi
+            artifact_name: astral-android-armeabi-v7a
+            build_cmd: flutter build apk --release --target-platform android-arm
+            artifact_path: build/app/outputs/flutter-apk/app-release.apk
+            
+          - os: ubuntu-24.04
+            platform: android
+            arch: universal
+            rust_target: "aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android"
+            artifact_name: astral-android-universal
+            build_cmd: flutter build apk --release
+            artifact_path: build/app/outputs/flutter-apk/app-release.apk
+            
+          # Linux 构建
+          - os: ubuntu-22.04
+            platform: linux
+            arch: x64
+            rust_target: x86_64-unknown-linux-gnu
+            artifact_name: astral-linux-x64
+            build_cmd: flutter build linux --release
+            artifact_path: build/linux/x64/release/bundle
+            package: true
+            
+          - os: ubuntu-22.04-arm
+            platform: linux
+            arch: arm64
+            rust_target: aarch64-unknown-linux-gnu
+            artifact_name: astral-linux-arm64
+            build_cmd: flutter build linux --release
+            artifact_path: build/linux/arm64/release/bundle
+            package: true
+            
+          # Windows 构建
+          - os: windows-2022
+            platform: windows
+            arch: x64
+            rust_target: x86_64-pc-windows-msvc
+            artifact_name: astral-windows-x64
+            build_cmd: flutter build windows --release
+            artifact_path: build/windows/x64/runner/Release
+            
+          - os: windows-2022
+            platform: windows
+            arch: x64-setup
+            rust_target: x86_64-pc-windows-msvc
+            artifact_name: astral-windows-x64-setup
+            build_cmd: flutter build windows --release
+            artifact_path: build/windows/x64/runner/Release
+            setup_installer: true
+            
+    runs-on: ${{ matrix.os }}
+    name: 📦 ${{ matrix.platform }}-${{ matrix.arch }}
+    
+    permissions:
+      contents: write
+      packages: write
+      
+    env:
+      FLUTTER_VERSION: main
+      FLUTTER_CHANNEL: main
+      RUST_VERSION: 1.89.0
+      NDK_VERSION: 28.2.13676358
+      
+    steps:
+      # ============= 通用步骤 =============
+      - name: 🛠️ 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          
+      # ============= Rust 配置 =============
+      - name: 🦀 安装 Rust (Linux/Android)
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
+          $GITHUB_WORKSPACE/scripts/install_rust.sh
+          
+      - name: 🦀 安装 Rust (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          & "$env:GITHUB_WORKSPACE\scripts\install_rust.ps1"
+        shell: pwsh
+        
+      - name: 🎯 配置 Rust 目标
+        run: |
+          for target in ${{ matrix.rust_target }}; do
+            rustup target add $target
+          done
+        shell: bash
+        if: runner.os != 'Windows'
+        
+      - name: 🎯 配置 Rust 目标 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          rustup target add ${{ matrix.rust_target }}
+        shell: pwsh
+        
+      # ============= Android 特定配置 =============
+      - name: 📦 安装 Android 系统依赖
+        if: matrix.platform == 'android'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libc6-dev \
+            libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+            clang llvm libclang-dev libc6-dev-i386 gcc-multilib g++-multilib \
+            protobuf-compiler
+            
+      - name: ☕ 设置 JDK
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+          
+      - name: 🤖 设置 Android SDK
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: ${{ env.NDK_VERSION }}
+          cmake-version: '3.18.1'
+          
+      - name: 🦀 安装 cargo-ndk
+        if: matrix.platform == 'android'
+        run: cargo install cargo-ndk
+        
+      - name: 🔐 设置 Android 签名
+        if: matrix.platform == 'android'
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          echo "storeFile=upload-keystore.jks" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          
+      - name: 🔧 设置 bindgen 环境变量
+        if: matrix.platform == 'android'
+        run: |
+          echo "BINDGEN_EXTRA_CLANG_ARGS=-I/usr/include -I/usr/include/x86_64-linux-gnu" >> $GITHUB_ENV
+          echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          
+      # ============= Linux 特定配置 =============
+      - name: 📦 安装 Linux 系统依赖
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build libgtk-3-dev \
+            clang cmake pkg-config libcurl4-openssl-dev protobuf-compiler \
+            libayatana-appindicator3-dev patchelf fuse libfuse2 ruby-dev
+          sudo gem install --no-document fpm
+          
+      # ============= Flutter 配置 =============
+      - name: 🐦 安装 Flutter (Linux/Android)
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_flutter.sh
+          $GITHUB_WORKSPACE/scripts/install_flutter.sh
+          
+      - name: 🐦 安装 Flutter (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          & "$env:GITHUB_WORKSPACE\scripts\install_flutter.ps1"
+        shell: pwsh
+        
+      - name: 🎯 启用平台支持
+        run: |
+          flutter config --enable-${{ matrix.platform }}-desktop
+        if: matrix.platform == 'linux' || matrix.platform == 'windows'
+        shell: bash
+        
+      - name: 📚 安装 Flutter 依赖
+        run: flutter pub get
+        
+      - name: 🐦 验证 Flutter
+        run: flutter --version
+        
+      # ============= 构建步骤 =============
+      - name: 🛠️ 构建应用
+        run: ${{ matrix.build_cmd }}
+        shell: bash
+        
+      # ============= Linux 打包 =============
+      - name: 📦 打包 Linux 应用
+        if: matrix.platform == 'linux' && matrix.package
+        run: |
+          set -e
+          mkdir -p release
+          BUNDLE="${{ matrix.artifact_path }}"
+          
+          # 创建 tar.gz
+          cd "$BUNDLE"
+          patchelf astral --add-needed libisar.so --add-needed librust_lib_astral.so
+          tar -czf $GITHUB_WORKSPACE/release/${{ matrix.artifact_name }}.tar.gz *
+          
+          # 准备打包目录
+          STAGING=$GITHUB_WORKSPACE/build/linux/pkgroot
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING/opt/astral"
+          cp -a "$BUNDLE/." "$STAGING/opt/astral/"
+          install -Dm755 linux/packaging/astral-cli.sh "$STAGING/usr/bin/astral"
+          install -Dm644 linux/packaging/astral.desktop "$STAGING/usr/share/applications/astral.desktop"
+          install -Dm644 assets/logo.png "$STAGING/usr/share/pixmaps/astral.png"
+          
+          # 打包 deb
+          fpm -s dir -t deb -n astral -v 1.0.0 -a amd64 -C "$STAGING" .
+          mv *.deb $GITHUB_WORKSPACE/release/${{ matrix.artifact_name }}.deb
+          
+          # 打包 rpm
+          fpm -s dir -t rpm -n astral -v 1.0.0 -a x86_64 -C "$STAGING" .
+          mv *.rpm $GITHUB_WORKSPACE/release/${{ matrix.artifact_name }}.rpm
+          
+      # ============= Windows 特定处理 =============
+      - name: � 安装 Inno Setup
+        if: matrix.platform == 'windows' && matrix.setup_installer
+        run: |
+          choco install innosetup -y
+        shell: pwsh
+        
+      - name: 📂 复制 Windows DLL
+        if: matrix.platform == 'windows'
+        run: |
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\dlls\*" -Destination "${{ matrix.artifact_path }}" -Recurse -Force
+        shell: pwsh
+        
+      - name: 📦 构建 Inno Setup 安装包
+        if: matrix.platform == 'windows' && matrix.setup_installer
+        run: |
+          mkdir -p release
+          iscc "1.iss"
+          Move-Item -Path "astral-windows-x64-setup.exe" -Destination "release/astral-windows-x64-setup.exe" -Force
+        shell: pwsh
+        
+      - name: 📦 压缩 Windows 构建
+        if: matrix.platform == 'windows' && !matrix.setup_installer
+        run: |
+          mkdir -p release
+          Compress-Archive -Path "${{ matrix.artifact_path }}\*" -DestinationPath "release/${{ matrix.artifact_name }}.zip" -Force
+        shell: pwsh
+        
+      # ============= 上传 Artifacts =============
+      - name: 📤 上传构建产物 (Linux打包版)
+        if: matrix.platform == 'linux' && matrix.package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/*
+          retention-days: 30
+          
+      - name: 📤 上传构建产物 (Android)
+        if: matrix.platform == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          retention-days: 30
+          
+      - name: 📤 上传构建产物 (Windows Zip)
+        if: matrix.platform == 'windows' && !matrix.setup_installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/${{ matrix.artifact_name }}.zip
+          retention-days: 30
+          
+      - name: 📤 上传构建产物 (Windows Setup)
+        if: matrix.platform == 'windows' && matrix.setup_installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/astral-windows-x64-setup.exe
+          retention-days: 30
+          
+  # ============= 合并所有产物 =============
+  merge-artifacts:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 📥 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+          
+      - name: 📤 上传合并后的产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: astral-all-platforms
+          path: artifacts
+          retention-days: 30
+          
+      - name: 📋 列出所有文件
+        run: |
+          echo "=== 所有构建产物 ==="
+          ls -lhR artifacts/

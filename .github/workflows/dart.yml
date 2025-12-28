@@ -29,37 +29,19 @@ jobs:
         with:
           fetch-depth: 0  # 获取完整历史记录，以便比较分支
         
-      - name: 📦 下载 arm64-v8a 构件
+      - name: 📦 下载所有平台构建产物
         uses: dawidd6/action-download-artifact@v6
         with:
-          workflow: "android-build-arm64.yaml"
-          name: astral-arm64-v8a-apk
-          path: ./downloaded/arm64-v8a
+          workflow: "build-all-platforms.yaml"
+          name: astral-all-platforms
+          path: ./downloaded
           search_artifacts: true
-          if_no_artifact_found: warn
-      - run: mv ./downloaded/arm64-v8a/* ./downloaded/arm64-v8a/astral-arm64-v8a.apk
-
-      - name: 📦 下载 armeabi-v7a 构件
+          if_no_artifact_found: fail
+          
+      # 如果需要兼容旧流程，可以选择同时下载旧 workflow 的产物（可选）
+      - name: 📦 下载 WindowsSetup 构件（兼容旧流程）
         uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: "android-build-armv7.yaml"
-          name: astral-armeabi-v7a-apk
-          path: ./downloaded/armeabi-v7a
-          search_artifacts: true
-          if_no_artifact_found: warn
-      - run: mv ./downloaded/armeabi-v7a/* ./downloaded/armeabi-v7a/astral-armeabi-v7a.apk
-
-      - name: 📦 下载 Universal APK 构件
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: "android-build-universal.yaml"
-          name: astral-universal-apk
-          path: ./downloaded/universal
-          search_artifacts: true
-          if_no_artifact_found: warn
-
-      - name: 📦 下载 WindowsSetup 构件
-        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
         with:
           workflow: "windows-build-Setup.yml"
           name: astral-windows-x64-setup
@@ -67,40 +49,13 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
-      - name: 📦 下载 Windows zip 构件构件
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: "windows-build.yml"
-          name: astral-windows-x64-zip
-          path: ./downloaded/windows
-          search_artifacts: true
-          if_no_artifact_found: warn
-
-      - name: 📦 下载 linux 构件
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: 'linux-build.yaml'
-          name: astral-linux-x64-all
-          path: ./downloaded/linux
-          search_artifacts: true
-          if_no_artifact_found: warn
-
       - name: 📝 列出下载的文件
         run: |
-          echo "已下载的文件列表:"
-          ls -la ./downloaded
-          echo "armeabi-v7a 文件:"
-          ls -la ./downloaded/armeabi-v7a || echo "目录不存在"
-          echo "arm64-v8a 文件:"
-          ls -la ./downloaded/arm64-v8a || echo "目录不存在"
-          echo "universal APK 文件:"
-          ls -la ./downloaded/universal || echo "目录不存在"
-          echo "Windows 文件:"
-          ls -la ./downloaded/windows || echo "目录不存在"
-          echo "WindowsSetup 文件:"
-          ls -la ./downloaded/WindowsSetup || echo "目录不存在"
-          echo "Linux 文件:"
-          ls -la ./downloaded/linux || echo "目录不存在"
+          echo "=== 已下载的所有文件 ==="
+          find ./downloaded -type f -exec ls -lh {} \;
+          echo ""
+          echo "=== 文件结构 ==="
+          tree ./downloaded || find ./downloaded -print
           
       - name: 🤖 生成分支差异提交内容（自动检测可用 Gemini 模型）
         id: generate_changelog
@@ -220,13 +175,13 @@ jobs:
           draft: true  # 设置为草稿状态
           prerelease: true  # 标记为预发布版本
           files: |
-            ./downloaded/arm64-v8a/*.apk
-            ./downloaded/armeabi-v7a/*.apk
-            ./downloaded/universal/*.apk
+            ./downloaded/astral-android-arm64-v8a.apk
+            ./downloaded/astral-android-armeabi-v7a.apk
+            ./downloaded/astral-android-universal.apk
+            ./downloaded/astral-linux-x64.tar.gz
+            ./downloaded/astral-linux-x64.deb
+            ./downloaded/astral-linux-x64.rpm
+            ./downloaded/astral-windows-x64.zip
             ./downloaded/WindowsSetup/*.exe
-            ./downloaded/windows/*.zip
-            ./downloaded/linux/astral-linux-x64.tar.gz
-            ./downloaded/linux/astral-linux-x64.deb
-            ./downloaded/linux/astral-linux-x64.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
