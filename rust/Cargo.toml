@@ -18,6 +18,9 @@ humansize = "1.1.1"
 tokio = { version = "1.39.2", features = ["full"] }
 tokio-util = "0.7"
 anyhow = "1.0.95"
+stun_codec = "0.3"
+bytecodec = "0.4"
+rand = "0.8"
 surge-ping = "0.8"
 
 easytier = { path = "./easytier" }

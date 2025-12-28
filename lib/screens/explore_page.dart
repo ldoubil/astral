@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:astral/src/rust/api/forward.dart';
 import 'package:astral/src/rust/api/multicast.dart';
+import 'package:astral/screens/nat_test_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:astral/widgets/minecraft_server_card.dart';
@@ -311,6 +312,23 @@ class _ExplorePageState extends State<ExplorePage> {
 
                 _buildSectionTitle(context, '联机工具'),
                 const SizedBox(height: 12),
+                _buildListTile(
+                  context,
+                  GameItem(
+                    title: 'NAT 类型测试',
+                    subtitle: '检测您的网络 NAT 类型',
+                    icon: Icons.network_check,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NatTestPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _buildListTile(
                   context,
                   GameItem(

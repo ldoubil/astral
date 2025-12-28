@@ -3730,6 +3730,7 @@ name = "rust_lib_astral"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytecodec",
  "chrono",
  "dashmap 6.1.0",
  "easytier",
@@ -3738,9 +3739,11 @@ dependencies = [
  "humansize 1.1.1",
  "lazy_static",
  "once_cell",
+ "rand 0.8.5",
  "rand 0.9.1",
  "serde",
  "serde_json",
+ "stun_codec",
  "surge-ping",
  "tokio",
  "tokio-util",
