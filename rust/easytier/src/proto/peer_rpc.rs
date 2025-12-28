@@ -38,6 +38,18 @@ impl PeerGroupInfo {
     }
 }
 
+impl From<RouteConnBitmap> for sync_route_info_request::ConnInfo {
+    fn from(val: RouteConnBitmap) -> Self {
+        Self::ConnBitmap(val)
+    }
+}
+
+impl From<RouteConnPeerList> for sync_route_info_request::ConnInfo {
+    fn from(val: RouteConnPeerList) -> Self {
+        Self::ConnPeerList(val)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,7 +243,7 @@ mod tests {
         let iterations = 100000;
 
         let peer_group_info =
-            PeerGroupInfo::generate_with_proof(group_name.clone(), group_secret.clone(), peer_id);
+            PeerGroupInfo::generate_with_proof(group_name, group_secret.clone(), peer_id);
 
         let start = std::time::Instant::now();
         for _ in 0..iterations {

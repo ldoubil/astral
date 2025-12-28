@@ -70,7 +70,7 @@ impl WindowsBuild {
         let target = std::env::var("TARGET").unwrap_or_default();
 
         if target.contains("x86_64") {
-            println!("cargo:rustc-link-search=native=easytier/third_party/");
+            println!("cargo:rustc-link-search=native=easytier/third_party/x86_64/");
         } else if target.contains("i686") {
             println!("cargo:rustc-link-search=native=easytier/third_party/i686/");
         } else if target.contains("aarch64") {
@@ -128,14 +128,13 @@ fn check_locale() {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // enable thunk-rs when target os is windows and arch is x86_64 or i686
-    // Disabled: Windows 7 compatibility not needed
-    // #[cfg(target_os = "windows")]
-    // if !std::env::var("TARGET")
-    //     .unwrap_or_default()
-    //     .contains("aarch64")
-    // {
-    //     thunk::thunk();
-    // }
+    #[cfg(target_os = "windows")]
+    if !std::env::var("TARGET")
+        .unwrap_or_default()
+        .contains("aarch64")
+    {
+        thunk::thunk();
+    }
 
     #[cfg(target_os = "windows")]
     WindowsBuild::check_for_win();
@@ -145,7 +144,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let proto_files = [
         "src/proto/error.proto",
         "src/proto/tests.proto",
-        "src/proto/cli.proto",
+        "src/proto/api_instance.proto",
+        "src/proto/api_logger.proto",
+        "src/proto/api_config.proto",
+        "src/proto/api_manage.proto",
         "src/proto/web.proto",
         "src/proto/magic_dns.proto",
         "src/proto/acl.proto",
@@ -161,8 +163,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .type_attribute(".acl", "#[derive(serde::Serialize, serde::Deserialize)]")
         .type_attribute(".common", "#[derive(serde::Serialize, serde::Deserialize)]")
         .type_attribute(".error", "#[derive(serde::Serialize, serde::Deserialize)]")
-        .type_attribute(".cli", "#[derive(serde::Serialize, serde::Deserialize)]")
+        .type_attribute(".api", "#[derive(serde::Serialize, serde::Deserialize)]")
         .type_attribute(".web", "#[derive(serde::Serialize, serde::Deserialize)]")
+        .type_attribute(".config", "#[derive(serde::Serialize, serde::Deserialize)]")
         .type_attribute(
             "peer_rpc.GetIpListResponse",
             "#[derive(serde::Serialize, serde::Deserialize)]",
@@ -179,7 +182,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "#[derive(Hash, Eq, serde::Serialize, serde::Deserialize)]",
         )
         .type_attribute("common.RpcDescriptor", "#[derive(Hash, Eq)]")
-        .field_attribute(".web.NetworkConfig", "#[serde(default)]")
+        .field_attribute(".api.manage.NetworkConfig", "#[serde(default)]")
         .service_generator(Box::new(rpc_build::ServiceGenerator::new()))
         .btree_map(["."])
         .skip_debug([".common.Ipv4Addr", ".common.Ipv6Addr", ".common.UUID"]);

@@ -13,7 +13,7 @@ message RoutePeerInfo {
   optional common.Ipv4Addr ipv4_addr = 4;
   repeated string proxy_cidrs = 5;
   optional string hostname = 6;
-  common.NatType udp_stun_info = 7;
+  common.NatType udp_nat_type = 7;
   google.protobuf.Timestamp last_update = 8;
   uint32 version = 9;
 
@@ -27,6 +27,8 @@ message RoutePeerInfo {
   optional common.Ipv6Inet ipv6_addr = 15;
 
   repeated PeerGroupInfo groups = 16;
+
+  common.NatType tcp_nat_type = 17;
 }
 
 message PeerIdVersion {
@@ -37,6 +39,14 @@ message PeerIdVersion {
 message RouteConnBitmap {
   repeated PeerIdVersion peer_ids = 1;
   bytes bitmap = 2;
+}
+
+message RouteConnPeerList {
+  message PeerConnInfo {
+    PeerIdVersion peer_id = 1;
+    repeated uint32 connected_peer_ids = 2;
+  }
+  repeated PeerConnInfo peer_conn_infos = 1;
 }
 
 message RoutePeerInfos { repeated RoutePeerInfo items = 1; }
@@ -82,7 +92,10 @@ message SyncRouteInfoRequest {
   uint64 my_session_id = 2;
   bool is_initiator = 3;
   RoutePeerInfos peer_infos = 4;
-  RouteConnBitmap conn_bitmap = 5;
+  oneof conn_info {
+    RouteConnBitmap conn_bitmap = 5;
+    RouteConnPeerList conn_peer_list = 7;
+  }
   RouteForeignNetworkInfos foreign_network_infos = 6;
 }
 
@@ -194,6 +207,14 @@ service UdpHolePunchRpc {
   // nat4 to nat4 (both predictably)
   rpc SendPunchPacketBothEasySym(SendPunchPacketBothEasySymRequest)
       returns (SendPunchPacketBothEasySymResponse);
+}
+
+message TcpHolePunchRequest { common.SocketAddr connector_mapped_addr = 1; }
+
+message TcpHolePunchResponse { common.SocketAddr listener_mapped_addr = 1; }
+
+service TcpHolePunchRpc {
+  rpc ExchangeMappedAddr(TcpHolePunchRequest) returns (TcpHolePunchResponse);
 }
 
 message DirectConnectedPeerInfo { int32 latency_ms = 1; }
