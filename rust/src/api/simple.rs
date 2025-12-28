@@ -1,27 +1,26 @@
-use easytier::{common::config::PortForwardConfig, launcher::ConfigSource};
+use easytier::common::config::{PortForwardConfig, ConfigFileControl};
 pub use easytier::{
     common::{
         self,
         config::{ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader},
         global_ctx::{EventBusSubscriber, GlobalCtxEvent},
     },
-    launcher::NetworkInstance,
+    launcher::{NetworkInstance, MyNodeInfo},
     proto,
     proto::{
-        cli::{
+        api::instance::{
             list_peer_route_pair, ConnectorManageRpc, ConnectorManageRpcClientFactory,
             DumpRouteRequest, GetVpnPortalInfoRequest, ListConnectorRequest,
             ListForeignNetworkRequest, ListGlobalForeignNetworkRequest, ListPeerRequest,
             ListPeerResponse, ListRouteRequest, ListRouteResponse, NodeInfo, PeerInfo,
             PeerManageRpc, PeerManageRpcClientFactory, PeerRoutePair, Route, ShowNodeInfoRequest,
             TcpProxyEntryState, TcpProxyEntryTransportType, TcpProxyRpc, TcpProxyRpcClientFactory,
-            VpnPortalRpc, VpnPortalRpcClientFactory,
+            VpnPortalRpc, VpnPortalRpcClientFactory, PeerConnInfo,
         },
         common::NatType,
         peer_rpc::{GetGlobalPeerMapRequest, PeerCenterRpc, PeerCenterRpcClientFactory},
         rpc_impl::standalone::StandAloneClient,
         rpc_types::controller::BaseController,
-        web::MyNodeInfo,
     },
     utils::cost_to_str,
 };
@@ -40,7 +39,7 @@ lazy_static! {
     static ref RT: Runtime = Runtime::new().expect("创建 Tokio 运行时失败");
 }
 
-fn peer_conn_info_to_string(p: proto::cli::PeerConnInfo) -> String {
+fn peer_conn_info_to_string(p: PeerConnInfo) -> String {
     format!(
         "my_peer_id: {}, dst_peer_id: {}, tunnel_info: {:?}",
         p.my_peer_id, p.peer_id, p.tunnel
@@ -180,6 +179,11 @@ pub fn handle_event(mut events: EventBusSubscriber) -> tokio::task::JoinHandle<(
                             println!("{}", msg);
                             let _ = send_udp_to_localhost(&msg);
                         }
+                        GlobalCtxEvent::ConfigPatched(patch) => {
+                            let msg = format!("配置已更新: {:?}", patch);
+                            println!("{}", msg);
+                            let _ = send_udp_to_localhost(&msg);
+                        }
                     }
                 }
                 Err(err) => {
@@ -211,7 +215,7 @@ async fn create_and_store_network_instance(cfg: TomlConfigLoader) -> Result<(), 
     // 在移动 cfg 之前先获取 ID
     let name = cfg.get_id().to_string();
     // 创建网络实例
-    let mut network = NetworkInstance::new(cfg, ConfigSource::FFI);
+    let mut network = NetworkInstance::new(cfg, ConfigFileControl::STATIC_CONFIG);
     // 启动网络实例，并处理可能的错误
     handle_event(network.start().unwrap());
     println!("instance {} started", name);
@@ -283,35 +287,37 @@ pub struct KVNetworkStatus {
 
 // 获取网络中所有节点的IP地址列表
 pub fn get_ips() -> Vec<String> {
-    let mut result = Vec::new();
+    RT.block_on(async {
+        let mut result = Vec::new();
 
-    // Lock the mutex and access the instance if it exists
-    let instance = INSTANCE.lock().unwrap();
+        // Lock the mutex and access the instance if it exists
+        let instance = INSTANCE.lock().unwrap();
 
-    if let Some(instance) = instance.as_ref() {
-        if let Some(info) = instance.get_running_info() {
-            // Add all remote node IPs
-            for route in &info.routes {
-                if let Some(ipv4_addr) = &route.ipv4_addr {
-                    if let Some(addr) = &ipv4_addr.address {
-                        let ip = format!(
-                            "{}.{}.{}.{}/{}",
-                            (addr.addr >> 24) & 0xFF,
-                            (addr.addr >> 16) & 0xFF,
-                            (addr.addr >> 8) & 0xFF,
-                            addr.addr & 0xFF,
-                            ipv4_addr.network_length
-                        );
-                        // Avoid duplicates
-                        if !result.contains(&ip) {
-                            result.push(ip);
+        if let Some(instance) = instance.as_ref() {
+            if let Ok(info) = instance.get_running_info().await {
+                // Add all remote node IPs
+                for route in &info.routes {
+                    if let Some(ipv4_addr) = &route.ipv4_addr {
+                        if let Some(addr) = &ipv4_addr.address {
+                            let ip = format!(
+                                "{}.{}.{}.{}/{}",
+                                (addr.addr >> 24) & 0xFF,
+                                (addr.addr >> 16) & 0xFF,
+                                (addr.addr >> 8) & 0xFF,
+                                addr.addr & 0xFF,
+                                ipv4_addr.network_length
+                            );
+                            // Avoid duplicates
+                            if !result.contains(&ip) {
+                                result.push(ip);
+                            }
                         }
                     }
                 }
             }
         }
-    }
-    result
+        result
+    })
 }
 
 // 设置TUN设备的文件描述符
@@ -326,14 +332,12 @@ pub fn set_tun_fd(fd: i32) -> Result<(), String> {
 }
 
 pub fn get_running_info() -> String {
-    INSTANCE
-        .lock()
-        .unwrap()
-        .as_ref()
-        .and_then(|instance| instance.get_running_info())
-        .and_then(|info| {
-            // 获取并打印节点路由对信息
-            serde_json::to_string(&json!({
+    RT.block_on(async {
+        let instance_guard = INSTANCE.lock().unwrap();
+        if let Some(instance) = instance_guard.as_ref() {
+            if let Ok(info) = instance.get_running_info().await {
+                // 获取并打印节点路由对信息
+                serde_json::to_string(&json!({
                 "dev_name": info.dev_name,
                 "my_node_info": info.my_node_info.as_ref().map(|node| json!({
                     "virtual_ipv4": node.virtual_ipv4.as_ref().map(|addr| json!({
@@ -487,9 +491,14 @@ pub fn get_running_info() -> String {
 
                 "running": info.running,
                 "error_msg": info.error_msg
-            })).ok()
-        })
-        .unwrap_or_else(|| "{}".to_string())
+            })).ok().unwrap_or_else(|| "{}".to_string())
+            } else {
+                "{}".to_string()
+            }
+        } else {
+            "{}".to_string()
+        }
+    })
 }
 
 pub struct FlagsC {
@@ -681,13 +690,14 @@ pub fn close_server() {
 // 网卡跃点数据结构
 
 pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
-    let instance_guard = INSTANCE
-        .lock()
-        .map_err(|e| format!("获取互斥锁失败: {}", e))?;
+    RT.block_on(async {
+        let instance_guard = INSTANCE
+            .lock()
+            .map_err(|e| format!("获取互斥锁失败: {}", e))?;
 
-    if let Some(instance) = instance_guard.as_ref() {
-        // 获取运行信息
-        if let Some(info) = instance.get_running_info() {
+        if let Some(instance) = instance_guard.as_ref() {
+            // 获取运行信息
+            if let Ok(info) = instance.get_running_info().await {
             let mut pairs = info.peer_route_pairs;
             // 如果存在本地节点信息，添加到结果中
             if let Some(my_node_info) = &info.my_node_info {
@@ -702,7 +712,7 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
                     .unwrap_or(0);
 
                 // 创建一个表示本地节点的Route
-                let my_route = proto::cli::Route {
+                let my_route = Route {
                     peer_id: my_peer_id,
                     ipv4_addr: my_node_info.virtual_ipv4.clone(),
                     ipv6_addr: None, // 添加ipv6地址字段,目前暂不支持ipv6
@@ -725,7 +735,7 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
                 let my_peer_info = info.peers.iter().find(|p| p.peer_id == my_peer_id).cloned();
 
                 // 创建一个表示本地节点的PeerRoutePair
-                let my_pair = proto::cli::PeerRoutePair {
+                let my_pair = PeerRoutePair {
                     route: Some(my_route),
                     peer: my_peer_info, // 使用找到的PeerInfo或None
                 };
@@ -739,12 +749,14 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
         return Err("无法获取运行信息".to_string());
     }
     Err("没有运行中的网络实例".to_string())
+    })
 }
 
 // 获取网络状态信息
 pub fn get_network_status() -> KVNetworkStatus {
-    let pairs = get_peer_route_pairs().unwrap_or_default();
-    let mut nodes = Vec::new();
+    RT.block_on(async {
+        let pairs = get_peer_route_pairs().unwrap_or_default();
+        let mut nodes = Vec::new();
     for pair in pairs.iter() {
         if let Some(route) = &pair.route {
             let cost = route.cost;
@@ -851,9 +863,10 @@ pub fn get_network_status() -> KVNetworkStatus {
 
                         // 从当前节点开始，收集到目标节点的完整路径
                         // 先添加本地节点信息
-                        let instance_guard = INSTANCE.lock().unwrap(); // 使用单例 INSTANCE
+                        let instance_guard = INSTANCE.lock().unwrap();
                         if let Some(instance) = instance_guard.as_ref() {
-                            if let Some(info) = instance.get_running_info() {
+                            // 使用已经在外层 block_on 中，所以直接await
+                            if let Ok(info) = instance.get_running_info().await {
                                 if let Some(local_node) = &info.my_node_info {
                                     // 添加本地节点作为起点
                                     hops.push(NodeHopStats {
@@ -1066,6 +1079,7 @@ pub fn get_network_status() -> KVNetworkStatus {
         total_nodes: nodes.len(),
         nodes,
     }
+    })
 }
 
 pub fn init_app() {

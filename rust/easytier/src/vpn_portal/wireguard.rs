@@ -16,7 +16,7 @@ use crate::{
     common::{
         config::NetworkIdentity,
         global_ctx::{ArcGlobalCtx, GlobalCtxEvent},
-        join_joinset_background,
+        join_joinset_background, shrink_dashmap,
     },
     peers::{peer_manager::PeerManager, PeerPacketFilter},
     tunnel::{
@@ -128,7 +128,11 @@ impl WireGuardImpl {
             tracing::trace!(?i, "Received from wg client");
             let dst = i.get_destination();
             let _ = peer_mgr
-                .send_msg_by_ip(ZCPacket::new_with_payload(inner.as_ref()), IpAddr::V4(dst))
+                .send_msg_by_ip(
+                    ZCPacket::new_with_payload(inner.as_ref()),
+                    IpAddr::V4(dst),
+                    false,
+                )
                 .await;
         }
 
@@ -144,6 +148,7 @@ impl WireGuardImpl {
                     "The wg client changed its endpoint address, not removing from table"
                 ),
             }
+            shrink_dashmap(&wg_peer_ip_table, None);
         }
 
         peer_mgr
@@ -325,11 +330,7 @@ impl VpnPortal for WireGuard {
 
         allow_ips.push(client_cidr.to_string());
 
-        let allow_ips = allow_ips
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<_>>()
-            .join(",");
+        let allow_ips = allow_ips.into_iter().collect::<Vec<_>>().join(",");
 
         let cfg = self.inner.as_ref().unwrap().wg_config.clone();
         let cfg_str = format!(

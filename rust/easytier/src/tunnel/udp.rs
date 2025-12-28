@@ -23,7 +23,7 @@ use tracing::{instrument, Instrument};
 
 use super::{packet_def::V6HolePunchPacket, TunnelInfo};
 use crate::{
-    common::{join_joinset_background, scoped_task::ScopedTask},
+    common::{join_joinset_background, scoped_task::ScopedTask, shrink_dashmap},
     tunnel::{
         build_url_from_socket_addr,
         common::{reserve_buf, TunnelWrapper},
@@ -569,7 +569,10 @@ impl TunnelListener for UdpTunnelListener {
                 if let Some(err) = err {
                     tracing::error!(?err, "udp close event error");
                 }
-                sock_map.upgrade().map(|v| v.remove(&dst_addr));
+                if let Some(sock_map) = sock_map.upgrade() {
+                    sock_map.remove(&dst_addr);
+                    shrink_dashmap(&sock_map, None);
+                }
             }
         });
 
@@ -795,7 +798,7 @@ impl UdpTunnelConnector {
     }
 
     async fn connect_with_default_bind(
-        &mut self,
+        &self,
         addr: SocketAddr,
     ) -> Result<Box<dyn Tunnel>, super::TunnelError> {
         let socket = if addr.is_ipv4() {
@@ -808,7 +811,7 @@ impl UdpTunnelConnector {
     }
 
     async fn connect_with_custom_bind(
-        &mut self,
+        &self,
         addr: SocketAddr,
     ) -> Result<Box<dyn Tunnel>, super::TunnelError> {
         let futures = FuturesUnordered::new();
