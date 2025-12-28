@@ -84,7 +84,7 @@ class TauriVpnService : VpnService() {
         
         // 获取VPN配置参数，如果未指定则使用默认值
         var mtu = args?.getInt(MTU) ?: 1500
-        var ipv4Addr = args?.getString(IPV4_ADDR) ?: "10.126.126.1/24"
+        var ipv4Addr = args?.getString(IPV4_ADDR) ?: "100.100.100.0/24"
         var dns = args?.getString(DNS) ?: "114.114.114.114"
         
         // 从ipv4Addr中计算网段地址
