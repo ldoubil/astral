@@ -19,7 +19,7 @@ class NetworkSettingsPage extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                // 协议选择
+                // Astral连接协议
                 ListTile(
                   title: Text(LocaleKeys.p2p_hole_punching.tr()),
                   subtitle: Text(LocaleKeys.preferred_protocol.tr()),
@@ -73,7 +73,7 @@ class NetworkSettingsPage extends StatelessWidget {
 
                 const Divider(),
 
-                // 基础网络设置
+                // 启用数据加密
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_encryption.tr()),
                   subtitle: Text(LocaleKeys.auto_set_mtu.tr()),
@@ -83,6 +83,7 @@ class NetworkSettingsPage extends StatelessWidget {
                   },
                 ),
 
+                // 启用延迟优先
                 SwitchListTile(
                   title: Text(LocaleKeys.latency_first.tr()),
                   subtitle: Text(LocaleKeys.latency_first_desc.tr()),
@@ -92,12 +93,13 @@ class NetworkSettingsPage extends StatelessWidget {
                   },
                 ),
 
+                // 强制中转
                 SwitchListTile(
-                  title: Text(LocaleKeys.tun_device.tr()),
-                  subtitle: Text(LocaleKeys.tun_device_desc.tr()),
-                  value: Aps().noTun.watch(context),
+                  title: Text(LocaleKeys.disable_p2p.tr()),
+                  subtitle: Text(LocaleKeys.disable_p2p_desc.tr()),
+                  value: Aps().disableP2p.watch(context),
                   onChanged: (value) {
-                    Aps().updateNoTun(value);
+                    Aps().updateDisableP2p(value);
                   },
                 ),
               ],
@@ -106,7 +108,7 @@ class NetworkSettingsPage extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // 高级网络设置
+          // 专业网络设置
           Card(
             child: Column(
               children: [
@@ -120,15 +122,7 @@ class NetworkSettingsPage extends StatelessWidget {
 
                 const Divider(),
 
-                SwitchListTile(
-                  title: Text(LocaleKeys.disable_p2p.tr()),
-                  subtitle: Text(LocaleKeys.disable_p2p_desc.tr()),
-                  value: Aps().disableP2p.watch(context),
-                  onChanged: (value) {
-                    Aps().updateDisableP2p(value);
-                  },
-                ),
-
+                // 禁用UDP打洞
                 SwitchListTile(
                   title: Text(LocaleKeys.disable_udp_hole_punching.tr()),
                   subtitle: Text(
@@ -140,6 +134,7 @@ class NetworkSettingsPage extends StatelessWidget {
                   },
                 ),
 
+                // 禁用UDP对称打洞
                 SwitchListTile(
                   title: Text(LocaleKeys.disable_sym_hole_punching.tr()),
                   subtitle: Text(
@@ -151,7 +146,7 @@ class NetworkSettingsPage extends StatelessWidget {
                   },
                 ),
 
-                // 压缩算法选择
+                // 数据压缩方式
                 ListTile(
                   title: Text(LocaleKeys.compression_algorithm.tr()),
                   subtitle: Text(LocaleKeys.compression_algorithm_desc.tr()),
@@ -191,15 +186,7 @@ class NetworkSettingsPage extends StatelessWidget {
                   ),
                 ),
 
-                SwitchListTile(
-                  title: Text(LocaleKeys.bind_device.tr()),
-                  subtitle: Text(LocaleKeys.bind_device_desc.tr()),
-                  value: Aps().bindDevice.watch(context),
-                  onChanged: (value) {
-                    Aps().updateBindDevice(value);
-                  },
-                ),
-
+                // 启用KCP代理
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_kcp_proxy.tr()),
                   subtitle: Text(LocaleKeys.enable_kcp_proxy_desc.tr()),
@@ -209,12 +196,33 @@ class NetworkSettingsPage extends StatelessWidget {
                   },
                 ),
 
+                // 启用QUIC代理
                 SwitchListTile(
                   title: Text(LocaleKeys.enable_quic_proxy.tr()),
                   subtitle: Text(LocaleKeys.enable_quic_proxy_desc.tr()),
                   value: Aps().enableQuicProxy.watch(context),
                   onChanged: (value) {
                     Aps().updateEnableQuicProxy(value);
+                  },
+                ),
+
+                // 绑定到物理网卡
+                SwitchListTile(
+                  title: Text(LocaleKeys.bind_device.tr()),
+                  subtitle: Text(LocaleKeys.bind_device_desc.tr()),
+                  value: Aps().bindDevice.watch(context),
+                  onChanged: (value) {
+                    Aps().updateBindDevice(value);
+                  },
+                ),
+
+                // 禁用TUN网卡
+                SwitchListTile(
+                  title: Text(LocaleKeys.tun_device.tr()),
+                  subtitle: Text(LocaleKeys.tun_device_desc.tr()),
+                  value: Aps().noTun.watch(context),
+                  onChanged: (value) {
+                    Aps().updateNoTun(value);
                   },
                 ),
               ],
