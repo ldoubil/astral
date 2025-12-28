@@ -13,7 +13,7 @@ class _NatTestPageState extends State<NatTestPage> {
   NetworkTestResult? _testResult;
   bool _isTestingNat = false;
   String _stunServer = 'stun.hot-chilli.net';
-  
+
   final List<String> _stunServers = [
     'stun.hot-chilli.net',
     'stun.miwifi.com',
@@ -39,9 +39,7 @@ class _NatTestPageState extends State<NatTestPage> {
 
     try {
       // 调用 Rust 的 NAT 检测函数（RFC 5780）
-      final result = await testNetworkConnectivity(
-        stunServer: _stunServer,
-      );
+      final result = await testNetworkConnectivity(stunServer: _stunServer);
 
       if (mounted) {
         setState(() {
@@ -68,9 +66,11 @@ class _NatTestPageState extends State<NatTestPage> {
   String _getNatTypeDescription(String natType) {
     if (natType.contains('完全锥形') || natType.contains('Full Cone')) {
       return '最佳连接。任何主机都可发送数据。';
-    } else if (natType.contains('受限锥形') || natType.contains('Restricted Cone')) {
+    } else if (natType.contains('受限锥形') ||
+        natType.contains('Restricted Cone')) {
       return '良好连接。只有联系过的主机可发送。';
-    } else if (natType.contains('端口受限') || natType.contains('Port Restricted')) {
+    } else if (natType.contains('端口受限') ||
+        natType.contains('Port Restricted')) {
       return '较好连接。常见类型，部分联机可用。';
     } else if (natType.contains('对称型') && !natType.contains('防火墙')) {
       return '可能影响P2P连接，需要中继服务器。';
@@ -111,12 +111,20 @@ class _NatTestPageState extends State<NatTestPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('正在检测中...', style: Theme.of(context).textTheme.titleSmall),
+                            Text(
+                              '正在检测中...',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
                             Text(
                               '使用 RFC 5780 STUN 协议',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
@@ -158,9 +166,15 @@ class _NatTestPageState extends State<NatTestPage> {
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
+                      Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       const SizedBox(width: 16),
-                      Text('检测失败', style: Theme.of(context).textTheme.titleSmall),
+                      Text(
+                        '检测失败',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                     ],
                   ),
                 ),
@@ -176,19 +190,29 @@ class _NatTestPageState extends State<NatTestPage> {
                     value: _stunServer,
                     decoration: InputDecoration(
                       labelText: 'STUN 服务器',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
-                    items: _stunServers.map((server) {
-                      return DropdownMenuItem(value: server, child: Text(server));
-                    }).toList(),
-                    onChanged: _isTestingNat
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _stunServer = value);
-                            }
-                          },
+                    items:
+                        _stunServers.map((server) {
+                          return DropdownMenuItem(
+                            value: server,
+                            child: Text(server),
+                          );
+                        }).toList(),
+                    onChanged:
+                        _isTestingNat
+                            ? null
+                            : (value) {
+                              if (value != null) {
+                                setState(() => _stunServer = value);
+                              }
+                            },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -224,17 +248,23 @@ class _NatTestPageState extends State<NatTestPage> {
               child: Text(
                 protocol,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
               ),
             ),
             const Spacer(),
-            Icon(Icons.speed, size: 16, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.speed,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(width: 4),
             Text(
               latency >= 0 ? '${latency}ms' : '-',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -248,9 +278,9 @@ class _NatTestPageState extends State<NatTestPage> {
               child: Text(
                 natType,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ),
           ],
@@ -262,8 +292,8 @@ class _NatTestPageState extends State<NatTestPage> {
           child: Text(
             _getNatTypeDescription(natType),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
