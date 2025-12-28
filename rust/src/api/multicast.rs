@@ -1,10 +1,11 @@
+use flutter_rust_bridge::frb;
 use tokio::io;
 use tokio::net::UdpSocket;
 use tokio::task::JoinHandle;
 use tokio::time::{interval, Duration};
 use tokio_util::sync::CancellationToken;
 use std::net::SocketAddr;
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 
@@ -13,6 +14,7 @@ lazy_static! {
     static ref MULTICAST_SENDERS: Mutex<Vec<MulticastSender>> = Mutex::new(Vec::new());
 }
 
+#[frb(opaque)]
 pub struct MulticastSender {
     multicast_addr: SocketAddr,
     bind_addr: String,
@@ -23,6 +25,7 @@ pub struct MulticastSender {
 }
 
 impl MulticastSender {
+    #[frb(ignore)]
     pub fn new(
         multicast_addr: impl Into<String>,
         port: u16,
@@ -44,6 +47,7 @@ impl MulticastSender {
         })
     }
 
+    #[frb(ignore)]
     pub fn with_bind_addr(mut self, bind_addr: impl Into<String>) -> Self {
         self.bind_addr = bind_addr.into();
         self
@@ -103,8 +107,8 @@ pub fn create_multicast_sender(
     port: u16,
     data: Vec<u8>,
     interval_ms: u64,
-) -> JoinHandle<Result<usize, String>> {
-    RT.spawn(async move {
+) -> Result<usize, String> {
+    RT.block_on(async move {
         let mut sender = match MulticastSender::new(multicast_addr.clone(), port, data, interval_ms) {
             Ok(s) => s,
             Err(e) => return Err(format!("创建组播发送器失败: {}", e)),
@@ -112,7 +116,7 @@ pub fn create_multicast_sender(
         
         match sender.start().await {
             Ok(_) => {
-                let mut senders = MULTICAST_SENDERS.lock().unwrap();
+                let mut senders = MULTICAST_SENDERS.lock().await;
                 senders.push(sender);
                 let index = senders.len() - 1;
                 println!("组播发送器已启动: {}:{}, 间隔: {}ms, 索引: {}", multicast_addr, port, interval_ms, index);
@@ -130,8 +134,8 @@ pub fn create_multicast_sender_with_bind(
     bind_addr: String,
     data: Vec<u8>,
     interval_ms: u64,
-) -> JoinHandle<Result<usize, String>> {
-    RT.spawn(async move {
+) -> Result<usize, String> {
+    RT.block_on(async move {
         let mut sender = match MulticastSender::new(multicast_addr.clone(), port, data, interval_ms) {
             Ok(s) => s.with_bind_addr(bind_addr.clone()),
             Err(e) => return Err(format!("创建组播发送器失败: {}", e)),
@@ -139,10 +143,10 @@ pub fn create_multicast_sender_with_bind(
         
         match sender.start().await {
             Ok(_) => {
-                let mut senders = MULTICAST_SENDERS.lock().unwrap();
+                let mut senders = MULTICAST_SENDERS.lock().await;
                 senders.push(sender);
                 let index = senders.len() - 1;
-                println!("组播发送器已启动: {}:{}, 绑定: {}, 间隔: {}ms, 索引: {}", 
+                println!("组播发送器已启动: {}:{}, 绑定: {}, 间隔: {}ms, 索引: {}",
                     multicast_addr, port, bind_addr, interval_ms, index);
                 Ok(index)
             }
@@ -152,9 +156,9 @@ pub fn create_multicast_sender_with_bind(
 }
 
 /// 停止指定索引的组播发送器
-pub fn stop_multicast_sender(index: usize) -> JoinHandle<Result<(), String>> {
-    RT.spawn(async move {
-        let mut senders = MULTICAST_SENDERS.lock().unwrap();
+pub fn stop_multicast_sender(index: usize) -> Result<(), String> {
+    RT.block_on(async move {
+        let mut senders = MULTICAST_SENDERS.lock().await;
         
         if index >= senders.len() {
             return Err(format!("无效的发送器索引: {}", index));
@@ -167,9 +171,9 @@ pub fn stop_multicast_sender(index: usize) -> JoinHandle<Result<(), String>> {
 }
 
 /// 停止所有组播发送器
-pub fn stop_all_multicast_senders() -> JoinHandle<Result<(), String>> {
-    RT.spawn(async move {
-        let mut senders = MULTICAST_SENDERS.lock().unwrap();
+pub fn stop_all_multicast_senders() -> Result<(), String> {
+    RT.block_on(async move {
+        let mut senders = MULTICAST_SENDERS.lock().await;
         
         for (index, sender) in senders.iter_mut().enumerate() {
             sender.stop().await;
@@ -184,17 +188,21 @@ pub fn stop_all_multicast_senders() -> JoinHandle<Result<(), String>> {
 
 /// 获取所有正在运行的组播发送器数量
 pub fn get_multicast_sender_count() -> usize {
-    let senders = MULTICAST_SENDERS.lock().unwrap();
-    senders.len()
+    RT.block_on(async move {
+        let senders = MULTICAST_SENDERS.lock().await;
+        senders.len()
+    })
 }
 
 /// 检查指定发送器是否正在运行
 pub fn is_multicast_sender_running(index: usize) -> bool {
-    let senders = MULTICAST_SENDERS.lock().unwrap();
-    
-    if index >= senders.len() {
-        return false;
-    }
-    
-    senders[index].is_running()
+    RT.block_on(async move {
+        let senders = MULTICAST_SENDERS.lock().await;
+        
+        if index >= senders.len() {
+            return false;
+        }
+        
+        senders[index].is_running()
+    })
 }

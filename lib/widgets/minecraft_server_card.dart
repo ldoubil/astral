@@ -35,13 +35,17 @@ class MinecraftServerInfo {
 class MinecraftServerCard extends StatefulWidget {
   final String host;
   final int port;
-  final VoidCallback? onConnect;
+  final bool isConnected;
+  final int? localPort;
+  final Function(String serverMotd)? onToggleConnection;
 
   const MinecraftServerCard({
     super.key,
     required this.host,
     required this.port,
-    this.onConnect,
+    this.isConnected = false,
+    this.localPort,
+    this.onToggleConnection,
   });
 
   @override
@@ -341,18 +345,40 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // 连接按钮
-                  FilledButton.icon(
-                    onPressed: widget.onConnect,
-                    icon: const Icon(Icons.play_arrow, size: 20),
-                    label: const Text('连接'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  // 连接/断开按钮
+                  widget.isConnected
+                      ? FilledButton.tonalIcon(
+                        onPressed: () {
+                          print('尝试断开服务器: ${widget.host}:${widget.port}');
+                          widget.onToggleConnection?.call(_serverInfo.motd);
+                        },
+                        icon: const Icon(Icons.stop, size: 20),
+                        label: const Text('断开'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.errorContainer,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onErrorContainer,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      )
+                      : FilledButton.icon(
+                        onPressed: () {
+                          print('尝试连接到服务器: ${widget.host}:${widget.port}');
+                          widget.onToggleConnection?.call(_serverInfo.motd);
+                        },
+                        icon: const Icon(Icons.play_arrow, size: 20),
+                        label: const Text('连接'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                 ],
               ),
             ),

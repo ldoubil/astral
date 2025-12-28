@@ -1,10 +1,11 @@
+use flutter_rust_bridge::frb;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 
@@ -13,11 +14,12 @@ lazy_static! {
     static ref FORWARD_SERVERS: Mutex<Vec<ForwardServer>> = Mutex::new(Vec::new());
 }
 
+#[frb(opaque)]
 #[derive(Clone)]
 pub struct ServerStats {
-    pub connections: Arc<AtomicUsize>,
-    pub bytes_sent: Arc<AtomicU64>,
-    pub bytes_received: Arc<AtomicU64>,
+    connections: Arc<AtomicUsize>,
+    bytes_sent: Arc<AtomicU64>,
+    bytes_received: Arc<AtomicU64>,
 }
 
 impl ServerStats {
@@ -41,8 +43,7 @@ impl ServerStats {
         self.bytes_received.load(Ordering::Relaxed)
     }
 }
-
-pub struct ForwardServer {
+#[frb(opaque)]pub struct ForwardServer {
     listen_addr: String,
     forward_addr: String,
     handle: Option<JoinHandle<()>>,
@@ -51,6 +52,7 @@ pub struct ForwardServer {
 }
 
 impl ForwardServer {
+    #[frb(ignore)]
     pub fn new(listen_addr: impl Into<String>, forward_addr: impl Into<String>) -> Self {
         Self {
             listen_addr: listen_addr.into(),
@@ -159,13 +161,13 @@ async fn handle_connection(mut client_stream: TcpStream, forward_addr: &str, sta
 
 /// 创建并启动一个端口转发服务器
 /// 返回服务器索引，用于后续操作
-pub fn create_forward_server(listen_addr: String, forward_addr: String) -> JoinHandle<Result<usize, String>> {
-    RT.spawn(async move {
+pub fn create_forward_server(listen_addr: String, forward_addr: String) -> Result<usize, String> {
+    RT.block_on(async move {
         let mut server = ForwardServer::new(listen_addr.clone(), forward_addr.clone());
         
         match server.start().await {
             Ok(_) => {
-                let mut servers = FORWARD_SERVERS.lock().unwrap();
+                let mut servers = FORWARD_SERVERS.lock().await;
                 servers.push(server);
                 let index = servers.len() - 1;
                 println!("端口转发服务器已启动: {} -> {}, 索引: {}", listen_addr, forward_addr, index);
@@ -177,9 +179,9 @@ pub fn create_forward_server(listen_addr: String, forward_addr: String) -> JoinH
 }
 
 /// 停止指定索引的端口转发服务器
-pub fn stop_forward_server(index: usize) -> JoinHandle<Result<(), String>> {
-    RT.spawn(async move {
-        let mut servers = FORWARD_SERVERS.lock().unwrap();
+pub fn stop_forward_server(index: usize) -> Result<(), String> {
+    RT.block_on(async move {
+        let mut servers = FORWARD_SERVERS.lock().await;
         
         if index >= servers.len() {
             return Err(format!("无效的服务器索引: {}", index));
@@ -192,9 +194,9 @@ pub fn stop_forward_server(index: usize) -> JoinHandle<Result<(), String>> {
 }
 
 /// 停止所有端口转发服务器
-pub fn stop_all_forward_servers() -> JoinHandle<Result<(), String>> {
-    RT.spawn(async move {
-        let mut servers = FORWARD_SERVERS.lock().unwrap();
+pub fn stop_all_forward_servers() -> Result<(), String> {
+    RT.block_on(async move {
+        let mut servers = FORWARD_SERVERS.lock().await;
         
         for (index, server) in servers.iter_mut().enumerate() {
             server.stop().await;
@@ -209,33 +211,39 @@ pub fn stop_all_forward_servers() -> JoinHandle<Result<(), String>> {
 
 /// 获取指定服务器的统计信息
 pub fn get_forward_server_stats(index: usize) -> Result<(usize, u64, u64), String> {
-    let servers = FORWARD_SERVERS.lock().unwrap();
-    
-    if index >= servers.len() {
-        return Err(format!("无效的服务器索引: {}", index));
-    }
-    
-    let stats = &servers[index].stats;
-    Ok((
-        stats.get_connections(),
-        stats.get_bytes_sent(),
-        stats.get_bytes_received(),
-    ))
+    RT.block_on(async move {
+        let servers = FORWARD_SERVERS.lock().await;
+        
+        if index >= servers.len() {
+            return Err(format!("无效的服务器索引: {}", index));
+        }
+        
+        let stats = &servers[index].stats;
+        Ok((
+            stats.get_connections(),
+            stats.get_bytes_sent(),
+            stats.get_bytes_received(),
+        ))
+    })
 }
 
 /// 获取所有正在运行的服务器数量
 pub fn get_forward_server_count() -> usize {
-    let servers = FORWARD_SERVERS.lock().unwrap();
-    servers.len()
+    RT.block_on(async move {
+        let servers = FORWARD_SERVERS.lock().await;
+        servers.len()
+    })
 }
 
 /// 检查指定服务器是否正在运行
 pub fn is_forward_server_running(index: usize) -> bool {
-    let servers = FORWARD_SERVERS.lock().unwrap();
-    
-    if index >= servers.len() {
-        return false;
-    }
-    
-    servers[index].is_running()
+    RT.block_on(async move {
+        let servers = FORWARD_SERVERS.lock().await;
+        
+        if index >= servers.len() {
+            return false;
+        }
+        
+        servers[index].is_running()
+    })
 }

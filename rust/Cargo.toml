@@ -16,6 +16,7 @@ dashmap = "6.1.0"
 chrono = "0.4.41"
 humansize = "1.1.1"
 tokio = { version = "1.39.2", features = ["full"] }
+tokio-util = "0.7"
 anyhow = "1.0.95"
 surge-ping = "0.8"
 

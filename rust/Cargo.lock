@@ -3743,6 +3743,7 @@ dependencies = [
  "serde_json",
  "surge-ping",
  "tokio",
+ "tokio-util",
  "widestring",
  "winapi",
  "windows 0.52.0",
