@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
+import 'package:astral/screens/settings/general/history_versions_page.dart';
 
 class UpdateChecker {
   /// GitHub 仓库所有者
@@ -214,6 +215,10 @@ class UpdateChecker {
                 releaseInfo != null
                     ? () => _handleDownload(context, releaseInfo)
                     : null,
+            onNetDiskDownload:
+                releaseInfo != null
+                    ? () => _showNetDiskDownloadDialog(context)
+                    : null,
           ),
     );
   }
@@ -228,9 +233,13 @@ class UpdateChecker {
       _showArchitectureSelectionDialog(context, releaseInfo);
     } else {
       // 其他平台直接下载
-      final downloadUrlPath = _getDownloadUrl(releaseInfo);
-      if (downloadUrlPath == null) return;
-      final downloadUrl = Aps().downloadAccelerate.value + downloadUrlPath;
+      final downloadUrl = _getDownloadUrl(releaseInfo);
+      if (downloadUrl == null) return;
+
+      // 添加GitHub下载加速前缀
+      final acceleratedUrl = 'https://gh.jasonzeng.dev/$downloadUrl';
+      debugPrint('下载链接: $acceleratedUrl');
+
       final fileName = _getPlatformFileName();
 
       // 显示下载进度对话框
@@ -240,8 +249,12 @@ class UpdateChecker {
         builder:
             (context) => _DownloadProgressDialog(
               onDownload:
-                  (onProgress) =>
-                      _downloadFile(downloadUrl, fileName, onProgress),
+                  (onProgress, isCancelled) => _downloadFile(
+                    acceleratedUrl,
+                    fileName,
+                    onProgress,
+                    isCancelled,
+                  ),
               fileName: fileName,
             ),
       );
@@ -303,15 +316,17 @@ class UpdateChecker {
     Map<String, dynamic> releaseInfo,
     String fileName,
   ) {
-    final downloadUrlPath = _getDownloadUrlForFile(releaseInfo, fileName);
-    if (downloadUrlPath == null) {
+    final downloadUrl = _getDownloadUrlForFile(releaseInfo, fileName);
+    if (downloadUrl == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('未找到 $fileName 的下载链接')));
       return;
     }
 
-    final downloadUrl = Aps().downloadAccelerate.value + downloadUrlPath;
+    // 添加GitHub下载加速前缀
+    final acceleratedUrl = 'https://gh.jasonzeng.dev/$downloadUrl';
+    debugPrint('下载链接: $acceleratedUrl');
 
     // 显示下载进度对话框
     showDialog(
@@ -320,8 +335,12 @@ class UpdateChecker {
       builder:
           (context) => _DownloadProgressDialog(
             onDownload:
-                (onProgress) =>
-                    _downloadFile(downloadUrl, fileName, onProgress),
+                (onProgress, isCancelled) => _downloadFile(
+                  acceleratedUrl,
+                  fileName,
+                  onProgress,
+                  isCancelled,
+                ),
             fileName: fileName,
           ),
     );
@@ -369,6 +388,7 @@ class UpdateChecker {
     String url,
     String fileName,
     Function(double) onProgress,
+    Function() isCancelled,
   ) async {
     IOSink? sink;
     try {
@@ -395,6 +415,10 @@ class UpdateChecker {
 
       // 使用 await for 替代 listen
       await for (final chunk in response.stream) {
+        if (isCancelled()) {
+          throw Exception('下载已取消');
+        }
+
         sink.add(chunk);
         downloadedBytes += chunk.length;
 
@@ -429,6 +453,137 @@ class UpdateChecker {
 
       debugPrint('下载失败: $e');
       return null;
+    }
+  }
+
+  /// 公开的网盘下载测试方法
+  Future<void> showUpdateDialogForTesting(BuildContext context) async {
+    try {
+      // 获取最新的 release 信息
+      final releaseInfo = await _fetchLatestRelease(
+        includePrereleases: Aps().beta.value,
+      );
+
+      if (releaseInfo == null || !context.mounted) {
+        _showUpdateDialog(
+          context,
+          '获取更新信息失败',
+          '无法获取版本信息',
+          'https://github.com/$owner/$repo/releases',
+        );
+        return;
+      }
+
+      // 直接显示更新对话框（模拟有新版本）
+      _showUpdateDialog(
+        context,
+        releaseInfo['tag_name'],
+        releaseInfo['body'] ?? '测试下载功能',
+        releaseInfo['html_url'],
+        releaseInfo: releaseInfo,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      _showUpdateDialog(
+        context,
+        '获取更新信息失败',
+        '发生错误: $e',
+        'https://github.com/$owner/$repo/releases',
+      );
+    }
+  }
+
+  Future<void> _showNetDiskDownloadDialog(BuildContext context) async {
+    // 显示加载对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('正在获取下载链接...'),
+              ],
+            ),
+          ),
+    );
+
+    try {
+      // 获取最新版本的网盘链接
+      final response = await http.get(
+        Uri.parse('https://astral.fan/downloads.json'),
+      );
+
+      if (!context.mounted) return;
+
+      // 关闭加载对话框
+      Navigator.of(context).pop();
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        if (jsonList.isNotEmpty) {
+          final latestVersion = jsonList[0];
+          final url = latestVersion['url'] as String;
+          final version = latestVersion['version'] as String;
+
+          // 显示即将跳转提示
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('网盘下载'),
+                  content: Text('即将跳转到网盘下载 $version 版本'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('取消'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _launchUrl(url);
+                      },
+                      child: const Text('确定'),
+                    ),
+                  ],
+                ),
+          );
+        } else {
+          _showErrorDialog(context, '未找到可用的下载链接');
+        }
+      } else {
+        _showErrorDialog(context, '获取下载链接失败: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // 关闭加载对话框
+      _showErrorDialog(context, '获取下载链接失败: $e');
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('错误'),
+            content: Text(message),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('确定'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }
@@ -477,6 +632,7 @@ class _UpdateDialog extends StatelessWidget {
   final bool isLatestVersion;
   final Map<String, dynamic>? releaseInfo;
   final VoidCallback? onDownload;
+  final VoidCallback? onNetDiskDownload;
 
   const _UpdateDialog({
     required this.version,
@@ -485,6 +641,7 @@ class _UpdateDialog extends StatelessWidget {
     required this.isLatestVersion,
     this.releaseInfo,
     this.onDownload,
+    this.onNetDiskDownload,
   });
 
   @override
@@ -507,13 +664,21 @@ class _UpdateDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('稍后再说'),
         ),
+        if (!isLatestVersion && onNetDiskDownload != null)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onNetDiskDownload!();
+            },
+            child: const Text('网盘下载'),
+          ),
         if (!isLatestVersion && onDownload != null)
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               onDownload!();
             },
-            child: const Text('立即更新'),
+            child: const Text('GitHub下载'),
           ),
         if (!isLatestVersion && onDownload == null)
           ElevatedButton(
@@ -542,7 +707,11 @@ class _UpdateDialog extends StatelessWidget {
 
 /// 下载进度对话框组件
 class _DownloadProgressDialog extends StatefulWidget {
-  final Future<String?> Function(Function(double) onProgress) onDownload;
+  final Future<String?> Function(
+    Function(double) onProgress,
+    Function() isCancelled,
+  )
+  onDownload;
   final String fileName;
 
   const _DownloadProgressDialog({
@@ -558,6 +727,7 @@ class _DownloadProgressDialog extends StatefulWidget {
 class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
   double _progress = 0.0;
   bool _isDownloading = true;
+  bool _isCancelled = false;
   String? _filePath;
   String? _error;
 
@@ -567,15 +737,25 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
     _startDownload();
   }
 
+  void _cancelDownload() {
+    setState(() {
+      _isCancelled = true;
+      _isDownloading = false;
+      _error = '下载已取消';
+    });
+  }
+
   Future<void> _startDownload() async {
     try {
       final filePath = await widget.onDownload((progress) {
-        if (mounted) {
+        if (mounted && !_isCancelled) {
           setState(() {
             _progress = progress;
           });
         }
-      });
+      }, () => _isCancelled);
+
+      if (_isCancelled) return;
 
       if (mounted) {
         setState(() {
@@ -587,6 +767,8 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
         });
       }
     } catch (e) {
+      if (_isCancelled) return;
+
       if (mounted) {
         setState(() {
           _isDownloading = false;
@@ -621,6 +803,9 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
         ],
       ),
       actions: [
+        if (_isDownloading) ...[
+          TextButton(onPressed: _cancelDownload, child: const Text('取消下载')),
+        ],
         if (!_isDownloading) ...[
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/k/app_s/aps.dart';
 import 'package:astral/utils/up.dart';
+import 'package:astral/screens/settings/general/history_versions_page.dart';
 
 class UpdateSettingsPage extends StatelessWidget {
   const UpdateSettingsPage({super.key});
@@ -63,38 +64,6 @@ class UpdateSettingsPage extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  title: Text(LocaleKeys.download_acceleration.tr()),
-                  subtitle: Text(LocaleKeys.download_acceleration_desc.tr()),
-                  leading: const Icon(Icons.speed),
-                ),
-
-                const Divider(),
-
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      labelText: LocaleKeys.download_acceleration.tr(),
-                      hintText: LocaleKeys.download_acceleration_hint.tr(),
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.link),
-                    ),
-                    initialValue: Aps().downloadAccelerate.watch(context),
-                    onChanged: (value) {
-                      Aps().setDownloadAccelerate(value);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Card(
-            child: Column(
-              children: [
-                ListTile(
                   title: Text(LocaleKeys.update_operations.tr()),
                   subtitle: Text(LocaleKeys.update_operations_desc.tr()),
                   leading: const Icon(Icons.update),
@@ -116,6 +85,22 @@ class UpdateSettingsPage extends StatelessWidget {
                   subtitle: Text(LocaleKeys.version_info_desc.tr()),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showVersionInfo(context),
+                ),
+
+                ListTile(
+                  leading: const Icon(Icons.history),
+                  title: Text(LocaleKeys.history_versions.tr()),
+                  subtitle: Text(LocaleKeys.history_versions_desc.tr()),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _navigateToHistoryVersions(context),
+                ),
+
+                ListTile(
+                  leading: const Icon(Icons.cloud_download),
+                  title: const Text('重新下载'),
+                  subtitle: const Text('如果出现问题可以尝试重新下载！'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _testNetDiskDownload(context),
                 ),
               ],
             ),
@@ -145,14 +130,6 @@ class UpdateSettingsPage extends StatelessWidget {
                   subtitle: Text(LocaleKeys.auto_update_info_desc.tr()),
                   leading: const Icon(Icons.auto_awesome),
                 ),
-
-                ListTile(
-                  title: Text(LocaleKeys.download_acceleration_title.tr()),
-                  subtitle: Text(
-                    LocaleKeys.download_acceleration_info_desc.tr(),
-                  ),
-                  leading: const Icon(Icons.speed),
-                ),
               ],
             ),
           ),
@@ -166,6 +143,36 @@ class UpdateSettingsPage extends StatelessWidget {
     if (context.mounted) {
       updateChecker.checkForUpdates(context);
     }
+  }
+
+  void _navigateToHistoryVersions(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) =>
+                const HistoryVersionsPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  void _testNetDiskDownload(BuildContext context) {
+    final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
+    updateChecker.showUpdateDialogForTesting(context);
   }
 
   void _showVersionInfo(BuildContext context) {

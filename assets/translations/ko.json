@@ -177,6 +177,8 @@
   "check_update_available": "새 버전이 있는지 확인",
   "version_info": "버전 정보",
   "version_info_desc": "현재 버전 및 변경 로그 보기",
+  "history_versions": "히스토리 버전",
+  "history_versions_desc": "히스토리 버전 다운로드",
   "update_description": "업데이트 설명",
   "update_description_desc": "다양한 업데이트 설정에 대해 알아보기",
   "beta_version": "베타 버전",

@@ -177,6 +177,8 @@
   "check_update_available": "Verificar si hay nueva versión disponible",
   "version_info": "Información de versión",
   "version_info_desc": "Ver versión actual y registro de cambios",
+  "history_versions": "Versiones históricas",
+  "history_versions_desc": "Descargar versiones históricas",
   "update_description": "Descripción de actualización",
   "update_description_desc": "Conocer diferentes configuraciones de actualización",
   "beta_version": "Versión Beta",

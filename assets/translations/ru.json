@@ -177,6 +177,8 @@
   "check_update_available": "Проверить наличие новой версии",
   "version_info": "Информация о версии",
   "version_info_desc": "Посмотреть текущую версию и журнал изменений",
+  "history_versions": "Исторические версии",
+  "history_versions_desc": "Скачать исторические версии",
   "update_description": "Описание обновления",
   "update_description_desc": "Узнать о различных настройках обновления",
   "beta_version": "Бета-версия",

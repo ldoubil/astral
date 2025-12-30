@@ -177,6 +177,8 @@
   "check_update_available": "Prüfen, ob neue Version verfügbar ist",
   "version_info": "Versionsinformationen",
   "version_info_desc": "Aktuelle Version und Änderungsprotokoll anzeigen",
+  "history_versions": "Versionsverlauf",
+  "history_versions_desc": "Historische Versionen herunterladen",
   "update_description": "Update-Beschreibung",
   "update_description_desc": "Über verschiedene Update-Einstellungen erfahren",
   "beta_version": "Beta-Version",

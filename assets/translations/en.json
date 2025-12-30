@@ -178,6 +178,8 @@
   "check_update_available": "Check if new version is available",
   "version_info": "Version Info",
   "version_info_desc": "View current version and changelog",
+  "history_versions": "History Versions",
+  "history_versions_desc": "Download history versions",
   "update_description": "Update Description",
   "update_description_desc": "Learn about different update settings",
   "beta_version": "Beta Version",

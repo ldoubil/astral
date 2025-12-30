@@ -178,6 +178,8 @@
   "check_update_available": "检查是否有新版本可用",
   "version_info": "版本信息",
   "version_info_desc": "查看当前版本和更新日志",
+  "history_versions": "历史版本",
+  "history_versions_desc": "下载历史版本",
   "update_description": "更新说明",
   "update_description_desc": "了解不同更新设置的作用",
   "beta_version": "Beta 版本",
