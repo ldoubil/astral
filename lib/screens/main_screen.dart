@@ -110,7 +110,7 @@ class _MainScreenState extends State<MainScreen>
     NavigationItem(
       icon: Icons.explore_outlined,
       activeIcon: Icons.explore,
-      label: LocaleKeys.nav_discover.tr(),
+      label: "发现",
       page: const ExplorePage(),
     ),
 
