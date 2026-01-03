@@ -2,11 +2,11 @@
 import 'dart:io';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:astral/utils/helpers/update_helper.dart';
-import 'package:astral/utils/helpers/regex_patterns.dart'; // 添加这行导入
+import 'package:astral/shared/utils/helpers/update_helper.dart';
+import 'package:astral/shared/utils/helpers/regex_patterns.dart'; // 添加这行导入
 import 'package:astral/core/app_s/log_capture.dart';
 import 'package:astral/core/database/app_data.dart';
-import 'package:astral/core/mod/window_manager.dart';
+import 'package:astral/core/constants/window_manager.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';

@@ -1,14 +1,14 @@
 ﻿// 导入所需的包
-import 'package:astral/utils/helpers/update_helper.dart';
+import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
-import 'package:astral/screens/home_page.dart';
-import 'package:astral/screens/room_page.dart';
-import 'package:astral/screens/explore_page.dart';
+import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
+import 'package:astral/features/home/pages/home_page.dart';
+import 'package:astral/features/rooms/pages/room_page.dart';
+import 'package:astral/features/explore/pages/explore_page.dart';
 import 'package:astral/screens/settings_page.dart';
-import 'package:astral/widgets/bottom_nav.dart';
-import 'package:astral/widgets/left_nav.dart';
-import 'package:astral/widgets/status_bar.dart';
+import 'package:astral/shared/widgets/navigation/bottom_nav.dart';
+import 'package:astral/shared/widgets/navigation/left_nav.dart';
+import 'package:astral/shared/widgets/common/status_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/core/navigation.dart';
 import 'package:easy_localization/easy_localization.dart';

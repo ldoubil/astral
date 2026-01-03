@@ -1,5 +1,5 @@
-﻿import 'package:astral/utils/network/astral_udp.dart';
-import 'package:astral/core/mod/small_window_adapter.dart'; // 导入小窗口适配器
+﻿import 'package:astral/shared/utils/network/astral_udp.dart';
+import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/core/services/service_manager.dart';

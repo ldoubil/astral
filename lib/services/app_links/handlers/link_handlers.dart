@@ -1,5 +1,5 @@
-﻿import 'package:astral/utils/data/room_crypto.dart';
-import 'package:astral/utils/data/room_share_helper.dart';
+﻿import 'package:astral/shared/utils/data/room_crypto.dart';
+import 'package:astral/shared/utils/data/room_share_helper.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:astral/screens/settings/settings_main_page.dart';
+import 'package:astral/features/settings/pages/settings_main_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
