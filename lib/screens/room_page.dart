@@ -1,14 +1,14 @@
-import 'package:astral/utils/random_name.dart';
-import 'package:astral/utils/show_add_room_dialog.dart';
-import 'package:astral/utils/show_edit_room_dialog.dart';
-import 'package:astral/utils/room_share_helper.dart';
+﻿import 'package:astral/utils/ui/random_name.dart';
+import 'package:astral/utils/dialogs/add_room_dialog.dart';
+import 'package:astral/utils/dialogs/edit_room_dialog.dart';
+import 'package:astral/utils/data/room_share_helper.dart';
 import 'package:astral/screens/user_page.dart';
 import 'package:astral/widgets/room_card.dart';
 import 'package:astral/widgets/room_reorder_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/k/services/service_manager.dart';
-import 'package:astral/k/models/room.dart';
+import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/models/room.dart';
 import 'package:uuid/uuid.dart';
 
 class RoomPage extends StatefulWidget {

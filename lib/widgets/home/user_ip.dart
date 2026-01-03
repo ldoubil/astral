@@ -1,7 +1,7 @@
-import 'package:astral/k/services/service_manager.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:astral/widgets/canvas_jump.dart';
-import 'package:astral/k/models/room.dart';
+import 'package:astral/core/models/room.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:easy_localization/easy_localization.dart';

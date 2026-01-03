@@ -1,5 +1,5 @@
-import 'package:astral/k/services/service_manager.dart';
-import 'package:astral/k/navigtion.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 

@@ -1,8 +1,8 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:astral/k/models/room.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/core/models/room.dart';
+import 'package:astral/core/services/service_manager.dart';
 
 // 添加DragHandle定义
 class DragHandle extends StatelessWidget {

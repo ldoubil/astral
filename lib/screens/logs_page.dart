@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
 
 class LogsPage extends StatefulWidget {
   const LogsPage({super.key});

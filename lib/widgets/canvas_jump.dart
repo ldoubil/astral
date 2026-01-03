@@ -1,6 +1,6 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:astral/k/models/room.dart';
+import 'package:astral/core/models/room.dart';
 
 class CanvasJump {
   static void show(BuildContext context, {required List<Room> rooms, required Function(Room) onSelect}) {

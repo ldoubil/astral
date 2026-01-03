@@ -1,20 +1,26 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/ui/base_settings_page.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-class SoftwareSettingsPage extends StatefulWidget {
+class SoftwareSettingsPage extends BaseStatefulSettingsPage {
   const SoftwareSettingsPage({super.key});
 
   @override
-  State<SoftwareSettingsPage> createState() => _SoftwareSettingsPageState();
+  BaseStatefulSettingsPageState<SoftwareSettingsPage> createState() =>
+      _SoftwareSettingsPageState();
 }
 
-class _SoftwareSettingsPageState extends State<SoftwareSettingsPage> {
+class _SoftwareSettingsPageState
+    extends BaseStatefulSettingsPageState<SoftwareSettingsPage> {
   bool _hasInstallPermission = false;
+
+  @override
+  String get title => LocaleKeys.software_settings.tr();
 
   @override
   void initState() {
@@ -97,112 +103,89 @@ class _SoftwareSettingsPageState extends State<SoftwareSettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(LocaleKeys.software_settings.tr()),
-        centerTitle: true,
-      ),
-      body: Watch((context) {
-        return ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    title: Text(LocaleKeys.software_settings.tr()),
-                    subtitle: Text(LocaleKeys.software_behavior_desc.tr()),
-                    leading: const Icon(Icons.settings),
-                  ),
-
-                  const Divider(),
-
-                  if (Platform.isAndroid)
-                    ListTile(
-                      leading: const Icon(Icons.install_mobile),
-                      title: Text(LocaleKeys.get_install_permission.tr()),
-                      subtitle: Text(
-                        _hasInstallPermission
-                            ? LocaleKeys.install_permission_granted.tr()
-                            : LocaleKeys.install_permission_not_granted.tr(),
-                      ),
-                      trailing:
-                          _hasInstallPermission
-                              ? const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              )
-                              : const Icon(Icons.warning, color: Colors.orange),
-                      onTap:
-                          _hasInstallPermission
-                              ? null
-                              : _requestInstallPermission,
-                    ),
-
-                  if (!Platform.isAndroid)
-                    SwitchListTile(
-                      title: Text(LocaleKeys.minimize.tr()),
-                      subtitle: Text(LocaleKeys.minimize_desc.tr()),
-                      value: ServiceManager().windowState.closeMinimize.value,
-                      onChanged: (value) {
-                        ServiceManager().appSettings.updateCloseMinimize(value);
-                      },
-                    ),
-
-                  SwitchListTile(
-                    title: Text(LocaleKeys.player_list_card.tr()),
-                    subtitle: Text(LocaleKeys.player_list_card_desc.tr()),
-                    value: ServiceManager().displayState.userListSimple.value,
-                    onChanged: (value) {
-                      ServiceManager().appSettings.setUserListSimple(value);
-                    },
-                  ),
-
-                  SwitchListTile(
-                    title: Text(LocaleKeys.enable_banner_carousel.tr()),
-                    subtitle: Text(LocaleKeys.enable_banner_carousel_desc.tr()),
-                    value:
-                        ServiceManager()
-                            .appSettingsState
-                            .enableBannerCarousel
-                            .value,
-                    onChanged: (value) async {
-                      await ServiceManager().appSettings
-                          .updateEnableBannerCarousel(value);
-                    },
-                  ),
-                ],
+  Widget buildContent(BuildContext context) {
+    return Watch((context) {
+      return ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          buildSettingsCard(
+            context: context,
+            children: [
+              ListTile(
+                title: Text(LocaleKeys.software_settings.tr()),
+                subtitle: Text(LocaleKeys.software_behavior_desc.tr()),
+                leading: const Icon(Icons.settings),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            if (Platform.isAndroid)
-              Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      title: Text(LocaleKeys.android_settings.tr()),
-                      subtitle: Text(LocaleKeys.android_settings_desc.tr()),
-                      leading: const Icon(Icons.android),
-                    ),
-
-                    const Divider(),
-
-                    ListTile(
-                      title: Text(LocaleKeys.permission_description.tr()),
-                      subtitle: Text(
-                        LocaleKeys.permission_description_desc.tr(),
-                      ),
-                      leading: const Icon(Icons.info_outline),
-                    ),
-                  ],
+              buildDivider(),
+              if (Platform.isAndroid)
+                ListTile(
+                  leading: const Icon(Icons.install_mobile),
+                  title: Text(LocaleKeys.get_install_permission.tr()),
+                  subtitle: Text(
+                    _hasInstallPermission
+                        ? LocaleKeys.install_permission_granted.tr()
+                        : LocaleKeys.install_permission_not_granted.tr(),
+                  ),
+                  trailing:
+                      _hasInstallPermission
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : const Icon(Icons.warning, color: Colors.orange),
+                  onTap:
+                      _hasInstallPermission ? null : _requestInstallPermission,
                 ),
+              if (!Platform.isAndroid)
+                SwitchListTile(
+                  title: Text(LocaleKeys.minimize.tr()),
+                  subtitle: Text(LocaleKeys.minimize_desc.tr()),
+                  value: ServiceManager().windowState.closeMinimize.value,
+                  onChanged: (value) {
+                    ServiceManager().appSettings.updateCloseMinimize(value);
+                  },
+                ),
+              SwitchListTile(
+                title: Text(LocaleKeys.player_list_card.tr()),
+                subtitle: Text(LocaleKeys.player_list_card_desc.tr()),
+                value: ServiceManager().displayState.userListSimple.value,
+                onChanged: (value) {
+                  ServiceManager().appSettings.setUserListSimple(value);
+                },
               ),
-          ],
-        );
-      }),
-    );
+              SwitchListTile(
+                title: Text(LocaleKeys.enable_banner_carousel.tr()),
+                subtitle: Text(LocaleKeys.enable_banner_carousel_desc.tr()),
+                value:
+                    ServiceManager()
+                        .appSettingsState
+                        .enableBannerCarousel
+                        .value,
+                onChanged: (value) async {
+                  await ServiceManager().appSettings.updateEnableBannerCarousel(
+                    value,
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (Platform.isAndroid)
+            buildSettingsCard(
+              context: context,
+              children: [
+                ListTile(
+                  title: Text(LocaleKeys.android_settings.tr()),
+                  subtitle: Text(LocaleKeys.android_settings_desc.tr()),
+                  leading: const Icon(Icons.android),
+                ),
+                buildDivider(),
+                ListTile(
+                  title: Text(LocaleKeys.permission_description.tr()),
+                  subtitle: Text(LocaleKeys.permission_description_desc.tr()),
+                  leading: const Icon(Icons.info_outline),
+                ),
+              ],
+            ),
+        ],
+      );
+    });
   }
 }

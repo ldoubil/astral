@@ -1,48 +1,42 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/hops.dart';
-import 'package:signals_flutter/signals_flutter.dart';
+import 'package:astral/core/ui/base_settings_page.dart';
 
-class NetworkAdapterPage extends StatelessWidget {
+class NetworkAdapterPage extends BaseSettingsPage {
   const NetworkAdapterPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(LocaleKeys.network_adapter_hop_settings.tr()),
-        centerTitle: true,
-      ),
-      body: Watch((context) {
-        return ListView(
-          padding: const EdgeInsets.all(16.0),
+  String get title => LocaleKeys.network_adapter_hop_settings.tr();
+
+  @override
+  Widget buildContent(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        buildSettingsCard(
+          context: context,
           children: [
-            Card(
-              child: Column(
-                children: [
-                  SwitchListTile(
-                    title: Text(LocaleKeys.auto_set_hop.tr()),
-                    subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
-                    value: ServiceManager().networkConfigState.autoSetMTU.value,
-                    onChanged: (value) {
-                      ServiceManager().networkConfig.setAutoSetMTU(value);
-                    },
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.list),
-                    title: Text(LocaleKeys.view_hop_list.tr()),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showHopList(context),
-                  ),
-                ],
-              ),
+            SwitchListTile(
+              title: Text(LocaleKeys.auto_set_hop.tr()),
+              subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
+              value: ServiceManager().networkConfigState.autoSetMTU.value,
+              onChanged: (value) {
+                ServiceManager().networkConfig.setAutoSetMTU(value);
+              },
+            ),
+            buildDivider(),
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: Text(LocaleKeys.view_hop_list.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showHopList(context),
             ),
           ],
-        );
-      }),
+        ),
+      ],
     );
   }
 

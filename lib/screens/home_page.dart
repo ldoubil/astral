@@ -1,5 +1,5 @@
-import 'dart:io';
-import 'package:astral/k/services/service_manager.dart';
+﻿import 'dart:io';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/widgets/home/about_home.dart';
 import 'package:astral/widgets/home/banner_carousel.dart';
 import 'package:astral/widgets/home/servers_home.dart';

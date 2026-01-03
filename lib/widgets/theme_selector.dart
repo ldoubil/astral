@@ -1,4 +1,4 @@
-import 'package:astral/k/services/service_manager.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 

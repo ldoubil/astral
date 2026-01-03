@@ -1,7 +1,7 @@
-import 'package:astral/k/services/service_manager.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
-import 'package:astral/utils/platform_version_parser.dart';
-import 'package:astral/utils/blocked_servers.dart';
+import 'package:astral/utils/helpers/platform_version_parser.dart';
+import 'package:astral/utils/network/blocked_servers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:astral/k/models/magic_wall_model.dart';
-import 'package:astral/k/database/app_data.dart';
+import 'package:astral/core/models/magic_wall_model.dart';
+import 'package:astral/core/database/app_data.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:io';

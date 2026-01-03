@@ -5,18 +5,35 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/models/history_version.dart';
+import 'package:astral/core/ui/base_settings_page.dart';
 
-class HistoryVersionsPage extends StatefulWidget {
+class HistoryVersionsPage extends BaseStatefulSettingsPage {
   const HistoryVersionsPage({super.key});
 
   @override
-  State<HistoryVersionsPage> createState() => _HistoryVersionsPageState();
+  BaseStatefulSettingsPageState<HistoryVersionsPage> createState() =>
+      _HistoryVersionsPageState();
 }
 
-class _HistoryVersionsPageState extends State<HistoryVersionsPage> {
+class _HistoryVersionsPageState
+    extends BaseStatefulSettingsPageState<HistoryVersionsPage> {
   List<HistoryVersion> _versions = [];
   bool _isLoading = true;
   String? _errorMessage;
+
+  @override
+  String get title => LocaleKeys.history_versions.tr();
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.refresh),
+        onPressed: _loadVersions,
+        tooltip: '刷新',
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -70,24 +87,7 @@ class _HistoryVersionsPageState extends State<HistoryVersionsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(LocaleKeys.history_versions.tr()),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadVersions,
-            tooltip: '刷新',
-          ),
-        ],
-      ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
+  Widget buildContent(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

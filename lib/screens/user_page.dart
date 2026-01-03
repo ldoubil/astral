@@ -1,4 +1,4 @@
-import 'package:astral/k/services/service_manager.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/widgets/all_user_card.dart';
 import 'package:astral/widgets/mini_user_card.dart';

@@ -1,87 +1,71 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/ui/base_settings_page.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-class SubnetProxyPage extends StatelessWidget {
+class SubnetProxyPage extends BaseSettingsPage {
   const SubnetProxyPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(LocaleKeys.subnet_proxy_cidr.tr()),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _addCidrProxy(context),
-          ),
-        ],
-      ),
-      body: Watch((context) {
-        final cidrList = ServiceManager().networkConfigState.cidrproxy.value;
+  String get title => LocaleKeys.subnet_proxy_cidr.tr();
 
-        if (cidrList.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.route,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No CIDR proxy rules',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.add),
+        onPressed: () => _addCidrProxy(context),
+      ),
+    ];
+  }
+
+  @override
+  Widget buildContent(BuildContext context) {
+    return Watch((context) {
+      final cidrList = ServiceManager().networkConfigState.cidrproxy.value;
+
+      if (cidrList.isEmpty) {
+        return buildEmptyState(
+          context: context,
+          icon: Icons.route,
+          title: 'No CIDR proxy rules',
+          actionLabel: LocaleKeys.add_cidr_proxy.tr(),
+          onAction: () => _addCidrProxy(context),
+        );
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: cidrList.length,
+        itemBuilder: (context, index) {
+          final cidr = cidrList[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              title: Text(cidr),
+              leading: const Icon(Icons.network_cell),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    tooltip: LocaleKeys.edit.tr(),
+                    onPressed: () => _editCidr(context, index, cidr),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () => _addCidrProxy(context),
-                  icon: const Icon(Icons.add),
-                  label: Text(LocaleKeys.add_cidr_proxy.tr()),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20),
+                    tooltip: LocaleKeys.delete.tr(),
+                    onPressed: () => _deleteCidr(context, index, cidr),
+                  ),
+                ],
+              ),
             ),
           );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16.0),
-          itemCount: cidrList.length,
-          itemBuilder: (context, index) {
-            final cidr = cidrList[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(cidr),
-                leading: const Icon(Icons.network_cell),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 20),
-                      tooltip: LocaleKeys.edit.tr(),
-                      onPressed: () => _editCidr(context, index, cidr),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20),
-                      tooltip: LocaleKeys.delete.tr(),
-                      onPressed: () => _deleteCidr(context, index, cidr),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      }),
-    );
+        },
+      );
+    });
   }
 
   Future<void> _addCidrProxy(BuildContext context) async {

@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:astral/utils/net_astral_udp.dart';
-import 'package:astral/k/services/service_manager.dart';
+import 'package:astral/utils/network/astral_udp.dart';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';

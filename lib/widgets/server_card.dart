@@ -1,6 +1,6 @@
-import 'package:astral/k/services/service_manager.dart';
-import 'package:astral/k/models/server_mod.dart';
-import 'package:astral/utils/blocked_servers.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/models/server_mod.dart';
+import 'package:astral/utils/network/blocked_servers.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
