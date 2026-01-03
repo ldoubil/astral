@@ -764,6 +764,7 @@ pub fn add_magic_wall_rule(rule: MagicWallRule) -> std::result::Result<(), Strin
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
 fn apply_rule(rule: &MagicWallRule) -> std::result::Result<(), String> {
     println!("\n➕ ============ 添加防火墙规则 ============");
     println!("📌 规则名称: {}", rule.name);
