@@ -311,7 +311,9 @@ class _BannerCarouselState extends State<BannerCarousel> {
                               actions: [
                                 TextButton.icon(
                                   onPressed: () async {
-                                    await Aps().updateEnableBannerCarousel(false);
+                                    await Aps().updateEnableBannerCarousel(
+                                      false,
+                                    );
                                     if (context.mounted) {
                                       Navigator.of(context).pop();
                                     }
