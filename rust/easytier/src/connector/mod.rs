@@ -10,15 +10,17 @@ use crate::tunnel::quic::QUICTunnelConnector;
 #[cfg(feature = "wireguard")]
 use crate::tunnel::wireguard::{WgConfig, WgTunnelConnector};
 use crate::{
-    common::{error::Error, global_ctx::ArcGlobalCtx, network::IPCollector},
+    common::{error::Error, global_ctx::ArcGlobalCtx, idn, network::IPCollector},
     tunnel::{
-        check_scheme_and_get_socket_addr, ring::RingTunnelConnector, tcp::TcpTunnelConnector,
-        udp::UdpTunnelConnector, IpVersion, TunnelConnector,
+        check_scheme_and_get_socket_addr, fake_tcp::FakeTcpTunnelConnector,
+        ring::RingTunnelConnector, tcp::TcpTunnelConnector, udp::UdpTunnelConnector, IpVersion,
+        TunnelConnector,
     },
 };
 
 pub mod direct;
 pub mod manual;
+pub mod tcp_hole_punch;
 pub mod udp_hole_punch;
 
 pub mod dns_connector;
@@ -58,6 +60,7 @@ pub async fn create_connector_by_url(
     ip_version: IpVersion,
 ) -> Result<Box<dyn TunnelConnector + 'static>, Error> {
     let url = url::Url::parse(url).map_err(|_| Error::InvalidUrl(url.to_owned()))?;
+    let url = idn::convert_idn_to_ascii(url)?;
     let mut connector: Box<dyn TunnelConnector + 'static> = match url.scheme() {
         "tcp" => {
             let dst_addr =
@@ -154,6 +157,20 @@ pub async fn create_connector_by_url(
                 )));
             }
             let connector = dns_connector::DNSTunnelConnector::new(url, global_ctx.clone());
+            Box::new(connector)
+        }
+        "faketcp" => {
+            let dst_addr =
+                check_scheme_and_get_socket_addr::<SocketAddr>(&url, "faketcp", ip_version).await?;
+            let mut connector = FakeTcpTunnelConnector::new(url);
+            if global_ctx.config.get_flags().bind_device {
+                set_bind_addr_for_peer_connector(
+                    &mut connector,
+                    dst_addr.is_ipv4(),
+                    &global_ctx.get_ip_collector(),
+                )
+                .await;
+            }
             Box::new(connector)
         }
         _ => {

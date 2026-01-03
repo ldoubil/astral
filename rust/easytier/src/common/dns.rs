@@ -68,12 +68,13 @@ pub async fn socket_addrs(
     url: &url::Url,
     default_port_number: impl Fn() -> Option<u16>,
 ) -> Result<Vec<SocketAddr>, Error> {
-    let host = url.host_str().ok_or(Error::InvalidUrl(url.to_string()))?;
+    let host = url.host().ok_or(Error::InvalidUrl(url.to_string()))?;
     let port = url
         .port()
         .or_else(default_port_number)
         .ok_or(Error::InvalidUrl(url.to_string()))?;
     // See https://github.com/EasyTier/EasyTier/pull/947
+    // here is for compatibility with old version
     let port = match port {
         0 => match url.scheme() {
             "ws" => 80,
@@ -84,9 +85,12 @@ pub async fn socket_addrs(
     };
 
     // if host is an ip address, return it directly
-    if let Ok(ip) = host.parse::<std::net::IpAddr>() {
-        return Ok(vec![SocketAddr::new(ip, port)]);
+    match host {
+        url::Host::Ipv4(ip) => return Ok(vec![SocketAddr::new(std::net::IpAddr::V4(ip), port)]),
+        url::Host::Ipv6(ip) => return Ok(vec![SocketAddr::new(std::net::IpAddr::V6(ip), port)]),
+        _ => {}
     }
+    let host = host.to_string();
 
     if ALLOW_USE_SYSTEM_DNS_RESOLVER.load(std::sync::atomic::Ordering::Relaxed) {
         let socket_addr = format!("{}:{}", host, port);
@@ -103,7 +107,7 @@ pub async fn socket_addrs(
     }
 
     // use hickory_resolver
-    let ret = RESOLVER.lookup_ip(host).await.with_context(|| {
+    let ret = RESOLVER.lookup_ip(&host).await.with_context(|| {
         format!(
             "hickory dns lookup_ip failed, host: {}, port: {}",
             host, port

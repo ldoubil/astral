@@ -1,6 +1,6 @@
 #[cfg(target_os = "windows")]
 use windows::{
-    core::{Result, Interface, HRESULT, Error},
+    core::{Result, HRESULT, Error},
     Win32::Foundation::VARIANT_BOOL,
     Win32::{
         NetworkManagement::WindowsFirewall::{

@@ -4,7 +4,7 @@ pub mod instance;
 
 pub mod listeners;
 
+pub mod proxy_cidrs_monitor;
+
 #[cfg(feature = "tun")]
 pub mod virtual_nic;
-
-pub mod logger_rpc_service;

@@ -14,7 +14,7 @@ use pnet::packet::{
     udp::{self, MutableUdpPacket},
     Packet,
 };
-use tachyonix::{channel, Receiver, Sender, TrySendError};
+use tokio::sync::mpsc::{channel, error::TrySendError, Receiver, Sender};
 use tokio::{
     net::UdpSocket,
     sync::Mutex,
@@ -85,7 +85,7 @@ impl UdpNatEntry {
 
     async fn compose_ipv4_packet(
         self: &Arc<Self>,
-        packet_sender: &mut Sender<ZCPacket>,
+        packet_sender: &Sender<ZCPacket>,
         buf: &mut [u8],
         src_v4: &SocketAddrV4,
         payload_len: usize,
@@ -139,12 +139,12 @@ impl UdpNatEntry {
 
     async fn forward_task(
         self: Arc<Self>,
-        mut packet_sender: Sender<ZCPacket>,
+        packet_sender: Sender<ZCPacket>,
         virtual_ipv4: Ipv4Addr,
         real_ipv4: Ipv4Addr,
         mapped_ipv4: Ipv4Addr,
     ) {
-        let (s, mut r) = tachyonix::channel(128);
+        let (s, mut r) = channel(128);
 
         let self_clone = self.clone();
         let recv_task = ScopedTask::from(tokio::spawn(async move {
@@ -190,7 +190,7 @@ impl UdpNatEntry {
         let self_clone = self.clone();
         let send_task = ScopedTask::from(tokio::spawn(async move {
             let mut ip_id = 1;
-            while let Ok((mut packet, len, src_socket)) = r.recv().await {
+            while let Some((mut packet, len, src_socket)) = r.recv().await {
                 let SocketAddr::V4(mut src_v4) = src_socket else {
                     continue;
                 };
@@ -207,7 +207,7 @@ impl UdpNatEntry {
 
                 let Ok(_) = Self::compose_ipv4_packet(
                     &self_clone,
-                    &mut packet_sender,
+                    &packet_sender,
                     &mut packet,
                     &src_v4,
                     len,
@@ -298,6 +298,30 @@ impl UdpProxy {
             udp::UdpPacket::new(ipv4.payload())?
         };
 
+        // TODO: should it be async.
+        let dst_socket = if Some(ipv4.get_destination())
+            == self.global_ctx.get_ipv4().as_ref().map(Ipv4Inet::address)
+        {
+            if self
+                .global_ctx
+                .is_port_in_running_listeners(udp_packet.get_destination(), true)
+                && self
+                    .global_ctx
+                    .is_ip_in_same_network(&std::net::IpAddr::V4(ipv4.get_source()))
+            {
+                tracing::debug!(
+                    dst_port = udp_packet.get_destination(),
+                    "dst socket is in running listeners, ignore it"
+                );
+                return Some(());
+            }
+            format!("127.0.0.1:{}", udp_packet.get_destination())
+                .parse()
+                .unwrap()
+        } else {
+            SocketAddr::new(real_dst_ip.into(), udp_packet.get_destination())
+        };
+
         tracing::trace!(
             ?packet,
             ?ipv4,
@@ -338,17 +362,6 @@ impl UdpProxy {
         }
 
         nat_entry.mark_active();
-
-        // TODO: should it be async.
-        let dst_socket = if Some(ipv4.get_destination())
-            == self.global_ctx.get_ipv4().as_ref().map(Ipv4Inet::address)
-        {
-            format!("127.0.0.1:{}", udp_packet.get_destination())
-                .parse()
-                .unwrap()
-        } else {
-            SocketAddr::new(real_dst_ip.into(), udp_packet.get_destination())
-        };
 
         let send_ret = {
             let _g = self.global_ctx.net_ns.guard();
@@ -422,6 +435,7 @@ impl UdpProxy {
                         true
                     }
                 });
+                nat_table.shrink_to_fit();
             }
         });
 
@@ -436,14 +450,14 @@ impl UdpProxy {
         // forward packets to peer manager
         let mut receiver = self.receiver.lock().await.take().unwrap();
         let peer_manager = self.peer_manager.clone();
-        let is_latency_first = self.global_ctx.get_flags().latency_first;
+        let is_latency_first = self.global_ctx.latency_first();
         self.tasks.lock().await.spawn(async move {
-            while let Ok(mut msg) = receiver.recv().await {
+            while let Some(mut msg) = receiver.recv().await {
                 let hdr = msg.mut_peer_manager_header().unwrap();
                 hdr.set_latency_first(is_latency_first);
                 let to_peer_id = hdr.to_peer_id.into();
                 tracing::trace!(?msg, ?to_peer_id, "udp nat packet response send");
-                let ret = peer_manager.send_msg(msg, to_peer_id).await;
+                let ret = peer_manager.send_msg_for_proxy(msg, to_peer_id).await;
                 if ret.is_err() {
                     tracing::error!("send icmp packet to peer failed: {:?}", ret);
                 }

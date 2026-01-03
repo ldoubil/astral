@@ -1,6 +1,6 @@
 use std::{
     fmt::Debug,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
     sync::{atomic::AtomicBool, Arc, Weak},
     time::{Instant, SystemTime},
 };
@@ -24,6 +24,7 @@ use crate::{
         constants::EASYTIER_VERSION,
         error::Error,
         global_ctx::{ArcGlobalCtx, NetworkIdentity},
+        shrink_dashmap,
         stats_manager::{CounterHandle, LabelSet, LabelType, MetricName},
         stun::StunInfoCollectorTrait,
         PeerId,
@@ -36,7 +37,7 @@ use crate::{
         PeerPacketFilter,
     },
     proto::{
-        cli::{
+        api::instance::{
             self, list_global_foreign_network_response::OneForeignNetwork,
             ListGlobalForeignNetworkResponse,
         },
@@ -152,7 +153,7 @@ pub struct PeerManager {
     encryptor: Arc<dyn Encryptor + 'static>,
     data_compress_algo: CompressorAlgo,
 
-    exit_nodes: Vec<IpAddr>,
+    exit_nodes: RwLock<Vec<IpAddr>>,
 
     reserved_my_peer_id_map: DashMap<String, PeerId>,
 
@@ -241,7 +242,7 @@ impl PeerManager {
         ));
         let foreign_network_client = Arc::new(ForeignNetworkClient::new(
             global_ctx.clone(),
-            packet_send.clone(),
+            packet_send,
             peer_rpc_mgr.clone(),
             my_peer_id,
         ));
@@ -288,7 +289,7 @@ impl PeerManager {
 
             packet_recv: Arc::new(Mutex::new(Some(packet_recv))),
 
-            peers: peers.clone(),
+            peers,
 
             peer_rpc_mgr,
             peer_rpc_tspt: rpc_tspt,
@@ -304,7 +305,7 @@ impl PeerManager {
             encryptor,
             data_compress_algo,
 
-            exit_nodes,
+            exit_nodes: RwLock::new(exit_nodes),
 
             reserved_my_peer_id_map: DashMap::new(),
 
@@ -415,47 +416,25 @@ impl PeerManager {
         if src.scheme() == "ring" {
             return Ok(());
         }
-        let src_host = match src.socket_addrs(|| Some(1)) {
-            Ok(addrs) => addrs,
-            Err(_) => {
-                // if the tunnel is not rely on ip address, skip check
-                return Ok(());
-            }
+        let Ok(Some(addr)) = src.socket_addrs(|| Some(1)).map(|x| x.first().cloned()) else {
+            // if the tunnel is not rely on ip address, skip check
+            return Ok(());
         };
-        let virtual_ipv4 = self.global_ctx.get_ipv4().map(|ip| ip.network());
-        let virtual_ipv6 = self.global_ctx.get_ipv6().map(|ip| ip.network());
-        tracing::info!(
-            ?virtual_ipv4,
-            ?virtual_ipv6,
-            "check remote addr not from virtual network"
-        );
-        for addr in src_host {
-            // if no-tun is enabled, the src ip of packet in virtual network is converted to loopback address
-            if addr.ip().is_loopback()
-                && !self
-                    .allow_loopback_tunnel
-                    .load(std::sync::atomic::Ordering::Relaxed)
-            {
-                anyhow::bail!("tunnel src host is loopback address");
-            }
 
-            match addr {
-                SocketAddr::V4(addr) => {
-                    if let Some(virtual_ipv4) = virtual_ipv4 {
-                        if virtual_ipv4.contains(addr.ip()) {
-                            anyhow::bail!("tunnel src host is from the virtual network (ignore this error please)");
-                        }
-                    }
-                }
-                SocketAddr::V6(addr) => {
-                    if let Some(virtual_ipv6) = virtual_ipv6 {
-                        if virtual_ipv6.contains(addr.ip()) {
-                            anyhow::bail!("tunnel src host is from the virtual network (ignore this error please)");
-                        }
-                    }
-                }
-            }
+        // if no-tun is enabled, the src ip of packet in virtual network is converted to loopback address
+        // we already filter out the connection in tcp/quic/kcp proxy so no need check here.
+        if addr.ip().is_loopback() {
+            // allow other loopback address, good for conn from cdn/l4 connection
+            return Ok(());
         }
+
+        if self.global_ctx.is_ip_in_same_network(&addr.ip()) {
+            anyhow::bail!(
+                "tunnel src {} is from the same network (ignore this error please)",
+                addr
+            );
+        }
+
         Ok(())
     }
 
@@ -514,6 +493,7 @@ impl PeerManager {
         }
 
         self.reserved_my_peer_id_map.remove(&peer_network_name);
+        shrink_dashmap(&self.reserved_my_peer_id_map, None);
 
         tracing::info!("add tunnel as server done");
         Ok(())
@@ -789,7 +769,7 @@ impl PeerManager {
         impl PeerPacketFilter for NicPacketProcessor {
             async fn try_process_packet_from_peer(&self, packet: ZCPacket) -> Option<ZCPacket> {
                 let hdr = packet.peer_manager_header().unwrap();
-                if hdr.packet_type == PacketType::Data as u8 {
+                if hdr.packet_type == PacketType::Data as u8 && !hdr.is_not_send_to_tun() {
                     tracing::trace!(?packet, "send packet to nic channel");
                     // TODO: use a function to get the body ref directly for zero copy
                     let _ = self.nic_channel.send(packet).await;
@@ -920,7 +900,7 @@ impl PeerManager {
         }
     }
 
-    pub async fn list_routes(&self) -> Vec<cli::Route> {
+    pub async fn list_routes(&self) -> Vec<instance::Route> {
         self.get_route().list_routes().await
     }
 
@@ -995,11 +975,30 @@ impl PeerManager {
         }
     }
 
-    pub async fn send_msg(&self, msg: ZCPacket, dst_peer_id: PeerId) -> Result<(), Error> {
+    fn check_p2p_only_before_send(&self, dst_peer_id: PeerId) -> Result<(), Error> {
+        if self.global_ctx.p2p_only() && !self.peers.has_peer(dst_peer_id) {
+            return Err(Error::RouteError(None));
+        }
+        Ok(())
+    }
+
+    pub async fn send_msg_for_proxy(
+        &self,
+        mut msg: ZCPacket,
+        dst_peer_id: PeerId,
+    ) -> Result<(), Error> {
+        self.check_p2p_only_before_send(dst_peer_id)?;
+
         self.self_tx_counters
-            .self_tx_bytes
+            .compress_tx_bytes_before
             .add(msg.buf_len() as u64);
-        self.self_tx_counters.self_tx_packets.inc();
+
+        Self::try_compress_and_encrypt(self.data_compress_algo, &self.encryptor, &mut msg).await?;
+
+        self.self_tx_counters
+            .compress_tx_bytes_after
+            .add(msg.buf_len() as u64);
+
         let msg_len = msg.buf_len() as u64;
         let result =
             Self::send_msg_internal(&self.peers, &self.foreign_network_client, msg, dst_peer_id)
@@ -1042,7 +1041,14 @@ impl PeerManager {
         }
     }
 
-    pub async fn get_msg_dst_peer(&self, ipv4_addr: &Ipv4Addr) -> (Vec<PeerId>, bool) {
+    pub async fn get_msg_dst_peer(&self, addr: &IpAddr) -> (Vec<PeerId>, bool) {
+        match addr {
+            IpAddr::V4(ipv4_addr) => self.get_msg_dst_peer_ipv4(ipv4_addr).await,
+            IpAddr::V6(ipv6_addr) => self.get_msg_dst_peer_ipv6(ipv6_addr).await,
+        }
+    }
+
+    pub async fn get_msg_dst_peer_ipv4(&self, ipv4_addr: &Ipv4Addr) -> (Vec<PeerId>, bool) {
         let mut is_exit_node = false;
         let mut dst_peers = vec![];
         let network_length = self
@@ -1068,7 +1074,7 @@ impl PeerManager {
             .global_ctx
             .is_ip_in_same_network(&std::net::IpAddr::V4(*ipv4_addr))
         {
-            for exit_node in &self.exit_nodes {
+            for exit_node in self.exit_nodes.read().await.iter() {
                 let IpAddr::V4(exit_node) = exit_node else {
                     continue;
                 };
@@ -1109,7 +1115,7 @@ impl PeerManager {
             dst_peers.push(peer_id);
         } else if !ipv6_addr.is_unicast_link_local() {
             // NOTE: never route link local address to exit node.
-            for exit_node in &self.exit_nodes {
+            for exit_node in self.exit_nodes.read().await.iter() {
                 let IpAddr::V6(exit_node) = exit_node else {
                     continue;
                 };
@@ -1138,7 +1144,12 @@ impl PeerManager {
         Ok(())
     }
 
-    pub async fn send_msg_by_ip(&self, mut msg: ZCPacket, ip_addr: IpAddr) -> Result<(), Error> {
+    pub async fn send_msg_by_ip(
+        &self,
+        mut msg: ZCPacket,
+        ip_addr: IpAddr,
+        not_send_to_self: bool,
+    ) -> Result<(), Error> {
         tracing::trace!(
             "do send_msg in peer manager, msg: {:?}, ip_addr: {}",
             msg,
@@ -1163,7 +1174,7 @@ impl PeerManager {
         }
 
         let (dst_peers, is_exit_node) = match ip_addr {
-            IpAddr::V4(ipv4_addr) => self.get_msg_dst_peer(&ipv4_addr).await,
+            IpAddr::V4(ipv4_addr) => self.get_msg_dst_peer_ipv4(&ipv4_addr).await,
             IpAddr::V6(ipv6_addr) => self.get_msg_dst_peer_ipv6(&ipv6_addr).await,
         };
 
@@ -1182,7 +1193,7 @@ impl PeerManager {
             .compress_tx_bytes_after
             .add(msg.buf_len() as u64);
 
-        let is_latency_first = self.global_ctx.get_flags().latency_first;
+        let is_latency_first = self.global_ctx.latency_first();
         msg.mut_peer_manager_header()
             .unwrap()
             .set_latency_first(is_latency_first)
@@ -1192,16 +1203,28 @@ impl PeerManager {
         let mut msg = Some(msg);
         let total_dst_peers = dst_peers.len();
         for (i, peer_id) in dst_peers.iter().enumerate() {
+            if let Err(e) = self.check_p2p_only_before_send(*peer_id) {
+                errs.push(e);
+                continue;
+            }
+
             let mut msg = if i == total_dst_peers - 1 {
                 msg.take().unwrap()
             } else {
                 msg.clone().unwrap()
             };
 
-            msg.mut_peer_manager_header()
-                .unwrap()
-                .to_peer_id
-                .set(*peer_id);
+            let hdr = msg.mut_peer_manager_header().unwrap();
+            hdr.to_peer_id.set(*peer_id);
+
+            #[cfg(not(target_env = "ohos"))]
+            {
+                if not_send_to_self && *peer_id == self.my_peer_id {
+                    // the packet may be sent to vpn portal, so we just set flags instead of drop it
+                    hdr.set_not_send_to_tun(true);
+                    hdr.set_no_proxy(true);
+                }
+            }
 
             self.self_tx_counters
                 .self_tx_bytes
@@ -1283,6 +1306,10 @@ impl PeerManager {
         self.global_ctx.clone()
     }
 
+    pub fn get_global_ctx_ref(&self) -> &ArcGlobalCtx {
+        &self.global_ctx
+    }
+
     pub fn get_nic_channel(&self) -> PacketRecvChan {
         self.nic_channel.clone()
     }
@@ -1295,8 +1322,8 @@ impl PeerManager {
         self.foreign_network_client.clone()
     }
 
-    pub async fn get_my_info(&self) -> cli::NodeInfo {
-        cli::NodeInfo {
+    pub async fn get_my_info(&self) -> instance::NodeInfo {
+        instance::NodeInfo {
             peer_id: self.my_peer_id,
             ipv4_addr: self
                 .global_ctx
@@ -1418,6 +1445,11 @@ impl PeerManager {
         }
 
         true
+    }
+
+    pub async fn update_exit_nodes(&self) {
+        let exit_nodes = self.global_ctx.config.get_exit_nodes();
+        *self.exit_nodes.write().await = exit_nodes;
     }
 }
 

@@ -32,7 +32,7 @@ use crate::{
         PeerId,
     },
     proto::{
-        cli::{PeerConnInfo, PeerConnStats},
+        api::instance::{PeerConnInfo, PeerConnStats},
         common::TunnelInfo,
         peer_rpc::HandshakeRequest,
     },
@@ -192,7 +192,7 @@ impl PeerConn {
         self.is_hole_punched
     }
 
-    async fn wait_handshake(&mut self, need_retry: &mut bool) -> Result<HandshakeRequest, Error> {
+    async fn wait_handshake(&self, need_retry: &mut bool) -> Result<HandshakeRequest, Error> {
         *need_retry = false;
 
         let mut locked = self.recv.lock().await;
@@ -223,8 +223,8 @@ impl PeerConn {
 
         if peer_mgr_hdr.packet_type != PacketType::HandShake as u8 {
             return Err(Error::WaitRespError(format!(
-                "unexpected packet type: {:?}",
-                peer_mgr_hdr.packet_type
+                "unexpected packet type: {:?}, packet: {:?}",
+                peer_mgr_hdr.packet_type, rsp
             )));
         }
 
@@ -241,7 +241,7 @@ impl PeerConn {
         Ok(rsp)
     }
 
-    async fn wait_handshake_loop(&mut self) -> Result<HandshakeRequest, Error> {
+    async fn wait_handshake_loop(&self) -> Result<HandshakeRequest, Error> {
         timeout(Duration::from_secs(5), async move {
             loop {
                 let mut need_retry = true;
@@ -260,7 +260,7 @@ impl PeerConn {
         .await?
     }
 
-    async fn send_handshake(&mut self, send_secret_digest: bool) -> Result<(), Error> {
+    async fn send_handshake(&self, send_secret_digest: bool) -> Result<(), Error> {
         let network = self.global_ctx.get_network_identity();
         let mut req = HandshakeRequest {
             magic: MAGIC,
@@ -384,8 +384,7 @@ impl PeerConn {
             traffic_rx_bytes: stats_mgr.get_counter(MetricName::TrafficBytesRx, label_set.clone()),
             traffic_tx_packets: stats_mgr
                 .get_counter(MetricName::TrafficPacketsTx, label_set.clone()),
-            traffic_rx_packets: stats_mgr
-                .get_counter(MetricName::TrafficPacketsRx, label_set.clone()),
+            traffic_rx_packets: stats_mgr.get_counter(MetricName::TrafficPacketsRx, label_set),
         };
         self.counters.store(Some(Arc::new(counters)));
 

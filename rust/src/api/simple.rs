@@ -1,4 +1,4 @@
-use easytier::{common::config::PortForwardConfig, launcher::ConfigSource};
+use easytier::common::config::{ConfigFileControl, PortForwardConfig};
 pub use easytier::{
     common::{
         self,
@@ -8,39 +8,35 @@ pub use easytier::{
     launcher::NetworkInstance,
     proto,
     proto::{
-        cli::{
-            list_peer_route_pair, ConnectorManageRpc, ConnectorManageRpcClientFactory,
-            DumpRouteRequest, GetVpnPortalInfoRequest, ListConnectorRequest,
-            ListForeignNetworkRequest, ListGlobalForeignNetworkRequest, ListPeerRequest,
-            ListPeerResponse, ListRouteRequest, ListRouteResponse, NodeInfo, PeerInfo,
-            PeerManageRpc, PeerManageRpcClientFactory, PeerRoutePair, Route, ShowNodeInfoRequest,
-            TcpProxyEntryState, TcpProxyEntryTransportType, TcpProxyRpc, TcpProxyRpcClientFactory,
-            VpnPortalRpc, VpnPortalRpcClientFactory,
+        api::{
+            instance::{
+                list_peer_route_pair, PeerRoutePair, Route,
+            },
+            manage::MyNodeInfo,
         },
         common::NatType,
-        peer_rpc::{GetGlobalPeerMapRequest, PeerCenterRpc, PeerCenterRpcClientFactory},
-        rpc_impl::standalone::StandAloneClient,
-        rpc_types::controller::BaseController,
-        web::MyNodeInfo,
     },
     utils::cost_to_str,
 };
 use lazy_static::lazy_static;
 use serde_json::json;
 pub use std::collections::BTreeMap;
-use std::sync::Mutex;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tokio::runtime::Runtime;
 pub use tokio::task::JoinHandle;
 
 pub static DEFAULT_ET_DNS_ZONE: &str = "as.net.";
 
-static INSTANCE: Mutex<Option<NetworkInstance>> = Mutex::new(None);
+lazy_static! {
+    static ref INSTANCE: Arc<RwLock<Option<NetworkInstance>>> = Arc::new(RwLock::new(None));
+}
 // 创建一个 NetworkInstance 类型变量 储存当前服务器
 lazy_static! {
     static ref RT: Runtime = Runtime::new().expect("创建 Tokio 运行时失败");
 }
 
-fn peer_conn_info_to_string(p: proto::cli::PeerConnInfo) -> String {
+fn peer_conn_info_to_string(p: proto::api::instance::PeerConnInfo) -> String {
     format!(
         "my_peer_id: {}, dst_peer_id: {}, tunnel_info: {:?}",
         p.my_peer_id, p.peer_id, p.tunnel
@@ -180,6 +176,8 @@ pub fn handle_event(mut events: EventBusSubscriber) -> tokio::task::JoinHandle<(
                             println!("{}", msg);
                             let _ = send_udp_to_localhost(&msg);
                         }
+                        GlobalCtxEvent::ConfigPatched(_instance_config_patch) => todo!(),
+                        GlobalCtxEvent::ProxyCidrsUpdated(_ipv4_cidrs, _ipv4_cidrs1) => todo!(),
                     }
                 }
                 Err(err) => {
@@ -211,14 +209,14 @@ async fn create_and_store_network_instance(cfg: TomlConfigLoader) -> Result<(), 
     // 在移动 cfg 之前先获取 ID
     let name = cfg.get_id().to_string();
     // 创建网络实例
-    let mut network = NetworkInstance::new(cfg, ConfigSource::FFI);
+    let mut network = NetworkInstance::new(cfg, ConfigFileControl::STATIC_CONFIG);
     // 启动网络实例，并处理可能的错误
     handle_event(network.start().unwrap());
     println!("instance {} started", name);
     // 将实例存储到 INSTANCE 中
     let mut instance_guard = INSTANCE
-        .lock()
-        .map_err(|e| format!("获取互斥锁失败: {}", e))?;
+        .write()
+        .await;
     if instance_guard.is_none() {
         *instance_guard = Some(network);
         println!("实例已成功储存");
@@ -236,8 +234,8 @@ pub fn easytier_version() -> Result<String, String> {
 }
 
 // 是否在运行
-pub fn is_easytier_running() -> bool {
-    let instance = INSTANCE.lock().unwrap();
+pub async fn is_easytier_running() -> bool {
+    let instance = INSTANCE.read().await;
     instance.is_some()
 }
 // 定义节点跳跃统计信息结构体
@@ -282,14 +280,14 @@ pub struct KVNetworkStatus {
 }
 
 // 获取网络中所有节点的IP地址列表
-pub fn get_ips() -> Vec<String> {
+pub async fn get_ips() -> Vec<String> {
     let mut result = Vec::new();
 
     // Lock the mutex and access the instance if it exists
-    let instance = INSTANCE.lock().unwrap();
+    let instance = INSTANCE.read().await;
 
     if let Some(instance) = instance.as_ref() {
-        if let Some(info) = instance.get_running_info() {
+            if let Ok(info) = instance.get_running_info().await {
             // Add all remote node IPs
             for route in &info.routes {
                 if let Some(ipv4_addr) = &route.ipv4_addr {
@@ -311,12 +309,13 @@ pub fn get_ips() -> Vec<String> {
             }
         }
     }
+
     result
 }
 
 // 设置TUN设备的文件描述符
-pub fn set_tun_fd(fd: i32) -> Result<(), String> {
-    let mut instance = INSTANCE.lock().unwrap();
+pub async fn set_tun_fd(fd: i32) -> Result<(), String> {
+    let mut instance = INSTANCE.write().await;
     if let Some(instance) = instance.as_mut() {
         instance.set_tun_fd(fd);
         Ok(())
@@ -325,171 +324,24 @@ pub fn set_tun_fd(fd: i32) -> Result<(), String> {
     }
 }
 
-pub fn get_running_info() -> String {
-    INSTANCE
-        .lock()
-        .unwrap()
-        .as_ref()
-        .and_then(|instance| instance.get_running_info())
-        .and_then(|info| {
-            // 获取并打印节点路由对信息
-            serde_json::to_string(&json!({
+pub async fn get_running_info() -> String {
+    let instance = INSTANCE.read().await;
+    
+    if let Some(instance) = instance.as_ref() {
+        if let Ok(info) = instance.get_running_info().await {
+            return serde_json::to_string(&json!({
                 "dev_name": info.dev_name,
                 "my_node_info": info.my_node_info.as_ref().map(|node| json!({
                     "virtual_ipv4": node.virtual_ipv4.as_ref().map(|addr| json!({
                         "address": addr.address.as_ref().map(|a| json!({ "addr": a.addr })),
-                        "network_length": addr.network_length
                     })),
-                    "hostname": node.hostname,
-                    "version": node.version,
-                    "ips": node.ips.as_ref().map(|ips| json!({
-                        "public_ipv4": ips.public_ipv4.as_ref().map(|a| json!({ "addr": a.addr })),
-                        "interface_ipv4s": ips.interface_ipv4s.iter().map(|a| json!({ "addr": a.addr })).collect::<Vec<_>>(),
-                        "public_ipv6": ips.public_ipv6.as_ref().map(|a| json!({
-                            "part1": a.part1,
-                            "part2": a.part2,
-                            "part3": a.part3,
-                            "part4": a.part4
-                        })),
-                        "interface_ipv6s": ips.interface_ipv6s.iter().map(|a| json!({
-                            "part1": a.part1,
-                            "part2": a.part2,
-                            "part3": a.part3,
-                            "part4": a.part4
-                        })).collect::<Vec<_>>(),
-                        "listeners": ips.listeners.iter().map(|l| json!({ "url": l.to_string() })).collect::<Vec<_>>()
-                    })),
-                    "stun_info": node.stun_info.as_ref().map(|info| json!({
-                        "udp_nat_type": info.udp_nat_type,
-                        "tcp_nat_type": info.tcp_nat_type,
-                        "last_update_time": info.last_update_time,
-                        "public_ip": info.public_ip,
-                        "min_port": info.min_port,
-                        "max_port": info.max_port
-                    })),
-                    "listeners": node.listeners.iter().map(|l| json!({ "url": l.url })).collect::<Vec<_>>(),
-                    "vpn_portal_cfg": node.vpn_portal_cfg
                 })),
-                "events": info.events,
-                "routes": info.routes.iter().map(|route| json!({
-                    "peer_id": route.peer_id,
-                    "ipv4_addr": route.ipv4_addr.as_ref().map(|addr| json!({
-                        "address": addr.address.as_ref().map(|a| json!({ "addr": a.addr })),
-                        "network_length": addr.network_length
-                    })),
-                    "next_hop_peer_id": route.next_hop_peer_id,
-                    "cost": route.cost,
-                    "path_latency": route.path_latency,
-                    "proxy_cidrs": route.proxy_cidrs,
-                    "hostname": route.hostname,
-                    "stun_info": route.stun_info.as_ref().map(|info| json!({
-                        "udp_nat_type": info.udp_nat_type,
-                        "tcp_nat_type": info.tcp_nat_type,
-                        "last_update_time": info.last_update_time,
-                        "public_ip": info.public_ip,
-                        "min_port": info.min_port,
-                        "max_port": info.max_port
-                    })),
-                    "inst_id": route.inst_id,
-                    "version": route.version,
-                    "feature_flag": route.feature_flag.as_ref().map(|flag| json!({
-                        "is_public_server": flag.is_public_server,
-                        "avoid_relay_data": flag.avoid_relay_data,
-                        "kcp_input": flag.kcp_input,
-                        "no_relay_kcp": flag.no_relay_kcp
-                    })),
-                    "next_hop_peer_id_latency_first": route.next_hop_peer_id_latency_first,
-                    "cost_latency_first": route.cost_latency_first,
-                    "path_latency_latency_first": route.path_latency_latency_first ,
-                })).collect::<Vec<_>>(),
-                "peers": info.peers.iter().map(|peer| 
-                     json!({
-                    "peer_id": peer.peer_id,
-                    "conns": peer.conns.iter().map(|conn| json!({
-                        "conn_id": conn.conn_id,
-                        "my_peer_id": conn.my_peer_id,
-                        "peer_id": conn.peer_id,
-                        "features": conn.features,
-                        "tunnel": conn.tunnel.as_ref().map(|t| json!({
-                            "tunnel_type": t.tunnel_type,
-                            "local_addr": t.local_addr.as_ref().map(|a| json!({ "url": a.url })),
-                            "remote_addr": t.remote_addr.as_ref().map(|a| json!({ "url": a.url }))
-                        })),
-                        "stats": conn.stats.as_ref().map(|s| json!({
-                            "rx_bytes": s.rx_bytes,
-                            "tx_bytes": s.tx_bytes,
-                            "rx_packets": s.rx_packets,
-                            "tx_packets": s.tx_packets,
-                            "latency_us": s.latency_us
-                        })),
-                        "loss_rate": conn.loss_rate,
-                        "is_client": conn.is_client,
-                        "network_name": conn.network_name
-                    })).collect::<Vec<_>>()
-                })).collect::<Vec<_>>(),
-                "peer_route_pairs": info.peer_route_pairs.iter().map(|pair| json!({
-                    "route": pair.route.as_ref().map(|route| json!({
-                        "peer_id": route.peer_id,
-                        "ipv4_addr": route.ipv4_addr.as_ref().map(|addr| json!({
-                            "address": addr.address.as_ref().map(|a| json!({ "addr": a.addr })),
-                            "network_length": addr.network_length
-                        })),
-                        "next_hop_peer_id": route.next_hop_peer_id,
-                        "cost": route.cost,
-                        "path_latency": route.path_latency,
-                        "proxy_cidrs": route.proxy_cidrs,
-                        "hostname": route.hostname,
-                        "stun_info": route.stun_info.as_ref().map(|info| json!({
-                            "udp_nat_type": info.udp_nat_type,
-                            "tcp_nat_type": info.tcp_nat_type,
-                            "last_update_time": info.last_update_time,
-                            "public_ip": info.public_ip,
-                            "min_port": info.min_port,
-                            "max_port": info.max_port
-                        })),
-                        "inst_id": route.inst_id,
-                        "version": route.version,
-                        "feature_flag": route.feature_flag.as_ref().map(|flag| json!({
-                            "is_public_server": flag.is_public_server,
-                            "avoid_relay_data": flag.avoid_relay_data,
-                            "kcp_input": flag.kcp_input,
-                            "no_relay_kcp": flag.no_relay_kcp
-                        })),
-                        "next_hop_peer_id_latency_first": route.next_hop_peer_id_latency_first,
-                        "cost_latency_first": route.cost_latency_first,
-                        "path_latency_latency_first": route.path_latency_latency_first
-                    })),
-                    "peer": pair.peer.as_ref().map(|peer| json!({
-                        "peer_id": peer.peer_id,
-                        "conns": peer.conns.iter().map(|conn| json!({
-                            "conn_id": conn.conn_id,
-                            "my_peer_id": conn.my_peer_id,
-                            "peer_id": conn.peer_id,
-                            "features": conn.features,
-                            "tunnel": conn.tunnel.as_ref().map(|t| json!({
-                                "tunnel_type": t.tunnel_type,
-                                "local_addr": t.local_addr.as_ref().map(|a| json!({ "url": a.url })),
-                                "remote_addr": t.remote_addr.as_ref().map(|a| json!({ "url": a.url }))
-                            })),
-                            "stats": conn.stats.as_ref().map(|s| json!({
-                                "rx_bytes": s.rx_bytes,
-                                "tx_bytes": s.tx_bytes,
-                                "rx_packets": s.rx_packets,
-                                "tx_packets": s.tx_packets,
-                                "latency_us": s.latency_us
-                            })),
-                            "loss_rate": conn.loss_rate,
-                            "is_client": conn.is_client,
-                            "network_name": conn.network_name
-                        })).collect::<Vec<_>>()
-                    }))
-                })).collect::<Vec<_>>(),
-
-                "running": info.running,
-                "error_msg": info.error_msg
-            })).ok()
-        })
-        .unwrap_or_else(|| "{}".to_string())
+                "routes": info.routes,
+                "peer_route_pairs": info.peer_route_pairs,
+            })).unwrap_or_else(|_| "null".to_string());
+        }
+    }
+    "null".to_string()
 }
 
 pub struct FlagsC {
@@ -645,7 +497,7 @@ pub fn create_server(
 pub fn close_server() {
     RT.spawn(async {
         // 获取mutex锁
-        let mut locked_instance = INSTANCE.lock().unwrap();
+        let mut locked_instance = INSTANCE.write().await;
 
         println!(
             "关闭前实例状态: {}",
@@ -680,14 +532,13 @@ pub fn close_server() {
 // 创建一个网卡跃点数据结构
 // 网卡跃点数据结构
 
-pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
-    let instance_guard = INSTANCE
-        .lock()
-        .map_err(|e| format!("获取互斥锁失败: {}", e))?;
+pub async fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
+    let instance_guard = INSTANCE.read().await;
 
     if let Some(instance) = instance_guard.as_ref() {
         // 获取运行信息
-        if let Some(info) = instance.get_running_info() {
+        match instance.get_running_info().await {
+            Ok(info) => {
             let mut pairs = info.peer_route_pairs;
             // 如果存在本地节点信息，添加到结果中
             if let Some(my_node_info) = &info.my_node_info {
@@ -702,7 +553,7 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
                     .unwrap_or(0);
 
                 // 创建一个表示本地节点的Route
-                let my_route = proto::cli::Route {
+                let my_route = proto::api::instance::Route {
                     peer_id: my_peer_id,
                     ipv4_addr: my_node_info.virtual_ipv4.clone(),
                     ipv6_addr: None, // 添加ipv6地址字段,目前暂不支持ipv6
@@ -725,7 +576,7 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
                 let my_peer_info = info.peers.iter().find(|p| p.peer_id == my_peer_id).cloned();
 
                 // 创建一个表示本地节点的PeerRoutePair
-                let my_pair = proto::cli::PeerRoutePair {
+                let my_pair = proto::api::instance::PeerRoutePair {
                     route: Some(my_route),
                     peer: my_peer_info, // 使用找到的PeerInfo或None
                 };
@@ -736,14 +587,25 @@ pub fn get_peer_route_pairs() -> Result<Vec<PeerRoutePair>, String> {
 
             return Ok(pairs);
         }
-        return Err("无法获取运行信息".to_string());
+        Err(_) => Err("无法获取运行信息".to_string())
+        }
+    } else {
+        Err("没有运行中的网络实例".to_string())
     }
-    Err("没有运行中的网络实例".to_string())
 }
 
 // 获取网络状态信息
-pub fn get_network_status() -> KVNetworkStatus {
-    let pairs = get_peer_route_pairs().unwrap_or_default();
+pub async fn get_network_status() -> KVNetworkStatus {
+    let pairs = get_peer_route_pairs().await.unwrap_or_default();
+    
+    // 提前获取运行信息
+    let instance_guard = INSTANCE.read().await;
+    let running_info = if let Some(instance) = instance_guard.as_ref() {
+        instance.get_running_info().await.ok()
+    } else {
+        None
+    };
+    
     let mut nodes = Vec::new();
     for pair in pairs.iter() {
         if let Some(route) = &pair.route {
@@ -851,10 +713,8 @@ pub fn get_network_status() -> KVNetworkStatus {
 
                         // 从当前节点开始，收集到目标节点的完整路径
                         // 先添加本地节点信息
-                        let instance_guard = INSTANCE.lock().unwrap(); // 使用单例 INSTANCE
-                        if let Some(instance) = instance_guard.as_ref() {
-                            if let Some(info) = instance.get_running_info() {
-                                if let Some(local_node) = &info.my_node_info {
+                        if let Some(info) = &running_info {
+                            if let Some(local_node) = &info.my_node_info {
                                     // 添加本地节点作为起点
                                     hops.push(NodeHopStats {
                                         target_ip: local_node
@@ -948,7 +808,6 @@ pub fn get_network_status() -> KVNetworkStatus {
                                     }
                                 }
                             }
-                        }
 
                         // 如果没有收集到任何跳点（可能是直连节点），则直接添加目标节点
                         // 检查 hops 是否只包含本地节点
