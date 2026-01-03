@@ -49,7 +49,10 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                       children: [
-                        if (ServiceManager().appSettingsState.enableBannerCarousel.value)
+                        if (ServiceManager()
+                            .appSettingsState
+                            .enableBannerCarousel
+                            .value)
                           StaggeredGridTile.fit(
                             crossAxisCellCount: columnCount,
                             child: BannerCarousel(),

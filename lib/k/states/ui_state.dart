@@ -11,7 +11,7 @@ class UIState {
   final hoveredIndex = signal<int?>(null);
 
   // 应用名称
-  final appName = signal('Astral Game');
+  final appName = signal('Astral');
 
   // 简单的状态更新
   void updateScreenWidth(double width) {

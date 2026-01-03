@@ -3,7 +3,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 /// 应用设置状态
 class AppSettingsState {
   // 应用名称
-  final appName = signal('Astral Game');
+  final appName = signal('Astral');
 
   // 监听列表
   final listenList = signal<List<String>>([]);
