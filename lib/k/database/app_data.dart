@@ -64,6 +64,8 @@ class AppDatabase {
       AllSettingsSchema,
       ServerModSchema,
       MagicWallRuleModelSchema,
+      MagicWallGroupModelSchema,
+      MagicWallEventLogModelSchema,
     ], directory: dbDir);
     themeSettings = ThemeSettingsRepository(isar);
     netConfigSetting = NetConfigRepository(isar);

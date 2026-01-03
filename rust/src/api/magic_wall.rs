@@ -225,10 +225,30 @@ mod wfp_impl {
 
             for is_inbound in directions {
                 if protocols.is_empty() {
-                    ids.extend(self.add_filter_set(rule, is_inbound, None)?);
+                    match self.add_filter_set(rule, is_inbound, None) {
+                        Ok(filter_ids) => ids.extend(filter_ids),
+                        Err(e) => {
+                            // 回滚已添加的过滤器
+                            println!("⚠️  添加过滤器失败，回滚已添加的 {} 个过滤器", ids.len());
+                            for id in &ids {
+                                let _ = self.remove_filter(*id);
+                            }
+                            return Err(e);
+                        }
+                    }
                 } else {
                     for proto in &protocols {
-                        ids.extend(self.add_filter_set(rule, is_inbound, Some(*proto))?);
+                        match self.add_filter_set(rule, is_inbound, Some(*proto)) {
+                            Ok(filter_ids) => ids.extend(filter_ids),
+                            Err(e) => {
+                                // 回滚已添加的过滤器
+                                println!("⚠️  添加过滤器失败，回滚已添加的 {} 个过滤器", ids.len());
+                                for id in &ids {
+                                    let _ = self.remove_filter(*id);
+                                }
+                                return Err(e);
+                            }
+                        }
                     }
                 }
             }
@@ -238,10 +258,12 @@ mod wfp_impl {
 
         pub fn remove_filter(&mut self, filter_id: u64) -> Result<()> {
             unsafe {
+                println!("🔍 尝试删除过滤器 ID: {}", filter_id);
                 let status = FwpmFilterDeleteById0(self.engine_handle, filter_id);
                 if status != 0 {
                     bail!("删除过滤器失败，错误代码: {:#x}", status);
                 }
+                println!("✅ 过滤器 {} 删除成功", filter_id);
                 Ok(())
             }
         }
@@ -253,6 +275,7 @@ mod wfp_impl {
             protocol: Option<u8>,
         ) -> Result<Vec<u64>> {
             let mut ids = Vec::new();
+            let mut errors = Vec::new();
 
             let layer_key_v4 = if is_inbound {
                 &FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4
@@ -262,7 +285,10 @@ mod wfp_impl {
 
             match self.add_filter(rule, layer_key_v4, protocol, false) {
                 Ok(id) => ids.push(id),
-                Err(err) => println!("⚠️  添加 IPv4 过滤器失败: {err}"),
+                Err(err) => {
+                    println!("!  添加 IPv4 过滤器失败: {err}");
+                    errors.push(format!("IPv4: {}", err));
+                }
             }
 
             let layer_key_v6 = if is_inbound {
@@ -273,7 +299,15 @@ mod wfp_impl {
 
             match self.add_filter(rule, layer_key_v6, protocol, true) {
                 Ok(id) => ids.push(id),
-                Err(err) => println!("⚠️  添加 IPv6 过滤器失败: {err}"),
+                Err(err) => {
+                    println!("!  添加 IPv6 过滤器失败: {err}");
+                    errors.push(format!("IPv6: {}", err));
+                }
+            }
+
+            // 如果两个都失败，返回错误
+            if ids.is_empty() {
+                bail!("添加过滤器失败: {}", errors.join(", "));
             }
 
             Ok(ids)
@@ -750,16 +784,28 @@ pub fn stop_magic_wall() -> std::result::Result<(), String> {
 /// 添加规则
 #[cfg(target_os = "windows")]
 pub fn add_magic_wall_rule(rule: MagicWallRule) -> std::result::Result<(), String> {
-    RULE_STORE
-        .lock()
-        .map_err(|e| e.to_string())?
-        .insert(rule.id.clone(), rule.clone());
+    // 检查规则是否已存在
+    {
+        let rules = RULE_STORE.lock().map_err(|e| e.to_string())?;
+        if rules.contains_key(&rule.id) {
+            println!("⚠️  规则已存在，将更新: {}", rule.name);
+            drop(rules);
+            return update_magic_wall_rule(rule);
+        }
+    }
 
+    // 先尝试应用规则（如果启用的话）
     if rule.enabled {
         apply_rule(&rule)?;
     } else {
         println!("⏸️  规则已添加但未启用: {}", rule.name);
     }
+
+    // 只有成功后才添加到存储
+    RULE_STORE
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(rule.id.clone(), rule.clone());
 
     Ok(())
 }
@@ -811,7 +857,10 @@ fn apply_rule(rule: &MagicWallRule) -> std::result::Result<(), String> {
     if let Some(ref mut firewall) = *firewall_guard {
         let ids = convert_rule(rule)
             .and_then(|f_rule| firewall.add_rule(&f_rule))
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                println!("!  添加规则失败: {}", e);
+                e.to_string()
+            })?;
 
         FILTER_TRACKER
             .lock()
@@ -851,11 +900,14 @@ pub fn remove_magic_wall_rule(rule_id: String) -> std::result::Result<(), String
             };
 
             if let Some(ids) = ids {
+                println!("📝 找到 {} 个过滤器需要删除", ids.len());
                 for id in ids {
                     if let Err(err) = firewall.remove_filter(id) {
                         println!("⚠️  删除过滤器失败: {}", err);
                     }
                 }
+            } else {
+                println!("⚠️  FILTER_TRACKER 中未找到规则 {} 的过滤器记录", rule_id);
             }
         }
 

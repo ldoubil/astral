@@ -12,6 +12,10 @@ class MagicWallRuleModel {
   @Index(unique: true)
   String ruleId = '';
 
+  /// 所属规则组标识
+  @Index()
+  String groupId = '';
+
   /// 规则名称
   @Index()
   String name = '';
@@ -54,4 +58,59 @@ class MagicWallRuleModel {
 
   /// 优先级（数字越大优先级越高）
   int priority = 0;
+}
+
+/// 魔法墙规则组
+@collection
+class MagicWallGroupModel {
+  /// 主键自增
+  Id id = Isar.autoIncrement;
+
+  /// 规则组唯一标识
+  @Index(unique: true)
+  String groupId = '';
+
+  /// 配置名称
+  @Index()
+  String name = '';
+
+  /// 绑定进程名称
+  @Index()
+  String processName = '';
+
+  /// 组启用状态
+  bool enabled = false;
+
+  /// 是否自动随进程启动/关闭
+  bool autoManage = true;
+
+  /// 创建时间
+  int? createdAt;
+
+  /// 更新时间
+  int? updatedAt;
+}
+
+/// 魔法墙事件日志
+@collection
+class MagicWallEventLogModel {
+  /// 主键自增
+  Id id = Isar.autoIncrement;
+
+  /// 事件类型：engine/group
+  @Index()
+  String targetType = 'engine';
+
+  /// 关联标识（如 groupId）
+  @Index()
+  String targetId = '';
+
+  /// 动作（如 on/off/auto_on/auto_off）
+  String action = '';
+
+  /// 附加信息
+  String? message;
+
+  /// 时间戳
+  int timestamp = 0;
 }

@@ -36,32 +36,33 @@ const MagicWallRuleModelSchema = CollectionSchema(
       type: IsarType.string,
     ),
     r'enabled': PropertySchema(id: 5, name: r'enabled', type: IsarType.bool),
-    r'localIp': PropertySchema(id: 6, name: r'localIp', type: IsarType.string),
+    r'groupId': PropertySchema(id: 6, name: r'groupId', type: IsarType.string),
+    r'localIp': PropertySchema(id: 7, name: r'localIp', type: IsarType.string),
     r'localPort': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'localPort',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(id: 8, name: r'name', type: IsarType.string),
-    r'priority': PropertySchema(id: 9, name: r'priority', type: IsarType.long),
+    r'name': PropertySchema(id: 9, name: r'name', type: IsarType.string),
+    r'priority': PropertySchema(id: 10, name: r'priority', type: IsarType.long),
     r'protocol': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'protocol',
       type: IsarType.string,
     ),
     r'remoteIp': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'remoteIp',
       type: IsarType.string,
     ),
     r'remotePort': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'remotePort',
       type: IsarType.string,
     ),
-    r'ruleId': PropertySchema(id: 13, name: r'ruleId', type: IsarType.string),
+    r'ruleId': PropertySchema(id: 14, name: r'ruleId', type: IsarType.string),
     r'updatedAt': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'updatedAt',
       type: IsarType.long,
     ),
@@ -81,6 +82,19 @@ const MagicWallRuleModelSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'ruleId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+    r'groupId': IndexSchema(
+      id: -8523216633229774932,
+      name: r'groupId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'groupId',
           type: IndexType.hash,
           caseSensitive: true,
         ),
@@ -129,6 +143,7 @@ int _magicWallRuleModelEstimateSize(
     }
   }
   bytesCount += 3 + object.direction.length * 3;
+  bytesCount += 3 + object.groupId.length * 3;
   {
     final value = object.localIp;
     if (value != null) {
@@ -171,15 +186,16 @@ void _magicWallRuleModelSerialize(
   writer.writeString(offsets[3], object.description);
   writer.writeString(offsets[4], object.direction);
   writer.writeBool(offsets[5], object.enabled);
-  writer.writeString(offsets[6], object.localIp);
-  writer.writeString(offsets[7], object.localPort);
-  writer.writeString(offsets[8], object.name);
-  writer.writeLong(offsets[9], object.priority);
-  writer.writeString(offsets[10], object.protocol);
-  writer.writeString(offsets[11], object.remoteIp);
-  writer.writeString(offsets[12], object.remotePort);
-  writer.writeString(offsets[13], object.ruleId);
-  writer.writeLong(offsets[14], object.updatedAt);
+  writer.writeString(offsets[6], object.groupId);
+  writer.writeString(offsets[7], object.localIp);
+  writer.writeString(offsets[8], object.localPort);
+  writer.writeString(offsets[9], object.name);
+  writer.writeLong(offsets[10], object.priority);
+  writer.writeString(offsets[11], object.protocol);
+  writer.writeString(offsets[12], object.remoteIp);
+  writer.writeString(offsets[13], object.remotePort);
+  writer.writeString(offsets[14], object.ruleId);
+  writer.writeLong(offsets[15], object.updatedAt);
 }
 
 MagicWallRuleModel _magicWallRuleModelDeserialize(
@@ -195,16 +211,17 @@ MagicWallRuleModel _magicWallRuleModelDeserialize(
   object.description = reader.readStringOrNull(offsets[3]);
   object.direction = reader.readString(offsets[4]);
   object.enabled = reader.readBool(offsets[5]);
+  object.groupId = reader.readString(offsets[6]);
   object.id = id;
-  object.localIp = reader.readStringOrNull(offsets[6]);
-  object.localPort = reader.readStringOrNull(offsets[7]);
-  object.name = reader.readString(offsets[8]);
-  object.priority = reader.readLong(offsets[9]);
-  object.protocol = reader.readString(offsets[10]);
-  object.remoteIp = reader.readStringOrNull(offsets[11]);
-  object.remotePort = reader.readStringOrNull(offsets[12]);
-  object.ruleId = reader.readString(offsets[13]);
-  object.updatedAt = reader.readLongOrNull(offsets[14]);
+  object.localIp = reader.readStringOrNull(offsets[7]);
+  object.localPort = reader.readStringOrNull(offsets[8]);
+  object.name = reader.readString(offsets[9]);
+  object.priority = reader.readLong(offsets[10]);
+  object.protocol = reader.readString(offsets[11]);
+  object.remoteIp = reader.readStringOrNull(offsets[12]);
+  object.remotePort = reader.readStringOrNull(offsets[13]);
+  object.ruleId = reader.readString(offsets[14]);
+  object.updatedAt = reader.readLongOrNull(offsets[15]);
   return object;
 }
 
@@ -228,22 +245,24 @@ P _magicWallRuleModelDeserializeProp<P>(
     case 5:
       return (reader.readBool(offset)) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
       return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
-    case 9:
-      return (reader.readLong(offset)) as P;
-    case 10:
-      return (reader.readString(offset)) as P;
-    case 11:
       return (reader.readStringOrNull(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
+      return (reader.readLong(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
     case 12:
       return (reader.readStringOrNull(offset)) as P;
     case 13:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 14:
+      return (reader.readString(offset)) as P;
+    case 15:
       return (reader.readLongOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -448,6 +467,58 @@ extension MagicWallRuleModelQueryWhere
                 indexName: r'ruleId',
                 lower: [],
                 upper: [ruleId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterWhereClause>
+  groupIdEqualTo(String groupId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'groupId', value: [groupId]),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterWhereClause>
+  groupIdNotEqualTo(String groupId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [],
+                upper: [groupId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [groupId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [groupId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [],
+                upper: [groupId],
                 includeUpper: false,
               ),
             );
@@ -1188,6 +1259,147 @@ extension MagicWallRuleModelQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'enabled', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'groupId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'groupId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'groupId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterFilterCondition>
+  groupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'groupId', value: ''),
       );
     });
   }
@@ -2528,6 +2740,20 @@ extension MagicWallRuleModelQuerySortBy
   }
 
   QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
+  sortByGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
+  sortByGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
   sortByLocalIp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'localIp', Sort.asc);
@@ -2741,6 +2967,20 @@ extension MagicWallRuleModelQuerySortThenBy
   }
 
   QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
+  thenByGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
+  thenByGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QAfterSortBy>
   thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -2926,6 +3166,13 @@ extension MagicWallRuleModelQueryWhereDistinct
   }
 
   QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QDistinct>
+  distinctByGroupId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'groupId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallRuleModel, MagicWallRuleModel, QDistinct>
   distinctByLocalIp({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'localIp', caseSensitive: caseSensitive);
@@ -3036,6 +3283,12 @@ extension MagicWallRuleModelQueryProperty
     });
   }
 
+  QueryBuilder<MagicWallRuleModel, String, QQueryOperations> groupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'groupId');
+    });
+  }
+
   QueryBuilder<MagicWallRuleModel, String?, QQueryOperations>
   localIpProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -3092,6 +3345,3027 @@ extension MagicWallRuleModelQueryProperty
   QueryBuilder<MagicWallRuleModel, int?, QQueryOperations> updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
+    });
+  }
+}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
+extension GetMagicWallGroupModelCollection on Isar {
+  IsarCollection<MagicWallGroupModel> get magicWallGroupModels =>
+      this.collection();
+}
+
+const MagicWallGroupModelSchema = CollectionSchema(
+  name: r'MagicWallGroupModel',
+  id: 7939844099195117598,
+  properties: {
+    r'autoManage': PropertySchema(
+      id: 0,
+      name: r'autoManage',
+      type: IsarType.bool,
+    ),
+    r'createdAt': PropertySchema(
+      id: 1,
+      name: r'createdAt',
+      type: IsarType.long,
+    ),
+    r'enabled': PropertySchema(id: 2, name: r'enabled', type: IsarType.bool),
+    r'groupId': PropertySchema(id: 3, name: r'groupId', type: IsarType.string),
+    r'name': PropertySchema(id: 4, name: r'name', type: IsarType.string),
+    r'processName': PropertySchema(
+      id: 5,
+      name: r'processName',
+      type: IsarType.string,
+    ),
+    r'updatedAt': PropertySchema(
+      id: 6,
+      name: r'updatedAt',
+      type: IsarType.long,
+    ),
+  },
+
+  estimateSize: _magicWallGroupModelEstimateSize,
+  serialize: _magicWallGroupModelSerialize,
+  deserialize: _magicWallGroupModelDeserialize,
+  deserializeProp: _magicWallGroupModelDeserializeProp,
+  idName: r'id',
+  indexes: {
+    r'groupId': IndexSchema(
+      id: -8523216633229774932,
+      name: r'groupId',
+      unique: true,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'groupId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+    r'name': IndexSchema(
+      id: 879695947855722453,
+      name: r'name',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'name',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+    r'processName': IndexSchema(
+      id: -7873847677164605846,
+      name: r'processName',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'processName',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+  },
+  links: {},
+  embeddedSchemas: {},
+
+  getId: _magicWallGroupModelGetId,
+  getLinks: _magicWallGroupModelGetLinks,
+  attach: _magicWallGroupModelAttach,
+  version: '3.3.0',
+);
+
+int _magicWallGroupModelEstimateSize(
+  MagicWallGroupModel object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  bytesCount += 3 + object.groupId.length * 3;
+  bytesCount += 3 + object.name.length * 3;
+  bytesCount += 3 + object.processName.length * 3;
+  return bytesCount;
+}
+
+void _magicWallGroupModelSerialize(
+  MagicWallGroupModel object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeBool(offsets[0], object.autoManage);
+  writer.writeLong(offsets[1], object.createdAt);
+  writer.writeBool(offsets[2], object.enabled);
+  writer.writeString(offsets[3], object.groupId);
+  writer.writeString(offsets[4], object.name);
+  writer.writeString(offsets[5], object.processName);
+  writer.writeLong(offsets[6], object.updatedAt);
+}
+
+MagicWallGroupModel _magicWallGroupModelDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = MagicWallGroupModel();
+  object.autoManage = reader.readBool(offsets[0]);
+  object.createdAt = reader.readLongOrNull(offsets[1]);
+  object.enabled = reader.readBool(offsets[2]);
+  object.groupId = reader.readString(offsets[3]);
+  object.id = id;
+  object.name = reader.readString(offsets[4]);
+  object.processName = reader.readString(offsets[5]);
+  object.updatedAt = reader.readLongOrNull(offsets[6]);
+  return object;
+}
+
+P _magicWallGroupModelDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readBool(offset)) as P;
+    case 1:
+      return (reader.readLongOrNull(offset)) as P;
+    case 2:
+      return (reader.readBool(offset)) as P;
+    case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+Id _magicWallGroupModelGetId(MagicWallGroupModel object) {
+  return object.id;
+}
+
+List<IsarLinkBase<dynamic>> _magicWallGroupModelGetLinks(
+  MagicWallGroupModel object,
+) {
+  return [];
+}
+
+void _magicWallGroupModelAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  MagicWallGroupModel object,
+) {
+  object.id = id;
+}
+
+extension MagicWallGroupModelByIndex on IsarCollection<MagicWallGroupModel> {
+  Future<MagicWallGroupModel?> getByGroupId(String groupId) {
+    return getByIndex(r'groupId', [groupId]);
+  }
+
+  MagicWallGroupModel? getByGroupIdSync(String groupId) {
+    return getByIndexSync(r'groupId', [groupId]);
+  }
+
+  Future<bool> deleteByGroupId(String groupId) {
+    return deleteByIndex(r'groupId', [groupId]);
+  }
+
+  bool deleteByGroupIdSync(String groupId) {
+    return deleteByIndexSync(r'groupId', [groupId]);
+  }
+
+  Future<List<MagicWallGroupModel?>> getAllByGroupId(
+    List<String> groupIdValues,
+  ) {
+    final values = groupIdValues.map((e) => [e]).toList();
+    return getAllByIndex(r'groupId', values);
+  }
+
+  List<MagicWallGroupModel?> getAllByGroupIdSync(List<String> groupIdValues) {
+    final values = groupIdValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'groupId', values);
+  }
+
+  Future<int> deleteAllByGroupId(List<String> groupIdValues) {
+    final values = groupIdValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'groupId', values);
+  }
+
+  int deleteAllByGroupIdSync(List<String> groupIdValues) {
+    final values = groupIdValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'groupId', values);
+  }
+
+  Future<Id> putByGroupId(MagicWallGroupModel object) {
+    return putByIndex(r'groupId', object);
+  }
+
+  Id putByGroupIdSync(MagicWallGroupModel object, {bool saveLinks = true}) {
+    return putByIndexSync(r'groupId', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByGroupId(List<MagicWallGroupModel> objects) {
+    return putAllByIndex(r'groupId', objects);
+  }
+
+  List<Id> putAllByGroupIdSync(
+    List<MagicWallGroupModel> objects, {
+    bool saveLinks = true,
+  }) {
+    return putAllByIndexSync(r'groupId', objects, saveLinks: saveLinks);
+  }
+}
+
+extension MagicWallGroupModelQueryWhereSort
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QWhere> {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhere> anyId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+}
+
+extension MagicWallGroupModelQueryWhere
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QWhereClause> {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  idEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  idNotEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  idGreaterThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  idLessThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  groupIdEqualTo(String groupId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'groupId', value: [groupId]),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  groupIdNotEqualTo(String groupId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [],
+                upper: [groupId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [groupId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [groupId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'groupId',
+                lower: [],
+                upper: [groupId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  nameEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'name', value: [name]),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  nameNotEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'name',
+                lower: [],
+                upper: [name],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'name',
+                lower: [name],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'name',
+                lower: [name],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'name',
+                lower: [],
+                upper: [name],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  processNameEqualTo(String processName) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(
+          indexName: r'processName',
+          value: [processName],
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterWhereClause>
+  processNameNotEqualTo(String processName) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'processName',
+                lower: [],
+                upper: [processName],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'processName',
+                lower: [processName],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'processName',
+                lower: [processName],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'processName',
+                lower: [],
+                upper: [processName],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+}
+
+extension MagicWallGroupModelQueryFilter
+    on
+        QueryBuilder<
+          MagicWallGroupModel,
+          MagicWallGroupModel,
+          QFilterCondition
+        > {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  autoManageEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'autoManage', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'createdAt'),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'createdAt'),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'createdAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'createdAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'createdAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  createdAtBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'createdAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  enabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'enabled', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'groupId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'groupId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'groupId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'groupId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  groupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'groupId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  idEqualTo(Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  idGreaterThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  idLessThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'name',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'name',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'name',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'name', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  nameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'name', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'processName',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'processName',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'processName',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'processName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  processNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'processName', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'updatedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'updatedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'updatedAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterFilterCondition>
+  updatedAtBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'updatedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+}
+
+extension MagicWallGroupModelQueryObject
+    on
+        QueryBuilder<
+          MagicWallGroupModel,
+          MagicWallGroupModel,
+          QFilterCondition
+        > {}
+
+extension MagicWallGroupModelQueryLinks
+    on
+        QueryBuilder<
+          MagicWallGroupModel,
+          MagicWallGroupModel,
+          QFilterCondition
+        > {}
+
+extension MagicWallGroupModelQuerySortBy
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QSortBy> {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByAutoManage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoManage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByAutoManageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoManage', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByProcessName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'processName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByProcessNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'processName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+}
+
+extension MagicWallGroupModelQuerySortThenBy
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QSortThenBy> {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByAutoManage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoManage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByAutoManageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoManage', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByGroupIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'groupId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByProcessName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'processName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByProcessNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'processName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QAfterSortBy>
+  thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+}
+
+extension MagicWallGroupModelQueryWhereDistinct
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct> {
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByAutoManage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'autoManage');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'createdAt');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'enabled');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByGroupId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'groupId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByProcessName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'processName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QDistinct>
+  distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
+    });
+  }
+}
+
+extension MagicWallGroupModelQueryProperty
+    on QueryBuilder<MagicWallGroupModel, MagicWallGroupModel, QQueryProperty> {
+  QueryBuilder<MagicWallGroupModel, int, QQueryOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, bool, QQueryOperations>
+  autoManageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'autoManage');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, int?, QQueryOperations>
+  createdAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, bool, QQueryOperations> enabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'enabled');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, String, QQueryOperations>
+  groupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'groupId');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, String, QQueryOperations> nameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, String, QQueryOperations>
+  processNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'processName');
+    });
+  }
+
+  QueryBuilder<MagicWallGroupModel, int?, QQueryOperations>
+  updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
+    });
+  }
+}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
+extension GetMagicWallEventLogModelCollection on Isar {
+  IsarCollection<MagicWallEventLogModel> get magicWallEventLogModels =>
+      this.collection();
+}
+
+const MagicWallEventLogModelSchema = CollectionSchema(
+  name: r'MagicWallEventLogModel',
+  id: -4653441657626086664,
+  properties: {
+    r'action': PropertySchema(id: 0, name: r'action', type: IsarType.string),
+    r'message': PropertySchema(id: 1, name: r'message', type: IsarType.string),
+    r'targetId': PropertySchema(
+      id: 2,
+      name: r'targetId',
+      type: IsarType.string,
+    ),
+    r'targetType': PropertySchema(
+      id: 3,
+      name: r'targetType',
+      type: IsarType.string,
+    ),
+    r'timestamp': PropertySchema(
+      id: 4,
+      name: r'timestamp',
+      type: IsarType.long,
+    ),
+  },
+
+  estimateSize: _magicWallEventLogModelEstimateSize,
+  serialize: _magicWallEventLogModelSerialize,
+  deserialize: _magicWallEventLogModelDeserialize,
+  deserializeProp: _magicWallEventLogModelDeserializeProp,
+  idName: r'id',
+  indexes: {
+    r'targetType': IndexSchema(
+      id: 3231268277051933692,
+      name: r'targetType',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'targetType',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+    r'targetId': IndexSchema(
+      id: -7400732725972739031,
+      name: r'targetId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'targetId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+  },
+  links: {},
+  embeddedSchemas: {},
+
+  getId: _magicWallEventLogModelGetId,
+  getLinks: _magicWallEventLogModelGetLinks,
+  attach: _magicWallEventLogModelAttach,
+  version: '3.3.0',
+);
+
+int _magicWallEventLogModelEstimateSize(
+  MagicWallEventLogModel object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  bytesCount += 3 + object.action.length * 3;
+  {
+    final value = object.message;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.targetId.length * 3;
+  bytesCount += 3 + object.targetType.length * 3;
+  return bytesCount;
+}
+
+void _magicWallEventLogModelSerialize(
+  MagicWallEventLogModel object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeString(offsets[0], object.action);
+  writer.writeString(offsets[1], object.message);
+  writer.writeString(offsets[2], object.targetId);
+  writer.writeString(offsets[3], object.targetType);
+  writer.writeLong(offsets[4], object.timestamp);
+}
+
+MagicWallEventLogModel _magicWallEventLogModelDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = MagicWallEventLogModel();
+  object.action = reader.readString(offsets[0]);
+  object.id = id;
+  object.message = reader.readStringOrNull(offsets[1]);
+  object.targetId = reader.readString(offsets[2]);
+  object.targetType = reader.readString(offsets[3]);
+  object.timestamp = reader.readLong(offsets[4]);
+  return object;
+}
+
+P _magicWallEventLogModelDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readString(offset)) as P;
+    case 1:
+      return (reader.readStringOrNull(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
+    case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readLong(offset)) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+Id _magicWallEventLogModelGetId(MagicWallEventLogModel object) {
+  return object.id;
+}
+
+List<IsarLinkBase<dynamic>> _magicWallEventLogModelGetLinks(
+  MagicWallEventLogModel object,
+) {
+  return [];
+}
+
+void _magicWallEventLogModelAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  MagicWallEventLogModel object,
+) {
+  object.id = id;
+}
+
+extension MagicWallEventLogModelQueryWhereSort
+    on QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QWhere> {
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterWhere>
+  anyId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+}
+
+extension MagicWallEventLogModelQueryWhere
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QWhereClause
+        > {
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  idEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  idNotEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  idGreaterThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  idLessThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  targetTypeEqualTo(String targetType) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'targetType', value: [targetType]),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  targetTypeNotEqualTo(String targetType) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetType',
+                lower: [],
+                upper: [targetType],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetType',
+                lower: [targetType],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetType',
+                lower: [targetType],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetType',
+                lower: [],
+                upper: [targetType],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  targetIdEqualTo(String targetId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'targetId', value: [targetId]),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterWhereClause
+  >
+  targetIdNotEqualTo(String targetId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetId',
+                lower: [],
+                upper: [targetId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetId',
+                lower: [targetId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetId',
+                lower: [targetId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'targetId',
+                lower: [],
+                upper: [targetId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+}
+
+extension MagicWallEventLogModelQueryFilter
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QFilterCondition
+        > {
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'action',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'action',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'action',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'action', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  actionIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'action', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  idEqualTo(Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  idGreaterThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  idLessThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'message'),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'message'),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageEqualTo(String? value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'message',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'message',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'message',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'message', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  messageIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'message', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'targetId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'targetId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'targetId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'targetId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'targetId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'targetType',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'targetType',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'targetType',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'targetType', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  targetTypeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'targetType', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  timestampEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'timestamp', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  timestampGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'timestamp',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  timestampLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'timestamp',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    MagicWallEventLogModel,
+    MagicWallEventLogModel,
+    QAfterFilterCondition
+  >
+  timestampBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'timestamp',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+}
+
+extension MagicWallEventLogModelQueryObject
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QFilterCondition
+        > {}
+
+extension MagicWallEventLogModelQueryLinks
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QFilterCondition
+        > {}
+
+extension MagicWallEventLogModelQuerySortBy
+    on QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QSortBy> {
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'action', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'action', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'message', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'message', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTargetId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTargetIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTargetType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTargetTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetType', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'timestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  sortByTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'timestamp', Sort.desc);
+    });
+  }
+}
+
+extension MagicWallEventLogModelQuerySortThenBy
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QSortThenBy
+        > {
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'action', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'action', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'message', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'message', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTargetId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTargetIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTargetType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTargetTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetType', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'timestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QAfterSortBy>
+  thenByTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'timestamp', Sort.desc);
+    });
+  }
+}
+
+extension MagicWallEventLogModelQueryWhereDistinct
+    on QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct> {
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct>
+  distinctByAction({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'action', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct>
+  distinctByMessage({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'message', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct>
+  distinctByTargetId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'targetId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct>
+  distinctByTargetType({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'targetType', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, MagicWallEventLogModel, QDistinct>
+  distinctByTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'timestamp');
+    });
+  }
+}
+
+extension MagicWallEventLogModelQueryProperty
+    on
+        QueryBuilder<
+          MagicWallEventLogModel,
+          MagicWallEventLogModel,
+          QQueryProperty
+        > {
+  QueryBuilder<MagicWallEventLogModel, int, QQueryOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, String, QQueryOperations>
+  actionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'action');
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, String?, QQueryOperations>
+  messageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'message');
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, String, QQueryOperations>
+  targetIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'targetId');
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, String, QQueryOperations>
+  targetTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'targetType');
+    });
+  }
+
+  QueryBuilder<MagicWallEventLogModel, int, QQueryOperations>
+  timestampProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'timestamp');
     });
   }
 }
