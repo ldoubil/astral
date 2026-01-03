@@ -45,9 +45,13 @@ async fn test_udp_ipv4(stun_server: &str) -> (bool, i64, NatType) {
     match detect_nat_type_rfc5780(stun_server, true).await {
         Ok(nat_type) => {
             let latency = start.elapsed().as_millis() as i64;
+            println!("✓ IPv4 NAT 检测成功: {:?}, 延迟: {}ms", nat_type, latency);
             (true, latency, nat_type)
         }
-        Err(_) => (false, -1, NatType::Blocked),
+        Err(e) => {
+            println!("✗ IPv4 NAT 检测失败: {}", e);
+            (false, -1, NatType::Blocked)
+        }
     }
 }
 
@@ -58,13 +62,17 @@ async fn test_udp_ipv6_nat(stun_server: &str) -> (bool, i64, NatType) {
     match detect_nat_type_rfc5780(stun_server, false).await {
         Ok(nat_type) => {
             let latency = start.elapsed().as_millis() as i64;
+            println!("✓ IPv6 NAT 检测成功: {:?}, 延迟: {}ms", nat_type, latency);
             (true, latency, nat_type)
         }
-        Err(_) => (false, -1, NatType::Blocked),
+        Err(e) => {
+            println!("✗ IPv6 NAT 检测失败: {}", e);
+            (false, -1, NatType::Unknown)
+        }
     }
 }
 
-/// RFC 5780 NAT 类型检测算法
+/// RFC 5780 NAT 类型检测算法（原实现保留）
 /// is_ipv4: true 为 IPv4, false 为 IPv6
 async fn detect_nat_type_rfc5780(stun_server: &str, is_ipv4: bool) -> Result<NatType, String> {
     // 解析 STUN 服务器地址
