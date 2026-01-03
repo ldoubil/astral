@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:astral/src/rust/api/forward.dart';
 import 'package:astral/src/rust/api/multicast.dart';
 import 'package:astral/screens/nat_test_page.dart';
+import 'package:astral/screens/magic_wall_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:astral/widgets/minecraft_server_card.dart';
@@ -312,6 +314,26 @@ class _ExplorePageState extends State<ExplorePage> {
 
                 _buildSectionTitle(context, '联机工具'),
                 const SizedBox(height: 12),
+                // 魔法墙功能（仅 Windows 平台显示）
+                if (Platform.isWindows) ...[
+                  _buildListTile(
+                    context,
+                    GameItem(
+                      title: '魔法墙',
+                      subtitle: '高级防火墙管理',
+                      icon: Icons.security,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MagicWallPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 _buildListTile(
                   context,
                   GameItem(

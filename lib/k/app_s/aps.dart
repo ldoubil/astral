@@ -15,7 +15,6 @@ import 'package:signals_flutter/signals_flutter.dart';
 import 'package:astral/k/database/app_data.dart';
 import 'package:uuid/uuid.dart';
 export 'package:signals_flutter/signals_flutter.dart';
-import 'package:astral/k/models/wfp_model.dart';
 
 enum CoState { idle, connecting, connected }
 
@@ -54,11 +53,6 @@ class Aps {
     updateNetConfig();
     initMisc();
     loadStartupSettings();
-    _initWfpModels();
-  }
-
-  Future<void> _initWfpModels() async {
-    wfpModels.value = await AppDatabase().WfpModelSetting.getAllWfpModels();
   }
 
   // 在类中混入WidgetsBindingObserver
@@ -1000,38 +994,5 @@ class Aps {
     pingServerOnce(server);
 
     return AppDatabase().ServerSetting.getAllServers();
-  }
-
-  /// WFP规则列表
-  final Signal<List<WfpModel>> wfpModels = signal([]);
-
-  /// 添加WFP规则
-  Future<void> addWfpModel(WfpModel model) async {
-    await AppDatabase().WfpModelSetting.addWfpModel(model);
-    wfpModels.value = await AppDatabase().WfpModelSetting.getAllWfpModels();
-  }
-
-  /// 更新WFP规则
-  Future<void> updateWfpModel(WfpModel model) async {
-    await AppDatabase().WfpModelSetting.updateWfpModel(model);
-    wfpModels.value = await AppDatabase().WfpModelSetting.getAllWfpModels();
-  }
-
-  /// 删除WFP规则
-  Future<void> deleteWfpModel(int id) async {
-    await AppDatabase().WfpModelSetting.deleteWfpModel(id);
-    wfpModels.value = await AppDatabase().WfpModelSetting.getAllWfpModels();
-  }
-
-  /// 获取所有WFP规则
-  Future<List<WfpModel>> getAllWfpModels() async {
-    final list = await AppDatabase().WfpModelSetting.getAllWfpModels();
-    wfpModels.value = list;
-    return list;
-  }
-
-  /// 根据ID获取WFP规则
-  Future<WfpModel?> getWfpModelById(int id) async {
-    return await AppDatabase().WfpModelSetting.getWfpModelById(id);
   }
 }

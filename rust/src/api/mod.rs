@@ -1,9 +1,9 @@
 pub mod simple;
 pub mod firewall;
 pub mod hops;
-pub mod astral_wfp;
 pub mod nt;
 pub mod utils;
 pub mod forward;
 pub mod multicast;
 pub mod nat_test;
+pub mod magic_wall;

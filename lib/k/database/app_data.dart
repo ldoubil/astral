@@ -3,12 +3,12 @@ import 'package:astral/k/models/all_settings.dart';
 import 'package:astral/k/models/net_config.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:astral/k/models/server_mod.dart';
-import 'package:astral/k/models/wfp_model.dart';
+import 'package:astral/k/models/magic_wall_model.dart';
 import 'package:astral/k/models_mod/all_settings_cz.dart';
 import 'package:astral/k/models_mod/net_config_cz.dart';
 import 'package:astral/k/models_mod/room_cz.dart';
 import 'package:astral/k/models_mod/server_cz.dart';
-import 'package:astral/k/models_mod/wfp_model_cz.dart';
+import 'package:astral/k/models_mod/magic_wall_model_cz.dart';
 import 'package:isar_community/isar.dart';
 import 'package:astral/k/models/theme_settings.dart';
 import 'package:astral/k/models_mod/theme_settings_cz.dart';
@@ -26,7 +26,7 @@ class AppDatabase {
   late final RoomCz RoomSetting;
   late final AllSettingsCz AllSettings;
   late final ServerCz ServerSetting;
-  late final WfpModelCz WfpModelSetting;
+  late final MagicWallModelCz MagicWallSetting;
 
   /// 初始化数据库
   Future<void> init([String? customDbDir]) async {
@@ -63,13 +63,13 @@ class AppDatabase {
       RoomSchema,
       AllSettingsSchema,
       ServerModSchema,
-      WfpModelSchema,
+      MagicWallRuleModelSchema,
     ], directory: dbDir);
     themeSettings = ThemeSettingsRepository(isar);
     netConfigSetting = NetConfigRepository(isar);
     RoomSetting = RoomCz(isar);
     AllSettings = AllSettingsCz(isar);
     ServerSetting = ServerCz(isar);
-    WfpModelSetting = WfpModelCz(isar);
+    MagicWallSetting = MagicWallModelCz(isar);
   }
 }
