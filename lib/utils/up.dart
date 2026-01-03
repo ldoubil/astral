@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -493,6 +494,11 @@ class UpdateChecker {
     }
   }
 
+  /// 公开的网盘下载入口，供设置页面直接调用
+  Future<void> openNetDiskDownload(BuildContext context) async {
+    await _showNetDiskDownloadDialog(context);
+  }
+
   Future<void> _showNetDiskDownloadDialog(BuildContext context) async {
     // 显示加载对话框
     showDialog(
@@ -512,9 +518,9 @@ class UpdateChecker {
 
     try {
       // 获取最新版本的网盘链接
-      final response = await http.get(
-        Uri.parse('https://astral.fan/downloads.json'),
-      );
+      final response = await http
+          .get(Uri.parse('https://astral.fan/downloads.json'))
+          .timeout(const Duration(seconds: 15));
 
       if (!context.mounted) return;
 
@@ -556,6 +562,10 @@ class UpdateChecker {
       } else {
         _showErrorDialog(context, '获取下载链接失败: HTTP ${response.statusCode}');
       }
+    } on TimeoutException {
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      _showErrorDialog(context, '获取下载链接超时，请稍后重试');
     } catch (e) {
       if (!context.mounted) return;
       Navigator.of(context).pop(); // 关闭加载对话框

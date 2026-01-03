@@ -100,7 +100,7 @@ class UpdateSettingsPage extends StatelessWidget {
                   title: const Text('重新下载'),
                   subtitle: const Text('如果出现问题可以尝试重新下载！'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _testNetDiskDownload(context),
+                  onTap: () => _openNetDiskDownload(context),
                 ),
               ],
             ),
@@ -170,9 +170,9 @@ class UpdateSettingsPage extends StatelessWidget {
     );
   }
 
-  void _testNetDiskDownload(BuildContext context) {
+  void _openNetDiskDownload(BuildContext context) {
     final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
-    updateChecker.showUpdateDialogForTesting(context);
+    updateChecker.openNetDiskDownload(context);
   }
 
   void _showVersionInfo(BuildContext context) {
