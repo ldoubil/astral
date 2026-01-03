@@ -310,9 +310,11 @@ class _BannerCarouselState extends State<BannerCarousel> {
                               ),
                               actions: [
                                 TextButton.icon(
-                                  onPressed: () {
-                                    Aps().updateEnableBannerCarousel(false);
-                                    Navigator.of(context).pop();
+                                  onPressed: () async {
+                                    await Aps().updateEnableBannerCarousel(false);
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop();
+                                    }
                                   },
                                   icon: const Icon(Icons.visibility_off),
                                   label: const Text('隐藏轮播图'),

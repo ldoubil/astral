@@ -161,8 +161,8 @@ class _SoftwareSettingsPageState extends State<SoftwareSettingsPage> {
                   title: Text(LocaleKeys.enable_banner_carousel.tr()),
                   subtitle: Text(LocaleKeys.enable_banner_carousel_desc.tr()),
                   value: Aps().enableBannerCarousel.watch(context),
-                  onChanged: (value) {
-                    Aps().updateEnableBannerCarousel(value);
+                  onChanged: (value) async {
+                    await Aps().updateEnableBannerCarousel(value);
                   },
                 ),
               ],
