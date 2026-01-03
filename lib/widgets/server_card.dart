@@ -21,11 +21,6 @@ class ServerCard extends StatefulWidget {
 
 class _ServerCardState extends State<ServerCard> {
   late final Signal<bool> _hoveredSignal = signal(false);
-  late final Computed<int?> _pingSignal = computed(() {
-    final pingMap = Aps().pingResults.value;
-    final url = widget.server.url;
-    return pingMap.containsKey(url) ? pingMap[url] : null;
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -55,34 +50,23 @@ class _ServerCardState extends State<ServerCard> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                // 左侧状态指示器
-                _buildStatusIndicator(),
-                const SizedBox(width: 14),
-                // 中间信息区域
+                // 左侧信息区域
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 服务器名称和延迟
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              server.name,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildCompactPing(),
-                        ],
+                      // 服务器名称
+                      Text(
+                        server.name,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       // 服务器地址
@@ -210,88 +194,6 @@ class _ServerCardState extends State<ServerCard> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // 状态指示器
-  Widget _buildStatusIndicator() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final pingValue = _pingSignal.value;
-
-    Color statusColor;
-    if (pingValue == null || pingValue == -1) {
-      statusColor = colorScheme.error;
-    } else if (pingValue < 100) {
-      statusColor = Colors.green;
-    } else if (pingValue < 300) {
-      statusColor = Colors.orange;
-    } else {
-      statusColor = colorScheme.error;
-    }
-
-    return Container(
-      width: 4,
-      height: 48,
-      decoration: BoxDecoration(
-        color: statusColor,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-
-  // 紧凑的延迟显示
-  Widget _buildCompactPing() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final pingValue = _pingSignal.value;
-
-    if (pingValue == null || pingValue == -1) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: colorScheme.error.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: colorScheme.error.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          '超时',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.error,
-            height: 1.2,
-          ),
-        ),
-      );
-    }
-
-    Color pingColor;
-    if (pingValue < 100) {
-      pingColor = Colors.green;
-    } else if (pingValue < 300) {
-      pingColor = Colors.orange;
-    } else {
-      pingColor = colorScheme.error;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: pingColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: pingColor.withOpacity(0.3), width: 1),
-      ),
-      child: Text(
-        '${pingValue}ms',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: pingColor,
-          height: 1.2,
         ),
       ),
     );

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/widgets.dart';
-import 'package:astral/utils/net/ping_util.dart';
 
 import 'package:astral/utils/random_name.dart';
 import 'package:astral/k/models/net_config.dart';
@@ -104,11 +103,6 @@ class Aps {
     PlayerName.value = await AppDatabase().AllSettings.getPlayerName();
     listenList.value = await AppDatabase().AllSettings.getListenList();
     servers.value = await AppDatabase().ServerSetting.getAllServers();
-
-    // 确保服务器列表初始化后启动Ping测试
-    if (servers.value.isNotEmpty) {
-      _startPingAllServers();
-    }
 
     userListSimple.value = await AppDatabase().AllSettings.getUserMinimal();
     sortOption.value = await AppDatabase().AllSettings.getSortOption();
@@ -807,59 +801,16 @@ class Aps {
   Future<void> setRoom(Room room) async {
     await AppDatabase().AllSettings.updateRoom(room);
     selectroom.value = await AppDatabase().AllSettings.getRoom();
-    _startPingAllServers(); // 启动Ping测试
   }
 
   /// 服务器列表
   final Signal<List<ServerMod>> servers = signal([]);
-
-  // 储存ping的结果
-  final Signal<Map<String, int?>> pingResults = signal({});
-
-  // 修改Ping结果访问方式
-  int? getPingResult(String url) => pingResults.value[url];
-
-  // Ping测试
-  Future<void> pingServerOnce(ServerMod server) async {
-    try {
-      final pingResult = await PingUtil.ping(server.url);
-      // 通过Signal更新触发界面刷新
-      pingResults.value = {
-        ...pingResults.value,
-        server.url: pingResult ?? -1, // 使用-1表示超时
-      };
-    } catch (e, stackTrace) {
-      debugPrint('Ping测试异常: $e\n$stackTrace');
-      // 记录错误日志
-      pingResults.value = {
-        ...pingResults.value,
-        server.url: -1, // 异常情况标记为无法连接
-      };
-    }
-  }
-
-  // 新增启动Ping测试方法
-  void _startPingAllServers() {
-    _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      for (var server in servers.value) {
-        pingServerOnce(server);
-      }
-    });
-  }
 
   /// 添加服务器
   Future<void> addServer(ServerMod server) async {
     try {
       await AppDatabase().ServerSetting.addServer(server);
       servers.value = await AppDatabase().ServerSetting.getAllServers();
-      // 添加后立即触发Ping测试
-      pingServerOnce(server);
     } catch (e, stackTrace) {
       // 记录错误日志
       debugPrint('添加服务器失败: $e\n$stackTrace');
@@ -989,9 +940,6 @@ class Aps {
     server.enable = enable;
     await AppDatabase().ServerSetting.updateServer(server);
     servers.value = await AppDatabase().ServerSetting.getAllServers();
-
-    // 无论启用状态如何都开始Ping测试
-    pingServerOnce(server);
 
     return AppDatabase().ServerSetting.getAllServers();
   }

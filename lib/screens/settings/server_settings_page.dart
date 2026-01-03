@@ -83,18 +83,6 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
             },
             itemBuilder: (context, index) {
               final server = servers[index];
-              final pingValue = Aps().getPingResult(server.url);
-
-              Color statusColor;
-              if (pingValue == null || pingValue == -1) {
-                statusColor = Colors.red;
-              } else if (pingValue < 100) {
-                statusColor = Colors.green;
-              } else if (pingValue < 300) {
-                statusColor = Colors.orange;
-              } else {
-                statusColor = Colors.red;
-              }
 
               return ReorderableDragStartListener(
                 key: ValueKey(server.id),
@@ -106,7 +94,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                       width: 4,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: statusColor,
+                        color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -122,53 +110,6 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (pingValue != null && pingValue != -1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: statusColor.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              '${pingValue}ms',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: statusColor,
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Text(
-                              '超时',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(width: 8),
                         // 启用/关闭开关
                         Transform.scale(
                           scale: 0.8,

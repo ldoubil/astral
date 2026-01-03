@@ -9,18 +9,6 @@ import 'package:astral/generated/locale_keys.g.dart';
 class ServersHome extends StatelessWidget {
   const ServersHome({super.key});
 
-  Color _getStatusColor(int? pingValue) {
-    if (pingValue == null || pingValue == -1) {
-      return Colors.red;
-    } else if (pingValue < 100) {
-      return Colors.green;
-    } else if (pingValue < 300) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     var colorScheme = Theme.of(context).colorScheme;
@@ -61,8 +49,6 @@ class ServersHome extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children:
                     enabledServers.map<Widget>((server) {
-                      final pingValue = Aps().getPingResult(server.url);
-
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
@@ -85,7 +71,7 @@ class ServersHome extends StatelessWidget {
                               width: 4,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: _getStatusColor(pingValue),
+                                color: colorScheme.primary,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
