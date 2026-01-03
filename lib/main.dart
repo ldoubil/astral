@@ -8,6 +8,7 @@ import 'package:astral/utils/reg.dart'; // 添加这行导入
 import 'package:astral/k/app_s/log_capture.dart';
 import 'package:astral/k/database/app_data.dart';
 import 'package:astral/k/mod/window_manager.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:easy_localization_loader/easy_localization_loader.dart';
 import 'package:flutter/foundation.dart';
@@ -42,6 +43,11 @@ void main() async {
   }
   await EasyLocalization.ensureInitialized();
   await AppDatabase().init();
+
+  // 初始化新的服务管理器
+  final services = ServiceManager();
+  await services.init();
+
   AppInfoUtil.init();
 
   await LogCapture().startCapture();

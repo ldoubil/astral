@@ -7,7 +7,7 @@ import 'package:astral/widgets/room_card.dart';
 import 'package:astral/widgets/room_reorder_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,7 +20,7 @@ class RoomPage extends StatefulWidget {
 
 // 在_RoomPageState类中添加排序相关方法
 class _RoomPageState extends State<RoomPage> {
-  final _aps = Aps();
+  final _services = ServiceManager();
   bool isHovered = false;
   bool _isReorderMode = false; // 添加重排序模式标志
 
@@ -96,8 +96,8 @@ class _RoomPageState extends State<RoomPage> {
   // 构建房间列表视图
   Widget _buildRoomsView(BuildContext context, BoxConstraints constraints) {
     final columnCount = _getColumnCount(constraints.maxWidth);
-    final rooms = _aps.rooms.watch(context);
-    final selectedRoom = _aps.selectroom.watch(context);
+    final rooms = _services.roomState.rooms.value;
+    final selectedRoom = _services.roomState.selectedRoom.value;
 
     // 如果是重排序模式，使用ReorderableListView
     if (_isReorderMode) {
@@ -111,7 +111,7 @@ class _RoomPageState extends State<RoomPage> {
           final List<Room> reorderedRooms = List.from(rooms);
           final Room item = reorderedRooms.removeAt(oldIndex);
           reorderedRooms.insert(newIndex, item);
-          _aps.reorderRooms(reorderedRooms);
+          _services.room.reorderRooms(reorderedRooms);
         },
         itemBuilder: (context, index) {
           final room = rooms[index];
@@ -155,7 +155,7 @@ class _RoomPageState extends State<RoomPage> {
                   showEditRoomDialog(context, room: room);
                 },
                 onDelete: () {
-                  _aps.deleteRoom(room.id);
+                  _services.room.deleteRoom(room.id);
                 },
                 onShare: () {
                   RoomShareHelper.showShareDialog(context, room);
@@ -174,9 +174,10 @@ class _RoomPageState extends State<RoomPage> {
   @override
   Widget build(BuildContext context) {
     // 监听连接状态
-    final isConnected = _aps.Connec_state.watch(context);
+    final isConnected = _services.connectionState.connectionState.value;
     // 获取当前选中房间（如无此逻辑请替换为你的实际选中房间变量）
-    final selectedRoom = _aps.selectroom.watch(context); // 假设有 selectedRoom 字段
+    final selectedRoom =
+        _services.roomState.selectedRoom.value; // 假设有 selectedRoom 字段
 
     return Scaffold(
       body: Column(
@@ -267,7 +268,10 @@ class _RoomPageState extends State<RoomPage> {
                   FloatingActionButton(
                     heroTag: 'room_sort',
                     onPressed: () {
-                      RoomReorderSheet.show(context, _aps.rooms.value);
+                      RoomReorderSheet.show(
+                        context,
+                        _services.roomState.rooms.value,
+                      );
                     },
                     child: const Icon(Icons.sort),
                   ),
@@ -306,5 +310,5 @@ void addEncryptedRoom(
     messageKey: isEncrypted ? Uuid().v4() : "",
     tags: [],
   );
-  Aps().addRoom(room);
+  ServiceManager().room.addRoom(room);
 }

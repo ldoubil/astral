@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/hops.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class NetworkAdapterPage extends StatelessWidget {
   const NetworkAdapterPage({super.key});
@@ -14,32 +15,34 @@ class NetworkAdapterPage extends StatelessWidget {
         title: Text(LocaleKeys.network_adapter_hop_settings.tr()),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: Text(LocaleKeys.auto_set_hop.tr()),
-                  subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
-                  value: Aps().autoSetMTU.watch(context),
-                  onChanged: (value) {
-                    Aps().setAutoSetMTU(value);
-                  },
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.list),
-                  title: Text(LocaleKeys.view_hop_list.tr()),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showHopList(context),
-                ),
-              ],
+      body: Watch((context) {
+        return ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            Card(
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: Text(LocaleKeys.auto_set_hop.tr()),
+                    subtitle: Text(LocaleKeys.auto_set_hop_desc.tr()),
+                    value: ServiceManager().networkConfigState.autoSetMTU.value,
+                    onChanged: (value) {
+                      ServiceManager().networkConfig.setAutoSetMTU(value);
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.list),
+                    title: Text(LocaleKeys.view_hop_list.tr()),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showHopList(context),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 

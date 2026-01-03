@@ -1,10 +1,10 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 void showThemeColorPicker(BuildContext context) {
   // 保存当前颜色，用于取消时恢复
-  final currentColor = Aps().themeColor.value;
+  final currentColor = ServiceManager().themeState.themeColor.value;
   // 临时颜色，用于预览
   Color tempColor = currentColor;
 
@@ -57,7 +57,7 @@ void showThemeColorPicker(BuildContext context) {
                     context,
                     tempColor, // 使用临时颜色作为初始值
                     (Color color) {
-                      Aps().updateThemeColor(color);
+                      ServiceManager().theme.updateThemeColor(color);
                     },
                   );
                 },
@@ -70,7 +70,7 @@ void showThemeColorPicker(BuildContext context) {
             child: const Text('取消'),
             onPressed: () {
               // 取消时恢复原来的颜色
-              Aps().updateThemeColor(currentColor);
+              ServiceManager().theme.updateThemeColor(currentColor);
               Navigator.of(context).pop();
             },
           ),
@@ -80,7 +80,7 @@ void showThemeColorPicker(BuildContext context) {
               // 确定时应用临时颜色
               Navigator.of(context).pop();
               Future.microtask(() {
-                Aps().updateThemeColor(tempColor);
+                ServiceManager().theme.updateThemeColor(tempColor);
               });
             },
           ),

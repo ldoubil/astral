@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/utils/up.dart';
 import 'package:astral/screens/settings/general/history_versions_page.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class UpdateSettingsPage extends StatelessWidget {
   const UpdateSettingsPage({super.key});
@@ -22,119 +23,121 @@ class UpdateSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(LocaleKeys.update_settings.tr()),
-                  subtitle: Text(LocaleKeys.update_behavior_desc.tr()),
-                  leading: const Icon(Icons.system_update),
-                ),
+      body: Watch((context) {
+        return ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Text(LocaleKeys.update_settings.tr()),
+                    subtitle: Text(LocaleKeys.update_behavior_desc.tr()),
+                    leading: const Icon(Icons.system_update),
+                  ),
 
-                const Divider(),
+                  const Divider(),
 
-                SwitchListTile(
-                  title: Text(LocaleKeys.join_beta.tr()),
-                  subtitle: Text(LocaleKeys.join_beta_desc.tr()),
-                  value: Aps().beta.watch(context),
-                  onChanged: (value) {
-                    Aps().setBeta(value);
-                  },
-                ),
-
-                if (!Aps().beta.watch(context))
                   SwitchListTile(
-                    title: Text(LocaleKeys.auto_update.tr()),
-                    subtitle: Text(LocaleKeys.auto_update_desc.tr()),
-                    value: Aps().autoCheckUpdate.watch(context),
+                    title: Text(LocaleKeys.join_beta.tr()),
+                    subtitle: Text(LocaleKeys.join_beta_desc.tr()),
+                    value: ServiceManager().updateState.beta.value,
                     onChanged: (value) {
-                      Aps().setAutoCheckUpdate(value);
+                      ServiceManager().appSettings.setBeta(value);
                     },
                   ),
-              ],
+
+                  if (!ServiceManager().updateState.beta.value)
+                    SwitchListTile(
+                      title: Text(LocaleKeys.auto_update.tr()),
+                      subtitle: Text(LocaleKeys.auto_update_desc.tr()),
+                      value: ServiceManager().updateState.autoCheckUpdate.value,
+                      onChanged: (value) {
+                        ServiceManager().appSettings.setAutoCheckUpdate(value);
+                      },
+                    ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(LocaleKeys.update_operations.tr()),
-                  subtitle: Text(LocaleKeys.update_operations_desc.tr()),
-                  leading: const Icon(Icons.update),
-                ),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Text(LocaleKeys.update_operations.tr()),
+                    subtitle: Text(LocaleKeys.update_operations_desc.tr()),
+                    leading: const Icon(Icons.update),
+                  ),
 
-                const Divider(),
+                  const Divider(),
 
-                ListTile(
-                  leading: const Icon(Icons.refresh),
-                  title: Text(LocaleKeys.check_update.tr()),
-                  subtitle: Text(LocaleKeys.check_update_available.tr()),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _checkForUpdates(context),
-                ),
+                  ListTile(
+                    leading: const Icon(Icons.refresh),
+                    title: Text(LocaleKeys.check_update.tr()),
+                    subtitle: Text(LocaleKeys.check_update_available.tr()),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _checkForUpdates(context),
+                  ),
 
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: Text(LocaleKeys.version_info.tr()),
-                  subtitle: Text(LocaleKeys.version_info_desc.tr()),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showVersionInfo(context),
-                ),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(LocaleKeys.version_info.tr()),
+                    subtitle: Text(LocaleKeys.version_info_desc.tr()),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showVersionInfo(context),
+                  ),
 
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: Text(LocaleKeys.history_versions.tr()),
-                  subtitle: Text(LocaleKeys.history_versions_desc.tr()),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _navigateToHistoryVersions(context),
-                ),
+                  ListTile(
+                    leading: const Icon(Icons.history),
+                    title: Text(LocaleKeys.history_versions.tr()),
+                    subtitle: Text(LocaleKeys.history_versions_desc.tr()),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _navigateToHistoryVersions(context),
+                  ),
 
-                ListTile(
-                  leading: const Icon(Icons.cloud_download),
-                  title: const Text('重新下载'),
-                  subtitle: const Text('如果出现问题可以尝试重新下载！'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _openNetDiskDownload(context),
-                ),
-              ],
+                  ListTile(
+                    leading: const Icon(Icons.cloud_download),
+                    title: const Text('重新下载'),
+                    subtitle: const Text('如果出现问题可以尝试重新下载！'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _redownload(context),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(LocaleKeys.update_description.tr()),
-                  subtitle: Text(LocaleKeys.update_description_desc.tr()),
-                  leading: const Icon(Icons.help_outline),
-                ),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    title: Text(LocaleKeys.update_description.tr()),
+                    subtitle: Text(LocaleKeys.update_description_desc.tr()),
+                    leading: const Icon(Icons.help_outline),
+                  ),
 
-                const Divider(),
+                  const Divider(),
 
-                ListTile(
-                  title: Text(LocaleKeys.beta_version.tr()),
-                  subtitle: Text(LocaleKeys.beta_version_desc.tr()),
-                  leading: const Icon(Icons.science),
-                ),
+                  ListTile(
+                    title: Text(LocaleKeys.beta_version.tr()),
+                    subtitle: Text(LocaleKeys.beta_version_desc.tr()),
+                    leading: const Icon(Icons.science),
+                  ),
 
-                ListTile(
-                  title: Text(LocaleKeys.auto_update_title.tr()),
-                  subtitle: Text(LocaleKeys.auto_update_info_desc.tr()),
-                  leading: const Icon(Icons.auto_awesome),
-                ),
-              ],
+                  ListTile(
+                    title: Text(LocaleKeys.auto_update_title.tr()),
+                    subtitle: Text(LocaleKeys.auto_update_info_desc.tr()),
+                    leading: const Icon(Icons.auto_awesome),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 
@@ -175,6 +178,13 @@ class UpdateSettingsPage extends StatelessWidget {
     updateChecker.openNetDiskDownload(context);
   }
 
+  void _redownload(BuildContext context) {
+    final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
+    if (context.mounted) {
+      updateChecker.checkForUpdates(context, forceShowDownload: true);
+    }
+  }
+
   void _showVersionInfo(BuildContext context) {
     showDialog(
       context: context,
@@ -190,7 +200,7 @@ class UpdateSettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${LocaleKeys.update_channel.tr()}: ${Aps().beta.value ? "Beta" : "Stable"}',
+                  '${LocaleKeys.update_channel.tr()}: ${ServiceManager().updateState.beta.value ? "Beta" : "Stable"}',
                 ),
               ],
             ),

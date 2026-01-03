@@ -1,7 +1,8 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/utils/blocked_servers.dart';
 import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class ServerCard extends StatefulWidget {
   final ServerMod server;
@@ -26,7 +27,7 @@ class _ServerCardState extends State<ServerCard> {
   Widget build(BuildContext context) {
     final server = widget.server;
     final colorScheme = Theme.of(context).colorScheme;
-    final isHovered = _hoveredSignal.watch(context);
+    final isHovered = _hoveredSignal.value;
 
     return MouseRegion(
       onEnter: (_) => _hoveredSignal.value = true,
@@ -111,7 +112,10 @@ class _ServerCardState extends State<ServerCard> {
                       child: Switch(
                         value: server.enable,
                         onChanged: (value) {
-                          Aps().setServerEnable(server, value);
+                          ServiceManager().server.setServerEnable(
+                            server,
+                            value,
+                          );
                           setState(() {});
                         },
                       ),

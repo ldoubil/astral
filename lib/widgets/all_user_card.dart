@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/utils/platform_version_parser.dart';
 import 'package:astral/utils/blocked_servers.dart';
@@ -43,7 +43,7 @@ class _AllUserCardState extends State<AllUserCard> {
     final connectionType = _mapConnectionType(
       player.cost,
       player.ipv4,
-      Aps().ipv4.watch(context), // Assuming Aps().ipv4 provides the local IP
+      ServiceManager().networkConfigState.ipv4.value, // Assuming ServiceManager().networkConfigState.ipv4 provides the local IP
     );
     final connectionTypeColor = _getConnectionTypeColor(
       connectionType,
@@ -639,7 +639,7 @@ class _AllUserCardState extends State<AllUserCard> {
                 _mapConnectionType(
                   widget.player.cost,
                   widget.player.ipv4,
-                  Aps().ipv4.watch(context),
+                  ServiceManager().networkConfigState.ipv4.value,
                 ),
               ),
             ),

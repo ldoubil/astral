@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';

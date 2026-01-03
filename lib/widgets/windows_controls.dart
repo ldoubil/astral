@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:window_manager/window_manager.dart';
@@ -126,7 +126,7 @@ class _WindowControlsState extends State<WindowControls>
         IconButton(
           icon: const Icon(Icons.close),
           onPressed: () async {
-            if (Aps().closeMinimize.value) {
+            if (ServiceManager().windowState.closeMinimize.value) {
               await windowManager.hide();
             } else {
               await windowManager.close();

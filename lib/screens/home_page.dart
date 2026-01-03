@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/widgets/home/about_home.dart';
 import 'package:astral/widgets/home/banner_carousel.dart';
 import 'package:astral/widgets/home/contributors.dart'; // 添加这行
@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
                       children: [
-                        if (Aps().enableBannerCarousel.watch(context))
+                        if (ServiceManager().appSettingsState.enableBannerCarousel.value)
                           StaggeredGridTile.fit(
                             crossAxisCellCount: columnCount,
                             child: BannerCarousel(),

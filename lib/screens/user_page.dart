@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/widgets/all_user_card.dart';
 import 'package:astral/widgets/mini_user_card.dart';
@@ -47,8 +47,8 @@ class _UserPageState extends State<UserPage> {
       ),
       body: Builder(
         builder: (context) {
-          final netStatus = Aps().netStatus.watch(context);
-          if (!Aps().isConnecting.watch(context)) {
+          final netStatus = ServiceManager().connectionState.netStatus.value;
+          if (!ServiceManager().connectionState.isConnecting.value) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -105,13 +105,13 @@ class _UserPageState extends State<UserPage> {
             }
 
             // 获取排序选项
-            final sortOption = Aps().sortOption.watch(context);
+            final sortOption = ServiceManager().displayState.sortOption.value;
             // 获取排序顺序
-            final sortOrder = Aps().sortOrder.watch(context);
+            final sortOrder = ServiceManager().displayState.sortOrder.value;
             // 获取显示模式
-            final displayMode = Aps().displayMode.watch(context);
+            final displayMode = ServiceManager().displayState.displayMode.value;
             // 获取原始节点列表
-            var nodes = Aps().netStatus.watch(context)!.nodes;
+            var nodes = ServiceManager().connectionState.netStatus.value!.nodes;
 
             // 根据排序选项对节点进行排序
             if (sortOption == 1) {
@@ -176,16 +176,16 @@ class _UserPageState extends State<UserPage> {
                         // 获取当前索引对应的玩家数据
                         final player = filteredNodes[index];
                         // 根据简单列表模式选项返回不同的卡片组件
-                        return Aps().userListSimple.watch(context)
+                        return ServiceManager().displayState.userListSimple.value
                             ? MiniUserCard(
                               player: player,
                               colorScheme: colorScheme,
-                              localIPv4: Aps().ipv4.watch(context),
+                              localIPv4: ServiceManager().networkConfigState.ipv4.value,
                             )
                             : AllUserCard(
                               player: player,
                               colorScheme: colorScheme,
-                              localIPv4: Aps().ipv4.watch(context),
+                              localIPv4: ServiceManager().networkConfigState.ipv4.value,
                             );
                       },
                       // 设置子项数量为过滤后的节点数量

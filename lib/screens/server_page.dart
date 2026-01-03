@@ -1,5 +1,5 @@
 import 'package:astral/utils/show_server_dialog.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/widgets/server_card.dart';
 import 'package:flutter/foundation.dart';
@@ -29,8 +29,13 @@ class _ServerPageState extends State<ServerPage>
     return 1;
   }
 
-  final _aps = Aps();
+  final _services = ServiceManager();
   late AnimationController _animationController;
+
+  // 用于去抖动的状态变量
+  final Map<String, int> _lastPingResults = {};
+  final Map<String, int> _stablePingCount = {};
+  final Set<String> _skippedServers = {};
 
   @override
   void initState() {
@@ -57,13 +62,13 @@ class _ServerPageState extends State<ServerPage>
   }
 
   Future<void> _loadServers() async {
-    await _aps.getAllServers();
+    await _services.server.getAllServers();
   }
 
   @override
   Widget build(BuildContext context) {
     // 获取服务器列表并添加自动监听
-    final servers = _aps.servers.watch(context);
+    final servers = _services.serverState.servers.value;
 
     return Scaffold(
       body: LayoutBuilder(
@@ -178,17 +183,17 @@ class _ServerPageState extends State<ServerPage>
           FloatingActionButton(
             heroTag: 'server_sort',
             onPressed: () async {
-              final currentServers = _aps.servers.value;
+              final currentServers = _services.serverState.servers.value;
               final reorderedServers = await ServerReorderSheet.show(
                 context,
                 currentServers,
               );
               if (reorderedServers != null && mounted) {
-                await _aps.reorderServers(reorderedServers);
+                await _services.server.reorderServers(reorderedServers);
                 // 使用更可靠的状态更新方式
                 setState(() {
                   // 使用展开运算符确保生成新列表实例
-                  _aps.servers.value = [...reorderedServers];
+                  _services.serverState.servers.value = [...reorderedServers];
                 });
               }
             },
@@ -220,7 +225,7 @@ class _ServerPageState extends State<ServerPage>
               ),
               TextButton(
                 onPressed: () {
-                  _aps.deleteServer(server);
+                  _services.server.deleteServer(server);
                   Navigator.of(context).pop();
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),

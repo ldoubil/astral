@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -53,13 +53,15 @@ class VirtualIpBox extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _getStatusColor(
-                    Aps().Connec_state.watch(context),
+                    ServiceManager().connectionState.connectionState.value,
                     colorScheme,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _getStatusText(Aps().Connec_state.watch(context)),
+                  _getStatusText(
+                    ServiceManager().connectionState.connectionState.value,
+                  ),
                   style: TextStyle(
                     color: colorScheme.onPrimary,
                     fontSize: 12,
@@ -82,7 +84,7 @@ class VirtualIpBox extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      Aps().firewallStatus.watch(context)
+                      ServiceManager().firewallState.firewallStatus.value
                           ? LocaleKeys.firewall_enabled.tr()
                           : LocaleKeys.firewall_disabled.tr(),
                       style: TextStyle(color: colorScheme.secondary),
@@ -92,18 +94,20 @@ class VirtualIpBox extends StatelessWidget {
 
                 const Spacer(),
                 Switch(
-                  value: Aps().firewallStatus.watch(
-                    context,
-                  ), // 需要在Aps中添加firewall_enabled状态
+                  value:
+                      ServiceManager()
+                          .firewallState
+                          .firewallStatus
+                          .value, // 需要在Aps中添加firewall_enabled状态
                   onChanged: (bool value) {
-                    Aps().setFirewall(value); // 切换防火墙状态
+                    ServiceManager().firewall.setFirewall(value); // 切换防火墙状态
                   },
                   activeColor: colorScheme.primary,
                 ),
               ],
             ),
           ],
-          if (Aps().ipv4.watch(context).isNotEmpty) ...[
+          if (ServiceManager().networkConfigState.ipv4.value.isNotEmpty) ...[
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
@@ -114,7 +118,7 @@ class VirtualIpBox extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  Aps().ipv4.watch(context),
+                  ServiceManager().networkConfigState.ipv4.value,
                   style: TextStyle(color: colorScheme.secondary),
                 ),
               ],

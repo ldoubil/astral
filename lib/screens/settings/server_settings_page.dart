@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/utils/blocked_servers.dart';
 import 'package:astral/utils/show_server_dialog.dart';
@@ -21,7 +21,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
       appBar: AppBar(title: const Text('服务器管理'), elevation: 0),
       body: Builder(
         builder: (context) {
-          final servers = Aps().servers.watch(context);
+          final servers = ServiceManager().serverState.servers.value;
 
           if (servers.isEmpty) {
             return Center(
@@ -76,9 +76,9 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
               newServers.insert(newIndex, server);
 
               // 保存到数据库
-              await Aps().reorderServers(newServers);
+              await ServiceManager().server.reorderServers(newServers);
               setState(() {
-                Aps().servers.value = newServers;
+                ServiceManager().serverState.servers.value = newServers;
               });
             },
             itemBuilder: (context, index) {
@@ -116,7 +116,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                           child: Switch(
                             value: server.enable,
                             onChanged: (value) {
-                              Aps().setServerEnable(server, value);
+                              ServiceManager().server.setServerEnable(server, value);
                               setState(() {});
                             },
                           ),
@@ -219,7 +219,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
               ),
               TextButton(
                 onPressed: () {
-                  Aps().deleteServer(server);
+                  ServiceManager().server.deleteServer(server);
                   Navigator.of(context).pop();
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),

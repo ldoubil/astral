@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/utils/net/ping_util.dart';
 
 // 公共服务器对话框组件
@@ -101,7 +101,7 @@ class _PublicServersDialogState extends State<PublicServersDialog>
   List<Map<String, String>> _filteredServers = [];
   bool _isLoading = true;
   String? _error;
-  final _aps = Aps();
+  final _services = ServiceManager();
   final Map<String, AnimationController> _animationControllers = {};
   final Map<String, Animation<double>> _scaleAnimations = {};
 
@@ -163,7 +163,7 @@ class _PublicServersDialogState extends State<PublicServersDialog>
 
       // 实时获取本地服务器列表进行过滤
       final existingUrls =
-          _aps.servers.value
+          _services.serverState.servers.value
               .map((server) => server.url.trim().toLowerCase())
               .toSet();
 

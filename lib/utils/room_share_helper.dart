@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:astral/k/models/room.dart';
 import 'package:astral/utils/e_d_room.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 
 /// 房间分享助手类
 /// 提供完整的房间分享功能，包括链接生成、分享、导入等
@@ -204,7 +204,7 @@ $roomSummary
     bool includeServers = false;
 
     // 预先加载所有启用的服务器列表
-    final allServers = await Aps().getAllServers();
+    final allServers = await ServiceManager().server.getAllServers();
     final enabledServerUrls =
         allServers.where((s) => s.enable).expand((s) {
           // 为每个服务器生成带协议前缀的URL列表
@@ -401,7 +401,7 @@ $roomSummary
       final cleanedRoom = cleanRoom(room);
 
       // 检查重复
-      final existingRooms = await Aps().getAllRooms();
+      final existingRooms = await ServiceManager().room.getAllRooms();
       final duplicate =
           existingRooms.where((existing) {
             if (cleanedRoom.encrypted && existing.encrypted) {
@@ -425,7 +425,7 @@ $roomSummary
       // cleanedRoom.servers 已经包含分享时的服务器列表，不需要在此修改
 
       // 添加房间
-      await Aps().addRoom(cleanedRoom);
+      await ServiceManager().room.addRoom(cleanedRoom);
 
       // 安全地跳转到房间页面并选中房间
       await navigateToRoomPage(cleanedRoom, context: context);
@@ -548,13 +548,13 @@ $roomSummary
       // 这样可以避免在应用初始化过程中出现问题
       await Future.microtask(() async {
         // 跳转到房间页面
-        Aps().selectedIndex.set(1);
+        ServiceManager().uiState.selectedIndex.set(1);
 
         // 延迟一点时间确保页面已经切换
         await Future.delayed(const Duration(milliseconds: 100));
 
         // 选中房间
-        await Aps().setRoom(room);
+        await ServiceManager().room.setRoom(room);
       });
 
       debugPrint('已跳转到房间页面并选中房间: ${room.name}');

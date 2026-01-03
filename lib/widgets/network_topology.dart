@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/utils/platform_version_parser.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +40,7 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     nodeDataMap.clear();
 
     // 首先添加本机节点
-    final localIp = Aps().ipv4.value;
+    final localIp = ServiceManager().networkConfigState.ipv4.value;
     if (localIp != null && localIp.isNotEmpty) {
       final localNode = Node.Id("local");
       nodeMap["local"] = localNode;
@@ -131,7 +131,7 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final netStatus = Aps().netStatus.watch(context);
+    final netStatus = ServiceManager().connectionState.netStatus.value;
 
     if (netStatus == null || netStatus.nodes.isEmpty) {
       return Center(

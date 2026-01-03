@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -31,10 +31,11 @@ class UpdateChecker {
   Future<void> checkForUpdates(
     BuildContext context, {
     bool showNoUpdateMessage = true,
+    bool forceShowDownload = false,
   }) async {
     try {
       final releaseInfo = await _fetchLatestRelease(
-        includePrereleases: Aps().beta.value,
+        includePrereleases: ServiceManager().updateState.beta.value,
       );
       if (releaseInfo == null) {
         if (!context.mounted) return;
@@ -53,13 +54,16 @@ class UpdateChecker {
       debugPrint('服务器版本: ${releaseInfo['tag_name']}');
 
       // 保存最新版本号到数据库
-      await Aps().updateLatestVersion(releaseInfo['tag_name']);
+      await ServiceManager().appSettings.updateLatestVersion(
+        releaseInfo['tag_name'],
+      );
 
       if (!context.mounted) return;
 
       // 比较版本号，如果有新版本则显示更新弹窗
       // 在 checkForUpdates 方法中修改 _showUpdateDialog 调用
-      if (_shouldUpdate(currentVersion, releaseInfo['tag_name'])) {
+      if (_shouldUpdate(currentVersion, releaseInfo['tag_name']) ||
+          forceShowDownload) {
         _showUpdateDialog(
           context,
           releaseInfo['tag_name'],
@@ -462,7 +466,7 @@ class UpdateChecker {
     try {
       // 获取最新的 release 信息
       final releaseInfo = await _fetchLatestRelease(
-        includePrereleases: Aps().beta.value,
+        includePrereleases: ServiceManager().updateState.beta.value,
       );
 
       if (releaseInfo == null || !context.mounted) {

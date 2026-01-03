@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:astral/k/models/room.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 
 // 添加DragHandle定义
 class DragHandle extends StatelessWidget {
@@ -35,25 +35,26 @@ class RoomReorderSheet extends StatefulWidget {
   State<RoomReorderSheet> createState() => _RoomReorderSheetState();
 
   static Future<void> show(BuildContext context, List<Room> rooms) async {
-    final aps = Aps();
-    
+    final services = ServiceManager();
+
     if (MediaQuery.of(context).size.width > 600) {
       // PC端显示为对话框
       await showDialog(
         context: context,
-        builder: (context) => Dialog(
-          child: Container(
-            width: 400,
-            height: 600,
-            child: RoomReorderSheet(
-              rooms: List.from(rooms),
-              onReorder: (reorderedRooms) {
-                aps.reorderRooms(reorderedRooms);
-                Navigator.of(context).pop();
-              }
+        builder:
+            (context) => Dialog(
+              child: Container(
+                width: 400,
+                height: 600,
+                child: RoomReorderSheet(
+                  rooms: List.from(rooms),
+                  onReorder: (reorderedRooms) {
+                    services.room.reorderRooms(reorderedRooms);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
       );
     } else {
       // 移动端显示为底部弹窗
@@ -61,26 +62,28 @@ class RoomReorderSheet extends StatefulWidget {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) => Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
+        builder:
+            (context) => DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.5,
+              maxChildSize: 0.9,
+              builder:
+                  (context, scrollController) => Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                    ),
+                    child: RoomReorderSheet(
+                      rooms: List.from(rooms),
+                      onReorder: (reorderedRooms) {
+                        services.room.reorderRooms(reorderedRooms);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
             ),
-            child: RoomReorderSheet(
-              rooms: List.from(rooms),
-              onReorder: (reorderedRooms) {
-                aps.reorderRooms(reorderedRooms);
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        ),
       );
     }
   }
@@ -105,17 +108,13 @@ class _RoomReorderSheetState extends State<RoomReorderSheet> {
       children: [
         // 标题栏
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 14, 8, 16), 
+          padding: const EdgeInsets.fromLTRB(24, 14, 8, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.sort,
-                    color: colorScheme.primary,
-                    size: 24,
-                  ),
+                  Icon(Icons.sort, color: colorScheme.primary, size: 24),
                   const SizedBox(width: 8),
                   Text(
                     '房间排序',
@@ -142,12 +141,8 @@ class _RoomReorderSheetState extends State<RoomReorderSheet> {
 
         // 房间列表 - 使用 Expanded 填充剩余空间
         Expanded(
-          child: Padding( 
-            padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
-              bottom: 16,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             child: ReorderableListView.builder(
               // 移除水平内边距
               padding: EdgeInsets.zero,
@@ -175,10 +170,7 @@ class _RoomReorderSheetState extends State<RoomReorderSheet> {
                 return Padding(
                   key: ValueKey(room.id), // 将key提升到Padding层级
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: _RoomReorderItem(
-                    room: room,
-                    index: index,
-                  ),
+                  child: _RoomReorderItem(room: room, index: index),
                 );
               },
             ),
@@ -227,11 +219,8 @@ class _RoomReorderItem extends StatefulWidget {
   final Room room;
   final int index;
 
-  const _RoomReorderItem({
-    Key? key,
-    required this.room,
-    required this.index,
-  }) : super(key: key);
+  const _RoomReorderItem({Key? key, required this.room, required this.index})
+    : super(key: key);
 
   @override
   _RoomReorderItemState createState() => _RoomReorderItemState();
@@ -244,7 +233,7 @@ class _RoomReorderItemState extends State<_RoomReorderItem> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return ReorderableDragStartListener(
       index: widget.index,
       child: MouseRegion(
@@ -262,9 +251,10 @@ class _RoomReorderItemState extends State<_RoomReorderItem> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             // 保持原有背景色，仅通过边框变化表示悬停状态
-            color: (theme.brightness == Brightness.light)
-                ? colorScheme.surfaceVariant.withOpacity(1.0)
-                : colorScheme.surfaceVariant.withOpacity(1.0), 
+            color:
+                (theme.brightness == Brightness.light)
+                    ? colorScheme.surfaceVariant.withOpacity(1.0)
+                    : colorScheme.surfaceVariant.withOpacity(1.0),
             border: Border.all(
               // 仅在悬停时显示边框
               color: _isHovered ? colorScheme.primary : Colors.transparent,
@@ -276,15 +266,12 @@ class _RoomReorderItemState extends State<_RoomReorderItem> {
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               title: Text(
-                widget.room.name, 
-                style: TextStyle(
-                  fontSize: 16, 
-                  color: colorScheme.onSurface
-                )
+                widget.room.name,
+                style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
               ),
               subtitle: Text(
                 widget.room.encrypted ? '加密房间' : '开放房间',
-                style: TextStyle(color: colorScheme.onSurfaceVariant)
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
             ),
           ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 
 // 房间设置弹窗组件
 class RoomSettingsSheet extends StatefulWidget {
@@ -138,16 +138,16 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('显示模式', [
                 _buildOptionButton(
                   '简约',
-                  Aps().userListSimple.watch(context),
+                  ServiceManager().displayState.userListSimple.value,
                   () {
-                    Aps().setUserListSimple(true);
+                    ServiceManager().appSettings.setUserListSimple(true);
                   },
                 ),
                 _buildOptionButton(
                   '详细',
-                  !Aps().userListSimple.watch(context),
+                  !ServiceManager().displayState.userListSimple.value,
                   () {
-                    Aps().setUserListSimple(false);
+                    ServiceManager().appSettings.setUserListSimple(false);
                   },
                 ),
               ], colorScheme),
@@ -156,18 +156,18 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('用户显示', [
                 _buildOptionButton(
                   '默认',
-                  Aps().displayMode.watch(context) == 0,
-                  () => Aps().setDisplayMode(0),
+                  ServiceManager().displayState.displayMode.value == 0,
+                  () => ServiceManager().appSettings.setDisplayMode(0),
                 ),
                 _buildOptionButton(
                   '用户',
-                  Aps().displayMode.watch(context) == 1,
-                  () => Aps().setDisplayMode(1),
+                  ServiceManager().displayState.displayMode.value == 1,
+                  () => ServiceManager().appSettings.setDisplayMode(1),
                 ),
                 _buildOptionButton(
                   '服务器',
-                  Aps().displayMode.watch(context) == 2,
-                  () => Aps().setDisplayMode(2),
+                  ServiceManager().displayState.displayMode.value == 2,
+                  () => ServiceManager().appSettings.setDisplayMode(2),
                 ),
               ], colorScheme),
 
@@ -175,18 +175,18 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('用户排序', [
                 _buildOptionButton(
                   '默认',
-                  Aps().sortOption.watch(context) == 0,
-                  () => Aps().setSortOption(0),
+                  ServiceManager().displayState.sortOption.value == 0,
+                  () => ServiceManager().appSettings.setSortOption(0),
                 ),
                 _buildOptionButton(
                   '延迟',
-                  Aps().sortOption.watch(context) == 1,
-                  () => Aps().setSortOption(1),
+                  ServiceManager().displayState.sortOption.value == 1,
+                  () => ServiceManager().appSettings.setSortOption(1),
                 ),
                 _buildOptionButton(
                   '用户名',
-                  Aps().sortOption.watch(context) == 2,
-                  () => Aps().setSortOption(2),
+                  ServiceManager().displayState.sortOption.value == 2,
+                  () => ServiceManager().appSettings.setSortOption(2),
                 ),
               ], colorScheme),
 
@@ -194,13 +194,13 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
               _buildSettingSection('排序方式', [
                 _buildOptionButton(
                   '升序',
-                  Aps().sortOrder.watch(context) == 0,
-                  () => Aps().setSortOrder(0),
+                  ServiceManager().displayState.sortOrder.value == 0,
+                  () => ServiceManager().appSettings.setSortOrder(0),
                 ),
                 _buildOptionButton(
                   '降序',
-                  Aps().sortOrder.watch(context) == 1,
-                  () => Aps().setSortOrder(1),
+                  ServiceManager().displayState.sortOrder.value == 1,
+                  () => ServiceManager().appSettings.setSortOrder(1),
                 ),
               ], colorScheme),
             ],

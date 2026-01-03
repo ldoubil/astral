@@ -8,7 +8,7 @@ import 'package:astral/screens/settings/network/network_settings_page.dart';
 import 'package:astral/screens/settings/general/startup_page.dart';
 import 'package:astral/screens/settings/general/software_settings_page.dart';
 import 'package:astral/screens/settings/general/update_settings_page.dart';
-import 'package:astral/screens/settings/general/about_page.dart';
+import 'package:astral/screens/logs_page.dart';
 import 'package:astral/screens/settings/server_settings_page.dart';
 
 class SettingsMainPage extends StatelessWidget {
@@ -96,10 +96,10 @@ class SettingsMainPage extends StatelessWidget {
 
           _buildSettingsCard(
             context,
-            icon: Icons.info_outline,
-            title: LocaleKeys.about.tr(),
-            subtitle: '版本信息和开源许可',
-            onTap: () => _navigateToPage(context, const AboutPage()),
+            icon: Icons.article_outlined,
+            title: '日志',
+            subtitle: '查看应用运行日志',
+            onTap: () => _navigateToPage(context, const LogsPage()),
           ),
         ],
       ),

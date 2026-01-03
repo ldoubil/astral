@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:astral/k/models/server_mod.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'dart:async'; // 添加对dart:async的导入以使用Completer
 
 // 新增服务器排序弹窗组件
@@ -33,27 +33,31 @@ class ServerReorderSheet extends StatefulWidget {
   @override
   State<ServerReorderSheet> createState() => _ServerReorderSheetState();
 
-  static Future<List<ServerMod>?> show(BuildContext context, List<ServerMod> servers) async {
-    final aps = Aps();
+  static Future<List<ServerMod>?> show(
+    BuildContext context,
+    List<ServerMod> servers,
+  ) async {
+    final services = ServiceManager();
     final completer = Completer<List<ServerMod>?>();
-    
+
     if (MediaQuery.of(context).size.width > 600) {
       // PC端显示为对话框
       await showDialog(
         context: context,
-        builder: (context) => Dialog(
-          child: Container(
-            width: 400,
-            height: 600,
-            child: ServerReorderSheet(
-              servers: List.from(servers),
-              onReorder: (reorderedServers) {
-                completer.complete(reorderedServers);
-                Navigator.of(context).pop();
-              }
+        builder:
+            (context) => Dialog(
+              child: Container(
+                width: 400,
+                height: 600,
+                child: ServerReorderSheet(
+                  servers: List.from(servers),
+                  onReorder: (reorderedServers) {
+                    completer.complete(reorderedServers);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
       );
     } else {
       // 移动端显示为底部弹窗
@@ -61,31 +65,35 @@ class ServerReorderSheet extends StatefulWidget {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) => Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
+        builder:
+            (context) => DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.5,
+              maxChildSize: 0.9,
+              builder:
+                  (context, scrollController) => Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                    ),
+                    child: ServerReorderSheet(
+                      servers: List.from(servers),
+                      // 修改排序完成回调
+                      onReorder: (reorderedServers) {
+                        services.server.reorderServers(reorderedServers);
+                        completer.complete(
+                          reorderedServers,
+                        ); // 添加缺失的Completer完成处理
+                        Navigator.of(context).pop(reorderedServers);
+                      },
+                    ),
+                  ),
             ),
-            child: ServerReorderSheet(
-              servers: List.from(servers),
-              // 修改排序完成回调
-              onReorder: (reorderedServers) {
-                aps.reorderServers(reorderedServers);
-                completer.complete(reorderedServers); // 添加缺失的Completer完成处理
-                Navigator.of(context).pop(reorderedServers);
-              }
-            ),
-          ),
-        ),
       );
     }
-    
+
     return completer.future;
   }
 }
@@ -109,17 +117,13 @@ class _ServerReorderSheetState extends State<ServerReorderSheet> {
       children: [
         // 标题栏
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 14, 8, 16), 
+          padding: const EdgeInsets.fromLTRB(24, 14, 8, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.sort,
-                    color: colorScheme.primary,
-                    size: 24,
-                  ),
+                  Icon(Icons.sort, color: colorScheme.primary, size: 24),
                   const SizedBox(width: 8),
                   Text(
                     '服务器排序',
@@ -146,12 +150,8 @@ class _ServerReorderSheetState extends State<ServerReorderSheet> {
 
         // 服务器列表 - 使用 Expanded 填充剩余空间
         Expanded(
-          child: Padding( 
-            padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
-              bottom: 16,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             child: ReorderableListView.builder(
               // 移除水平内边距
               padding: EdgeInsets.zero,
@@ -177,12 +177,9 @@ class _ServerReorderSheetState extends State<ServerReorderSheet> {
               itemBuilder: (context, index) {
                 final server = _servers[index];
                 return Padding(
-                  key: ValueKey(server.id), 
+                  key: ValueKey(server.id),
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: _ServerReorderItem(
-                    server: server,
-                    index: index,
-                  ),
+                  child: _ServerReorderItem(server: server, index: index),
                 );
               },
             ),
@@ -248,7 +245,7 @@ class _ServerReorderItemState extends State<_ServerReorderItem> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return ReorderableDragStartListener(
       index: widget.index,
       child: MouseRegion(
@@ -266,9 +263,10 @@ class _ServerReorderItemState extends State<_ServerReorderItem> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             // 保持原有背景色，仅通过边框变化表示悬停状态
-            color: (theme.brightness == Brightness.light)
-                ? colorScheme.surfaceVariant.withOpacity(1.0)
-                : colorScheme.surfaceVariant.withOpacity(1.0), 
+            color:
+                (theme.brightness == Brightness.light)
+                    ? colorScheme.surfaceVariant.withOpacity(1.0)
+                    : colorScheme.surfaceVariant.withOpacity(1.0),
             border: Border.all(
               // 仅在悬停时显示边框
               color: _isHovered ? colorScheme.primary : Colors.transparent,
@@ -280,15 +278,12 @@ class _ServerReorderItemState extends State<_ServerReorderItem> {
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               title: Text(
-                widget.server.name, 
-                style: TextStyle(
-                  fontSize: 16, 
-                  color: colorScheme.onSurface
-                )
+                widget.server.name,
+                style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
               ),
               subtitle: Text(
                 widget.server.enable ? '已启用' : '未启用',
-                style: TextStyle(color: colorScheme.onSurfaceVariant)
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
             ),
           ),

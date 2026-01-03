@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 
 /// 轮播图标签
 class BannerTag {
@@ -74,7 +74,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
   void initState() {
     super.initState();
     // 如果开关关闭，直接标记为不加载
-    if (!Aps().enableBannerCarousel.value) {
+    if (!ServiceManager().appSettingsState.enableBannerCarousel.value) {
       _isLoading = false;
       _hasError = true;
       return;
@@ -311,7 +311,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                               actions: [
                                 TextButton.icon(
                                   onPressed: () async {
-                                    await Aps().updateEnableBannerCarousel(
+                                    await ServiceManager().appSettings.updateEnableBannerCarousel(
                                       false,
                                     );
                                     if (context.mounted) {

@@ -2,7 +2,7 @@ import 'package:astral/utils/net_astral_udp.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/screens/main_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class KevinApp extends StatefulWidget {
@@ -12,7 +12,7 @@ class KevinApp extends StatefulWidget {
 }
 
 class _KevinAppState extends State<KevinApp> {
-  final _aps = Aps();
+  final _services = ServiceManager();
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _KevinAppState extends State<KevinApp> {
       },
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: _aps.themeColor.watch(context), // 设置当前主题颜色,
+        colorSchemeSeed: _services.themeState.themeColor.value, // 设置当前主题颜色,
         brightness: Brightness.light,
       ).copyWith(
         textTheme: Typography.material2021().black.apply(fontFamily: 'MiSans'),
@@ -59,7 +59,7 @@ class _KevinAppState extends State<KevinApp> {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: _aps.themeColor.watch(context),
+        colorSchemeSeed: _services.themeState.themeColor.value,
         brightness: Brightness.dark,
       ).copyWith(
         textTheme: Typography.material2021().white.apply(fontFamily: 'MiSans'),
@@ -67,7 +67,7 @@ class _KevinAppState extends State<KevinApp> {
           fontFamily: 'MiSans',
         ),
       ),
-      themeMode: _aps.themeMode.watch(context), // 设置当前主题模式
+      themeMode: _services.themeState.themeMode.value, // 设置当前主题模式
       home: MainScreen(),
     );
   }

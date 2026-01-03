@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/mod/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/widgets/theme_selector.dart';
 import 'package:astral/widgets/windows_controls.dart';
@@ -50,7 +50,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
           foregroundColor: colorScheme.onPrimaryContainer,
           toolbarHeight: 32, // 在小窗口模式下降低高度
           title: Text(
-            Aps().appName.watch(context),
+            ServiceManager().appSettingsState.appName.value,
             style: TextStyle(
               fontSize: 14, // 在小窗口模式下使用更小的字体
               fontWeight: FontWeight.bold,
@@ -59,7 +59,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
           actions: [
             IconButton(
               icon: Icon(
-                switch (Aps().themeMode.watch(context)) {
+                switch (ServiceManager().themeState.themeMode.value) {
                   ThemeMode.light => Icons.wb_sunny,
                   ThemeMode.dark => Icons.nightlight_round,
                   ThemeMode.system => Icons.auto_mode,
@@ -67,13 +67,13 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 16, // 在小窗口模式下使用更小的图标
               ),
               onPressed: () {
-                final currentMode = Aps().themeMode.value;
+                final currentMode = ServiceManager().themeState.themeMode.value;
                 final newMode = switch (currentMode) {
                   ThemeMode.light => ThemeMode.dark,
                   ThemeMode.dark => ThemeMode.system,
                   ThemeMode.system => ThemeMode.light,
                 };
-                Aps().updateThemeMode(newMode);
+                ServiceManager().theme.updateThemeMode(newMode);
               },
               padding: const EdgeInsets.all(4), // 减小内边距
             ),
@@ -85,7 +85,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                     locale.countryCode != null
                         ? '${locale.languageCode}_${locale.countryCode}'
                         : locale.languageCode;
-                Aps().updateLanguage(langCode);
+                ServiceManager().theme.updateLanguage(langCode);
                 context.setLocale(locale);
               },
               itemBuilder:
@@ -199,7 +199,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ).createShader(bounds),
             child: Text(
-              Aps().appName.watch(context),
+              ServiceManager().appSettingsState.appName.value,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -248,7 +248,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
             IconButton(
               icon: Icon(
                 // 根据当前主题模式选择对应图标
-                switch (Aps().themeMode.watch(context)) {
+                switch (ServiceManager().themeState.themeMode.value) {
                   ThemeMode.light => Icons.wb_sunny,
                   ThemeMode.dark => Icons.nightlight_round,
                   ThemeMode.system => Icons.auto_mode,
@@ -256,15 +256,17 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 20,
               ),
               onPressed: () {
-                final currentMode = Aps().themeMode.value;
+                final currentMode = ServiceManager().themeState.themeMode.value;
                 final newMode = switch (currentMode) {
                   ThemeMode.light => ThemeMode.dark,
                   ThemeMode.dark => ThemeMode.system,
                   ThemeMode.system => ThemeMode.light,
                 };
-                Aps().updateThemeMode(newMode);
+                ServiceManager().theme.updateThemeMode(newMode);
               },
-              tooltip: getThemeModeText(Aps().themeMode.watch(context)),
+              tooltip: getThemeModeText(
+                ServiceManager().themeState.themeMode.value,
+              ),
               padding: const EdgeInsets.all(8),
             ),
 
@@ -282,7 +284,7 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                     locale.countryCode != null
                         ? '${locale.languageCode}_${locale.countryCode}'
                         : locale.languageCode;
-                Aps().updateLanguage(langCode);
+                ServiceManager().theme.updateLanguage(langCode);
                 context.setLocale(locale);
               },
               itemBuilder:

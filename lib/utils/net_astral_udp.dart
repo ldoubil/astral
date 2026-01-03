@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:flutter/foundation.dart';
 
 Future getIpv4AndIpV6Addresses() async {
@@ -12,7 +12,7 @@ Future getIpv4AndIpV6Addresses() async {
      debugPrint('Failed to get public IPv6: HTTP ${response.statusCode}');
       final publicIPv6 = await response.transform(utf8.decoder).join();
       if (publicIPv6.isNotEmpty) {
-        Aps().ipv6.value = response.statusCode.toString();
+        ServiceManager().networkConfigState.ipv6.value = response.statusCode.toString();
       }
     }
   } catch (e) {

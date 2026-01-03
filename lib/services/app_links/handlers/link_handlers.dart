@@ -1,12 +1,12 @@
 import 'package:astral/utils/e_d_room.dart';
 import 'package:astral/utils/room_share_helper.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class LinkHandlers {
-  static final _aps = Aps();
+  static final _services = ServiceManager();
 
   // 处理房间分享链接: astral://room?code=JWT_TOKEN
   static Future<void> handleRoom(Uri uri, {BuildContext? context}) async {
@@ -44,7 +44,7 @@ class LinkHandlers {
       }
 
       // 检查是否已存在相同的房间
-      final existingRooms = await _aps.getAllRooms();
+      final existingRooms = await _services.room.getAllRooms();
       final duplicateRoom =
           existingRooms.where((existingRoom) {
             if (room.encrypted && existingRoom.encrypted) {
@@ -65,7 +65,7 @@ class LinkHandlers {
         _showInfo(context, '房间已存在', '房间"${duplicateRoom.name}"已在您的房间列表中');
         return;
       } // 添加房间到数据库
-      await _aps.addRoom(room);
+      await _services.room.addRoom(room);
       debugPrint('成功添加分享房间: ${room.name}');
 
       // 安全地跳转到房间页面并选中房间

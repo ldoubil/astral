@@ -1,4 +1,4 @@
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/k/models/server_mod.dart';
 import 'package:astral/utils/blocked_servers.dart';
 import 'package:flutter/material.dart';
@@ -107,10 +107,10 @@ class _ServerDialogState extends State<ServerDialog> {
 
       if (widget.server == null) {
         // 添加新服务器
-        Aps().addServer(server);
+        ServiceManager().server.addServer(server);
       } else {
         // 更新现有服务器
-        Aps().updateServer(server);
+        ServiceManager().server.updateServer(server);
       }
       Navigator.of(context).pop();
     }

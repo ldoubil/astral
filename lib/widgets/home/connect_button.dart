@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:astral/utils/net_astral_udp.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -71,7 +71,7 @@ class _ConnectButtonState extends State<ConnectButton>
         ipv4Addr: ipv4Addr,
         mtu: mtu,
         routes:
-            Aps().customVpn.value
+            ServiceManager().vpnState.customVpn.value
                 .where((route) => _isValidCIDR(route))
                 .toList(),
         disallowedApplications: disallowedApplications,
@@ -104,7 +104,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
     // 添加自动连接逻辑
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (Aps().startupAutoConnect.watch(context)) {
+      if (ServiceManager().startupState.startupAutoConnect.value) {
         _startConnection();
       }
     });
@@ -191,14 +191,17 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 然后模拟一个10秒的网络连接过程，最后切换到已连接(connected)状态
   Future<void> _startConnection() async {
     // 如果当前状态不是空闲状态，则直接返回，防止重复触发连接操作
-    if (Aps().Connec_state.value != CoState.idle) return;
+    if (ServiceManager().connectionState.connectionState.value != CoState.idle)
+      return;
 
-    final rom = Aps().selectroom.value;
+    final rom = ServiceManager().roomState.selectedRoom.value;
     if (rom == null) return;
 
     // 检查服务器列表是否为空，以及当前房间是否携带服务器
     final enabledServers =
-        Aps().servers.value.where((server) => server.enable).toList();
+        ServiceManager().serverState.servers.value
+            .where((server) => server.enable)
+            .toList();
     final hasRoomServers = rom.servers.isNotEmpty;
 
     if (enabledServers.isEmpty && !hasRoomServers) {
@@ -211,7 +214,7 @@ class _ConnectButtonState extends State<ConnectButton>
               label: LocaleKeys.go_add.tr(),
               onPressed: () {
                 // 跳转到服务器页面（索引为2）
-                Aps().selectedIndex.set(2);
+                ServiceManager().uiState.selectedIndex.set(2);
               },
             ),
             behavior: SnackBarBehavior.floating,
@@ -229,18 +232,18 @@ class _ConnectButtonState extends State<ConnectButton>
       await _beginConnectionProcess();
     } catch (e) {
       // 发生错误时重置状态
-      Aps().Connec_state.value = CoState.idle;
+      ServiceManager().connectionState.connectionState.value = CoState.idle;
       rethrow;
     }
   }
 
   Future<void> _initializeServer(dynamic rom) async {
-    final aps = Aps();
+    final services = ServiceManager();
     if (Platform.isAndroid) {
       vpnPlugin?.prepareVpn();
     }
 
-    String currentIp = aps.ipv4.value;
+    String currentIp = services.networkConfigState.ipv4.value;
     bool forceDhcp = false;
     String ipForServer = ""; // 默认为空，如果强制DHCP
 
@@ -253,7 +256,7 @@ class _ConnectButtonState extends State<ConnectButton>
       ipForServer = currentIp;
     }
     List<Forward> forwards = [];
-    for (var conn in aps.connections.value) {
+    for (var conn in services.firewallState.connections.value) {
       if (conn.enabled) {
         for (var conn in conn.connections) {
           // 根据协议类型添加转发规则
@@ -287,17 +290,19 @@ class _ConnectButtonState extends State<ConnectButton>
       }
     }
     await createServer(
-      username: aps.PlayerName.value,
-      enableDhcp: forceDhcp ? true : aps.dhcp.value,
+      username: services.playerState.playerName.value,
+      enableDhcp: forceDhcp ? true : services.networkConfigState.dhcp.value,
       specifiedIp: forceDhcp ? "" : ipForServer, // 如果强制DHCP，则指定IP为空
       roomName: rom.roomName,
       roomPassword: rom.password,
-      cidrs: aps.cidrproxy.value,
+      cidrs: services.vpnState.customVpn.value,
       forwards: forwards,
       severurl: () {
         // 获取全局启用的服务器生成的URL列表
         final globalUrls = <String>[];
-        for (var server in aps.servers.value.where((server) => server.enable)) {
+        for (var server in services.serverState.servers.value.where(
+          (server) => server.enable,
+        )) {
           if (server.tcp) globalUrls.add('tcp://${server.url}');
           if (server.udp) globalUrls.add('udp://${server.url}');
           if (server.ws) globalUrls.add('ws://${server.url}');
@@ -317,42 +322,49 @@ class _ConnectButtonState extends State<ConnectButton>
         return deduplicatedUrls;
       }(),
       onurl:
-          Aps().listenList.value.where((url) => !url.contains('[::]')).toList(),
-      flag: _buildFlags(aps),
+          ServiceManager().appSettingsState.listenList.value
+              .where((url) => !url.contains('[::]'))
+              .toList(),
+      flag: _buildFlags(ServiceManager()),
     );
   }
 
-  FlagsC _buildFlags(Aps aps) => FlagsC(
-    defaultProtocol: aps.defaultProtocol.value,
-    devName: aps.devName.value,
-    enableEncryption: aps.enableEncryption.value,
-    enableIpv6: aps.enableIpv6.value,
-    mtu: aps.enableEncryption.value ? 1360 : 1380,
-    multiThread: aps.multiThread.value,
-    latencyFirst: aps.latencyFirst.value,
-    enableExitNode: aps.enableExitNode.value,
-    noTun: aps.noTun.value,
-    useSmoltcp: aps.useSmoltcp.value,
-    // relayNetworkWhitelist: aps.relayNetworkWhitelist.value,
-    relayNetworkWhitelist: '*',
-    disableP2P: aps.disableP2p.value,
-    relayAllPeerRpc: true,
-    disableUdpHolePunching: aps.disableUdpHolePunching.value,
-    dataCompressAlgo: aps.dataCompressAlgo.value,
-    bindDevice: aps.bindDevice.value,
-    enableKcpProxy: aps.enableKcpProxy.value,
-    disableKcpInput: aps.disableKcpInput.value,
-    disableRelayKcp: false,
-    proxyForwardBySystem: aps.proxyForwardBySystem.value,
-    acceptDns: aps.accept_dns.value,
-    privateMode: aps.privateMode.value,
-    enableQuicProxy: aps.enableQuicProxy.value,
-    disableQuicInput: aps.disableQuicInput.value,
-    disableSymHolePunching: aps.disableSymHolePunching.value,
-  );
+  FlagsC _buildFlags(ServiceManager services) {
+    final networkConfig = services.networkConfigState;
+    final vpnState = services.vpnState;
+
+    return FlagsC(
+      defaultProtocol: networkConfig.defaultProtocol.value,
+      devName: networkConfig.devName.value,
+      enableEncryption: networkConfig.enableEncryption.value,
+      enableIpv6: networkConfig.enableIpv6.value,
+      mtu: networkConfig.enableEncryption.value ? 1360 : 1380,
+      multiThread: networkConfig.multiThread.value,
+      latencyFirst: networkConfig.latencyFirst.value,
+      enableExitNode: networkConfig.enableExitNode.value,
+      noTun: networkConfig.noTun.value,
+      useSmoltcp: networkConfig.useSmoltcp.value,
+      // relayNetworkWhitelist: networkConfig.relayNetworkWhitelist.value,
+      relayNetworkWhitelist: '*',
+      disableP2P: networkConfig.disableP2p.value,
+      relayAllPeerRpc: true,
+      disableUdpHolePunching: networkConfig.disableUdpHolePunching.value,
+      dataCompressAlgo: networkConfig.dataCompressAlgo.value,
+      bindDevice: networkConfig.bindDevice.value,
+      enableKcpProxy: networkConfig.enableKcpProxy.value,
+      disableKcpInput: networkConfig.disableKcpInput.value,
+      disableRelayKcp: false,
+      proxyForwardBySystem: vpnState.proxyForwardBySystem.value,
+      acceptDns: vpnState.acceptDns.value,
+      privateMode: vpnState.privateMode.value,
+      enableQuicProxy: networkConfig.enableQuicProxy.value,
+      disableQuicInput: networkConfig.disableQuicInput.value,
+      disableSymHolePunching: networkConfig.disableSymHolePunching.value,
+    );
+  }
 
   Future<void> _beginConnectionProcess() async {
-    Aps().Connec_state.value = CoState.connecting;
+    ServiceManager().connectionState.connectionState.value = CoState.connecting;
     setState(() {
       _progress = 0.0;
     });
@@ -375,7 +387,8 @@ class _ConnectButtonState extends State<ConnectButton>
 
   void _setupConnectionTimeout() {
     _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
-      if (Aps().Connec_state.value == CoState.connecting) {
+      if (ServiceManager().connectionState.connectionState.value ==
+          CoState.connecting) {
         debugPrint("连接超时");
         if (Platform.isAndroid) {
           _cancelNotification();
@@ -387,7 +400,8 @@ class _ConnectButtonState extends State<ConnectButton>
 
   void _startConnectionStatusCheck() {
     Timer.periodic(const Duration(seconds: 1), (timer) async {
-      if (Aps().Connec_state.value != CoState.connecting) {
+      if (ServiceManager().connectionState.connectionState.value !=
+          CoState.connecting) {
         timer.cancel();
         return;
       }
@@ -407,8 +421,9 @@ class _ConnectButtonState extends State<ConnectButton>
     final data = jsonDecode(runningInfo);
 
     final ipv4Address = _extractIpv4Address(data);
-    if (ipv4Address != "0.0.0.0" && Aps().ipv4.value != ipv4Address) {
-      Aps().updateIpv4(ipv4Address);
+    if (ipv4Address != "0.0.0.0" &&
+        ServiceManager().networkConfigState.ipv4.value != ipv4Address) {
+      ServiceManager().networkConfig.updateIpv4(ipv4Address);
     }
     return ipv4Address != "0.0.0.0";
   }
@@ -428,14 +443,20 @@ class _ConnectButtonState extends State<ConnectButton>
       _progress = 100;
       _connectionDuration = 0;
     });
-    Aps().Connec_state.value = CoState.connected;
-    Aps().isConnecting.value = true;
+    ServiceManager().connectionState.connectionState.value = CoState.connected;
+    ServiceManager().connectionState.isConnecting.value = true;
     if (Platform.isAndroid) {
-      _startVpn(ipv4Addr: Aps().ipv4.value, mtu: Aps().mtu.value);
+      _startVpn(
+        ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
+        mtu: ServiceManager().networkConfigState.mtu.value,
+      );
       // 显示连接成功通知
       await _showConnectionNotification(
         status: '已连接',
-        ip: Aps().ipv4.value.isNotEmpty ? Aps().ipv4.value : '获取中...',
+        ip:
+            ServiceManager().networkConfigState.ipv4.value.isNotEmpty
+                ? ServiceManager().networkConfigState.ipv4.value
+                : '获取中...',
         duration: _formatDuration(_connectionDuration),
       );
     }
@@ -466,14 +487,20 @@ class _ConnectButtonState extends State<ConnectButton>
       final runningInfo = await getRunningInfo();
       final data = jsonDecode(runningInfo);
 
-      Aps().updateIpv4(_extractIpv4Address(data));
-      Aps().netStatus.value = await getNetworkStatus();
+      ServiceManager().networkConfig.updateIpv4(_extractIpv4Address(data));
+      ServiceManager().connectionState.netStatus.value =
+          await getNetworkStatus();
 
       // 在安卓平台更新通知
-      if (Platform.isAndroid && Aps().Connec_state.value == CoState.connected) {
+      if (Platform.isAndroid &&
+          ServiceManager().connectionState.connectionState.value ==
+              CoState.connected) {
         await _showConnectionNotification(
           status: '已连接',
-          ip: Aps().ipv4.value.isNotEmpty ? Aps().ipv4.value : '获取中...',
+          ip:
+              ServiceManager().networkConfigState.ipv4.value.isNotEmpty
+                  ? ServiceManager().networkConfigState.ipv4.value
+                  : '获取中...',
           duration: _formatDuration(_connectionDuration),
         );
       }
@@ -487,7 +514,7 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 该方法负责将按钮状态从已连接(connected)切换回空闲(idle)状态，
   /// 实现断开连接的功能
   void _disconnect() {
-    Aps().isConnecting.value = false;
+    ServiceManager().connectionState.isConnecting.value = false;
     if (Platform.isAndroid) {
       vpnPlugin?.stopVpn();
       // 取消通知
@@ -497,16 +524,18 @@ class _ConnectButtonState extends State<ConnectButton>
     _connectionTimer?.cancel();
     _connectionTimer = null;
     closeServer();
-    Aps().Connec_state.value = CoState.idle;
+    ServiceManager().connectionState.connectionState.value = CoState.idle;
   }
 
   /// 切换连接状态的方法
   /// 根据当前的连接状态来决定是开始连接还是断开连接
   void _toggleConnection() {
-    if (Aps().Connec_state.value == CoState.idle) {
+    if (ServiceManager().connectionState.connectionState.value ==
+        CoState.idle) {
       // 如果当前是空闲状态，则开始连接
       _startConnection();
-    } else if (Aps().Connec_state.value == CoState.connected) {
+    } else if (ServiceManager().connectionState.connectionState.value ==
+        CoState.connected) {
       // 如果当前是已连接状态，则断开连接
       debugPrint("断开连接");
       _disconnect();
@@ -594,13 +623,15 @@ class _ConnectButtonState extends State<ConnectButton>
             child: AnimatedSlide(
               duration: const Duration(milliseconds: 300),
               offset:
-                  Aps().Connec_state.watch(context) == CoState.connecting
+                  ServiceManager().connectionState.connectionState.value ==
+                          CoState.connecting
                       ? Offset.zero
                       : const Offset(0, 1.0),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity:
-                    Aps().Connec_state.watch(context) == CoState.connecting
+                    ServiceManager().connectionState.connectionState.value ==
+                            CoState.connecting
                         ? 1.0
                         : 0.0,
                 child: Container(
@@ -613,7 +644,7 @@ class _ConnectButtonState extends State<ConnectButton>
                   ),
                   child: TweenAnimationBuilder<double>(
                     key: ValueKey(
-                      'progress_${Aps().Connec_state.watch(context) == CoState.connecting}',
+                      'progress_${ServiceManager().connectionState.connectionState.value == CoState.connecting}',
                     ),
                     tween: Tween<double>(begin: 0.0, end: 1.0),
                     duration: Duration(
@@ -652,17 +683,22 @@ class _ConnectButtonState extends State<ConnectButton>
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutCubic,
               width:
-                  Aps().Connec_state.watch(context) != CoState.idle ? 180 : 100,
+                  ServiceManager().connectionState.connectionState.value !=
+                          CoState.idle
+                      ? 180
+                      : 100,
               height: 60,
               child: FloatingActionButton.extended(
                 onPressed:
-                    Aps().Connec_state.watch(context) == CoState.connecting
+                    ServiceManager().connectionState.connectionState.value ==
+                            CoState.connecting
                         ? null
                         : _toggleConnection,
                 heroTag: "connect_button",
                 extendedPadding: const EdgeInsets.symmetric(horizontal: 2),
                 splashColor:
-                    Aps().Connec_state.watch(context) != CoState.idle
+                    ServiceManager().connectionState.connectionState.value !=
+                            CoState.idle
                         ? colorScheme.onTertiary.withAlpha(51)
                         : colorScheme.onPrimary.withAlpha(51),
                 icon: AnimatedSwitcher(
@@ -678,20 +714,24 @@ class _ConnectButtonState extends State<ConnectButton>
                       child: ScaleTransition(scale: animation, child: child),
                     );
                   },
-                  child: _getButtonIcon(Aps().Connec_state.watch(context)),
+                  child: _getButtonIcon(
+                    ServiceManager().connectionState.connectionState.value,
+                  ),
                 ),
                 label: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   switchInCurve: Curves.easeOutQuad,
                   switchOutCurve: Curves.easeInQuad,
-                  child: _getButtonLabel(Aps().Connec_state.watch(context)),
+                  child: _getButtonLabel(
+                    ServiceManager().connectionState.connectionState.value,
+                  ),
                 ),
                 backgroundColor: _getButtonColor(
-                  Aps().Connec_state.watch(context),
+                  ServiceManager().connectionState.connectionState.value,
                   colorScheme,
                 ),
                 foregroundColor: _getButtonForegroundColor(
-                  Aps().Connec_state.watch(context),
+                  ServiceManager().connectionState.connectionState.value,
                   colorScheme,
                 ),
               ),

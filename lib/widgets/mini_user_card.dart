@@ -3,7 +3,7 @@ import 'package:astral/utils/platform_version_parser.dart';
 import 'package:astral/utils/blocked_servers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:astral/k/app_s/aps.dart';
+import 'package:astral/k/services/service_manager.dart';
 
 // 将列表项卡片抽取为独立的StatefulWidget
 class MiniUserCard extends StatefulWidget {
