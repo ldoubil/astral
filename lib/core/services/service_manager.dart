@@ -1,4 +1,5 @@
 ﻿import 'package:astral/core/database/app_data.dart';
+import 'package:flutter/foundation.dart';
 
 // Export CoState for external use
 export 'package:astral/core/states/connection_state.dart' show CoState;
@@ -155,15 +156,35 @@ class ServiceManager {
 
   /// 初始化所有服务（从数据库加载数据）
   Future<void> init() async {
-    await Future.wait([
-      theme.init(),
-      room.init(),
-      server.init(),
-      networkConfig.init(),
-      appSettings.init(),
-      connection.init(),
-      firewall.init(),
+    // 使用 Future.wait 并发初始化所有服务
+    // 但即使某些服务失败，也要继续初始化其他服务
+    final results = await Future.wait([
+      _initService('Theme', () => theme.init()),
+      _initService('Room', () => room.init()),
+      _initService('Server', () => server.init()),
+      _initService('NetworkConfig', () => networkConfig.init()),
+      _initService('AppSettings', () => appSettings.init()),
+      _initService('Connection', () => connection.init()),
+      _initService('Firewall', () => firewall.init()),
     ]);
+
+    final failedServices = results.where((r) => !r).length;
+    if (failedServices > 0) {
+      debugPrint('警告: $failedServices 个服务初始化失败，但应用将继续运行');
+    }
+  }
+
+  /// 安全地初始化单个服务
+  Future<bool> _initService(String name, Future<void> Function() init) async {
+    try {
+      await init();
+      debugPrint('$name 服务初始化成功');
+      return true;
+    } catch (e, stack) {
+      debugPrint('$name 服务初始化失败: $e');
+      debugPrint('堆栈: $stack');
+      return false;
+    }
   }
 
   /// 重置所有服务（用于测试或登出）
