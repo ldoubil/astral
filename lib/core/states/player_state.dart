@@ -8,9 +8,6 @@ class PlayerState {
   // 监听列表
   final listenList = signal<List<String>>([]);
 
-  // 用户列表简化显示
-  final userListSimple = signal(false);
-
   // 状态更新方法
   void updatePlayerName(String name) {
     playerName.value = name;
@@ -38,13 +35,5 @@ class PlayerState {
       list[index] = listen;
       listenList.value = list;
     }
-  }
-
-  void toggleUserListSimple() {
-    userListSimple.value = !userListSimple.value;
-  }
-
-  void setUserListSimple(bool value) {
-    userListSimple.value = value;
   }
 }

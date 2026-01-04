@@ -148,6 +148,7 @@ class ServiceManager {
       windowState: windowState,
       vpnState: vpnState,
       firewallState: firewallState,
+      appSettingsState: appSettingsState,
       repository: _appSettingsRepository,
     );
   }

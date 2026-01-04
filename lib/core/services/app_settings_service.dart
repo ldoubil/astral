@@ -6,6 +6,7 @@ import 'package:astral/core/states/notification_state.dart';
 import 'package:astral/core/states/window_state.dart';
 import 'package:astral/core/states/vpn_state.dart';
 import 'package:astral/core/states/firewall_state.dart';
+import 'package:astral/core/states/app_settings_state.dart';
 import 'package:astral/core/repositories/app_settings_repository.dart';
 import 'package:astral/src/rust/api/hops.dart';
 
@@ -19,6 +20,7 @@ class AppSettingsService {
   final WindowState windowState;
   final VpnState vpnState;
   final FirewallState firewallState;
+  final AppSettingsState appSettingsState;
   final AppSettingsRepository _repository;
 
   AppSettingsService({
@@ -30,6 +32,7 @@ class AppSettingsService {
     required this.windowState,
     required this.vpnState,
     required this.firewallState,
+    required this.appSettingsState,
     required AppSettingsRepository repository,
   }) : _repository = repository;
 
@@ -41,8 +44,8 @@ class AppSettingsService {
     // 更新各个状态
     playerState.updatePlayerName(settings.playerName);
     playerState.setListenList(settings.listenList);
-    playerState.setUserListSimple(settings.userMinimal);
 
+    displayState.setUserListSimple(settings.userMinimal);
     displayState.setSortOption(settings.sortOption);
     displayState.setSortOrder(settings.sortOrder);
     displayState.setDisplayMode(settings.displayMode);
@@ -58,7 +61,7 @@ class AppSettingsService {
     updateState.setDownloadAccelerate(settings.downloadAccelerate);
     updateState.setLatestVersion(settings.latestVersion);
 
-    notificationState.setEnableBannerCarousel(settings.enableBannerCarousel);
+    appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
     notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
 
     windowState.setCloseMinimize(settings.closeMinimize);
@@ -160,18 +163,13 @@ class AppSettingsService {
   // ========== 通知设置 ==========
 
   Future<void> updateEnableBannerCarousel(bool enable) async {
-    notificationState.setEnableBannerCarousel(enable);
+    appSettingsState.updateEnableBannerCarousel(enable);
     await _repository.setEnableBannerCarousel(enable);
   }
 
   Future<void> updateHasShownBannerTip(bool hasShown) async {
     notificationState.setHasShownBannerTip(hasShown);
     await _repository.setHasShownBannerTip(hasShown);
-  }
-
-  Future<void> loadHasShownBannerTip() async {
-    final value = await _repository.getHasShownBannerTip();
-    notificationState.setHasShownBannerTip(value);
   }
 
   // ========== 窗口设置 ==========

@@ -105,7 +105,7 @@ class _UserPageState extends State<UserPage> {
         } else {
           // 如果显示拓扑图，直接返回拓扑图视图
           if (_showTopology) {
-            return const NetworkTopologyView();
+            return NetworkTopologyView(nodes: netStatus.nodes);
           }
 
           // 获取排序选项

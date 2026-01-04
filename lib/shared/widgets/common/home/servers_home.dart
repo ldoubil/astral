@@ -2,7 +2,6 @@
 import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:astral/shared/widgets/common/home_box.dart';
 import 'package:flutter/material.dart';
-import 'package:graphview/GraphView.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';

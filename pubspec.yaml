@@ -2,7 +2,7 @@ name: astral
 description: 'astral'
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.6.98
+version: 2.6.99
 
 isar_version: &isar_version 3.3.0 # define the version to be used
 
@@ -32,7 +32,7 @@ dependencies:
   flutter_localization: ^0.3.2
   flutter_localizations:
     sdk: flutter
-  graphview: ^1.2.0
+  vyuh_node_flow: ^0.22.2
   device_info_plus: ^11.4.0
   toml: ^0.16.0
   isar_community:

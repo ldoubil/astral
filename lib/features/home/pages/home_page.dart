@@ -9,6 +9,7 @@ import 'package:astral/shared/widgets/common/home/connect_button.dart';
 import 'package:astral/shared/widgets/common/home/hitokoto_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,52 +36,57 @@ class _HomePageState extends State<HomePage> {
     final width = MediaQuery.of(context).size.width;
     final columnCount = _getColumnCount(width);
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: StaggeredGrid.count(
-                      crossAxisCount: columnCount,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      children: [
-                        if (ServiceManager()
-                            .appSettingsState
-                            .enableBannerCarousel
-                            .value)
+    return Watch((context) {
+      final enableBannerCarousel = ServiceManager()
+          .appSettingsState
+          .enableBannerCarousel
+          .watch(context);
+
+      return Scaffold(
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: StaggeredGrid.count(
+                        crossAxisCount: columnCount,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        children: [
+                          if (enableBannerCarousel)
+                            StaggeredGridTile.fit(
+                              crossAxisCellCount: columnCount,
+                              child: BannerCarousel(),
+                            ),
+                          if (!Platform.isAndroid) VirtualIpBox(),
+                          UserIpBox(),
+                          // TrafficStats(),
+                          ServersHome(),
+                          // UdpLog(),
+                          AboutHome(),
+                          HitokotoCard(),
+                          // 底部空白保护，使内容能滚动得更深
                           StaggeredGridTile.fit(
                             crossAxisCellCount: columnCount,
-                            child: BannerCarousel(),
+                            child: SizedBox(
+                              height:
+                                  MediaQuery.of(context).padding.bottom + 100,
+                            ),
                           ),
-                        if (!Platform.isAndroid) VirtualIpBox(),
-                        UserIpBox(),
-                        // TrafficStats(),
-                        ServersHome(),
-                        // UdpLog(),
-                        AboutHome(),
-                        HitokotoCard(),
-                        // 底部空白保护，使内容能滚动得更深
-                        StaggeredGridTile.fit(
-                          crossAxisCellCount: columnCount,
-                          child: SizedBox(
-                            height: MediaQuery.of(context).padding.bottom + 100,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: const ConnectButton(),
-    );
+              ],
+            ),
+          ],
+        ),
+        floatingActionButton: const ConnectButton(),
+      );
+    });
   }
 }

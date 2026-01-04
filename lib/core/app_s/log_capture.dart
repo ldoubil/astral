@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/app_s/file_logger.dart';
 
 /// 日志捕获管理器 - 单例类
 class LogCapture {
@@ -104,6 +105,7 @@ class LogCapture {
     final timestamp = DateTime.now().toString().substring(11, 19);
     final logEntry = '[$timestamp] [ERROR] $message';
     _addLogToSignal(logEntry);
+    FileLogger().error(message); // 同时写入文件
   }
 
   /// 添加UDP原始日志（不添加时间戳，直接使用原始数据）
@@ -149,7 +151,7 @@ class LogCapture {
       ServiceManager().appSettingsState.logs.value,
     );
     currentLogs.add(logEntry);
-    debugPrint('ERROR: $logEntry');
+    debugPrint('LOG: $logEntry');
 
     // 限制日志数量，保留最新的1000条
     if (currentLogs.length > 1000) {

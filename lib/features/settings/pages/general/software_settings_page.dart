@@ -153,11 +153,8 @@ class _SoftwareSettingsPageState
               SwitchListTile(
                 title: Text(LocaleKeys.enable_banner_carousel.tr()),
                 subtitle: Text(LocaleKeys.enable_banner_carousel_desc.tr()),
-                value:
-                    ServiceManager()
-                        .appSettingsState
-                        .enableBannerCarousel
-                        .value,
+                value: ServiceManager().appSettingsState.enableBannerCarousel
+                    .watch(context),
                 onChanged: (value) async {
                   await ServiceManager().appSettings.updateEnableBannerCarousel(
                     value,
