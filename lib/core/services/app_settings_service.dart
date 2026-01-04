@@ -97,7 +97,7 @@ class AppSettingsService {
   }
 
   Future<void> setUserListSimple(bool value) async {
-    playerState.setUserListSimple(value);
+    displayState.setUserListSimple(value); // 修复：应该更新displayState而不是playerState
     await _repository.setUserMinimal(value);
   }
 

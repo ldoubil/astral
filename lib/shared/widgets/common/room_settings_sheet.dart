@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 房间设置弹窗组件
 class RoomSettingsSheet extends StatefulWidget {
@@ -90,124 +91,130 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Column(
-      children: [
-        // 标题栏
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 14, 8, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.bar_chart_outlined,
-                    color: colorScheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '房间设置',
-                    style: TextStyle(
-                      fontSize: 16,
+    return Watch((context) {
+      // 监听所有显示状态
+      final userListSimple = ServiceManager().displayState.userListSimple.watch(
+        context,
+      );
+      final displayMode = ServiceManager().displayState.displayMode.watch(
+        context,
+      );
+      final sortOption = ServiceManager().displayState.sortOption.watch(
+        context,
+      );
+      final sortOrder = ServiceManager().displayState.sortOrder.watch(context);
+
+      return Column(
+        children: [
+          // 标题栏
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 14, 8, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.bar_chart_outlined,
                       color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
+                      size: 20,
                     ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '房间设置',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '点击下方设置项进行配置，所有更改将实时生效',
+                  textAlign: TextAlign.left,
+                  maxLines: null,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '点击下方设置项进行配置，所有更改将实时生效',
-                textAlign: TextAlign.left,
-                maxLines: null,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // 滚动内容区域
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              // 显示模式
-              _buildSettingSection('显示模式', [
-                _buildOptionButton(
-                  '简约',
-                  ServiceManager().displayState.userListSimple.value,
-                  () {
+          // 滚动内容区域
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                // 显示模式
+                _buildSettingSection('显示模式', [
+                  _buildOptionButton('简约', userListSimple, () {
                     ServiceManager().appSettings.setUserListSimple(true);
-                  },
-                ),
-                _buildOptionButton(
-                  '详细',
-                  !ServiceManager().displayState.userListSimple.value,
-                  () {
+                  }),
+                  _buildOptionButton('详细', !userListSimple, () {
                     ServiceManager().appSettings.setUserListSimple(false);
-                  },
-                ),
-              ], colorScheme),
+                  }),
+                ], colorScheme),
 
-              // 用户显示
-              _buildSettingSection('用户显示', [
-                _buildOptionButton(
-                  '默认',
-                  ServiceManager().displayState.displayMode.value == 0,
-                  () => ServiceManager().appSettings.setDisplayMode(0),
-                ),
-                _buildOptionButton(
-                  '用户',
-                  ServiceManager().displayState.displayMode.value == 1,
-                  () => ServiceManager().appSettings.setDisplayMode(1),
-                ),
-                _buildOptionButton(
-                  '服务器',
-                  ServiceManager().displayState.displayMode.value == 2,
-                  () => ServiceManager().appSettings.setDisplayMode(2),
-                ),
-              ], colorScheme),
+                // 用户显示
+                _buildSettingSection('用户显示', [
+                  _buildOptionButton(
+                    '默认',
+                    displayMode == 0,
+                    () => ServiceManager().appSettings.setDisplayMode(0),
+                  ),
+                  _buildOptionButton(
+                    '用户',
+                    displayMode == 1,
+                    () => ServiceManager().appSettings.setDisplayMode(1),
+                  ),
+                  _buildOptionButton(
+                    '服务器',
+                    displayMode == 2,
+                    () => ServiceManager().appSettings.setDisplayMode(2),
+                  ),
+                ], colorScheme),
 
-              // 用户排序
-              _buildSettingSection('用户排序', [
-                _buildOptionButton(
-                  '默认',
-                  ServiceManager().displayState.sortOption.value == 0,
-                  () => ServiceManager().appSettings.setSortOption(0),
-                ),
-                _buildOptionButton(
-                  '延迟',
-                  ServiceManager().displayState.sortOption.value == 1,
-                  () => ServiceManager().appSettings.setSortOption(1),
-                ),
-                _buildOptionButton(
-                  '用户名',
-                  ServiceManager().displayState.sortOption.value == 2,
-                  () => ServiceManager().appSettings.setSortOption(2),
-                ),
-              ], colorScheme),
+                // 用户排序
+                _buildSettingSection('用户排序', [
+                  _buildOptionButton(
+                    '默认',
+                    sortOption == 0,
+                    () => ServiceManager().appSettings.setSortOption(0),
+                  ),
+                  _buildOptionButton(
+                    '延迟',
+                    sortOption == 1,
+                    () => ServiceManager().appSettings.setSortOption(1),
+                  ),
+                  _buildOptionButton(
+                    '用户名',
+                    sortOption == 2,
+                    () => ServiceManager().appSettings.setSortOption(2),
+                  ),
+                ], colorScheme),
 
-              // 排序方式
-              _buildSettingSection('排序方式', [
-                _buildOptionButton(
-                  '升序',
-                  ServiceManager().displayState.sortOrder.value == 0,
-                  () => ServiceManager().appSettings.setSortOrder(0),
-                ),
-                _buildOptionButton(
-                  '降序',
-                  ServiceManager().displayState.sortOrder.value == 1,
-                  () => ServiceManager().appSettings.setSortOrder(1),
-                ),
-              ], colorScheme),
-            ],
+                // 排序方式
+                _buildSettingSection('排序方式', [
+                  _buildOptionButton(
+                    '升序',
+                    sortOrder == 0,
+                    () => ServiceManager().appSettings.setSortOrder(0),
+                  ),
+                  _buildOptionButton(
+                    '降序',
+                    sortOrder == 1,
+                    () => ServiceManager().appSettings.setSortOrder(1),
+                  ),
+                ], colorScheme),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   // 构建选项按钮
@@ -221,7 +228,7 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
       child: SizedBox(
         height: 32,
         child: TextButton(
-          onPressed: onPressed,
+          onPressed: onPressed, // 始终可点击，避免状态不同步
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             backgroundColor:
