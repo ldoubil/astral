@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class UserIpBox extends StatefulWidget {
   const UserIpBox({super.key});
@@ -94,208 +95,202 @@ class _UserIpBoxState extends State<UserIpBox> {
   Widget build(BuildContext context) {
     var colorScheme = Theme.of(context).colorScheme;
 
-    return HomeBox(
-      widthSpan: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.person, color: colorScheme.primary, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                LocaleKeys.user_info.tr(),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
+    return Watch((context) {
+      final connectionState = ServiceManager().connectionState.connectionState
+          .watch(context);
+      final selectedRoom = ServiceManager().roomState.selectedRoom.watch(
+        context,
+      );
+      final rooms = ServiceManager().roomState.rooms.watch(context);
+
+      return HomeBox(
+        widthSpan: 2,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.person, color: colorScheme.primary, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  LocaleKeys.user_info.tr(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              if (ServiceManager().connectionState.connectionState.value !=
-                  CoState.idle)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    LocaleKeys.locked.tr(),
-                    style: TextStyle(
-                      color: colorScheme.onSecondaryContainer,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
+                const Spacer(),
+                if (connectionState != CoState.idle)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      LocaleKeys.locked.tr(),
+                      style: TextStyle(
+                        color: colorScheme.onSecondaryContainer,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          TextField(
-            controller: _usernameController,
-            focusNode: _usernameControllerFocusNode,
-            enabled:
-                (ServiceManager().connectionState.connectionState.value !=
-                        CoState.idle)
-                    ? false
-                    : true,
-            onChanged: (value) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _services.playerState.updatePlayerName(value);
-              });
-            },
-            decoration: InputDecoration(
-              labelText: LocaleKeys.username.tr(),
-              hintText: LocaleKeys.username_hint.tr(),
-              border: const OutlineInputBorder(),
-              prefixIcon: Icon(Icons.person, color: colorScheme.primary),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 12,
-              ),
+              ],
             ),
-          ),
+            const SizedBox(height: 14),
 
-          const SizedBox(height: 14),
-          InkWell(
-            onTap:
-                ServiceManager().connectionState.connectionState.value !=
-                        CoState.connected
-                    ? () => CanvasJump.show(
-                      context,
-                      rooms: _services.roomState.rooms.value.cast<Room>(),
-                      onSelect: (Room room) {
-                        _services.room.setRoom(room);
-                      },
-                    )
-                    : null,
-            child: InputDecorator(
+            TextField(
+              controller: _usernameController,
+              focusNode: _usernameControllerFocusNode,
+              enabled: (connectionState != CoState.idle) ? false : true,
+              onChanged: (value) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _services.playerState.updatePlayerName(value);
+                });
+              },
               decoration: InputDecoration(
-                labelText: LocaleKeys.select_room.tr(),
+                labelText: LocaleKeys.username.tr(),
+                hintText: LocaleKeys.username_hint.tr(),
+                border: const OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person, color: colorScheme.primary),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 12,
                   horizontal: 12,
                 ),
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                enabled:
-                    ServiceManager().connectionState.connectionState.value ==
-                    CoState.idle,
-                border: const OutlineInputBorder(),
-                prefixIcon: Icon(Icons.apartment, color: colorScheme.primary),
-                suffixIcon: Icon(Icons.menu, color: colorScheme.primary),
               ),
-              child: IgnorePointer(
-                ignoring:
-                    ServiceManager().connectionState.connectionState.value ==
-                    CoState.connected,
-                child: Text(
-                  ServiceManager().roomState.selectedRoom.value?.name ??
-                      LocaleKeys.select_room_hint.tr(),
-                  style: TextStyle(
-                    color:
-                        ServiceManager()
-                                    .connectionState
-                                    .connectionState
-                                    .value !=
-                                CoState.connected
-                            ? Theme.of(context).textTheme.bodyLarge?.color
-                            : Theme.of(context).disabledColor,
+            ),
+
+            const SizedBox(height: 14),
+            InkWell(
+              onTap:
+                  connectionState != CoState.connected
+                      ? () => CanvasJump.show(
+                        context,
+                        rooms: rooms.cast<Room>(),
+                        onSelect: (Room room) {
+                          _services.room.setRoom(room);
+                        },
+                      )
+                      : null,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: LocaleKeys.select_room.tr(),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  enabled: connectionState == CoState.idle,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.apartment, color: colorScheme.primary),
+                  suffixIcon: Icon(Icons.menu, color: colorScheme.primary),
+                ),
+                child: IgnorePointer(
+                  ignoring: connectionState == CoState.connected,
+                  child: Text(
+                    selectedRoom?.name ?? LocaleKeys.select_room_hint.tr(),
+                    style: TextStyle(
+                      color:
+                          connectionState != CoState.connected
+                              ? Theme.of(context).textTheme.bodyLarge?.color
+                              : Theme.of(context).disabledColor,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 9),
+            const SizedBox(height: 9),
 
-          SizedBox(
-            height: 60,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _virtualIPController,
-                    focusNode: _virtualIPFocusNode,
-                    enabled:
-                        !_services.networkConfigState.dhcp.value &&
-                        (ServiceManager()
-                                .connectionState
-                                .connectionState
-                                .value ==
-                            CoState.idle),
-                    onChanged: (value) {
-                      if (!_services.networkConfigState.dhcp.value) {
-                        // 实时更新IPv4值并立即验证
-                        _services.networkConfigState.updateIpv4(value);
-                        setState(() {
-                          _isValidIP = _isValidIPv4(value);
-                        });
-                      }
-                    },
-                    decoration: InputDecoration(
-                      labelText: LocaleKeys.virtual_network_ip.tr(),
-                      // 添加提示文本
-                      hintText: LocaleKeys.virtual_network_ip_hint.tr(),
-                      border: const OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lan, color: colorScheme.primary),
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 12,
-                      ),
-                      errorText:
-                          (!_services.networkConfigState.dhcp.value &&
-                                  !_isValidIP)
-                              ? LocaleKeys.invalid_ipv4_error.tr()
-                              : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Switch(
-                      value: _services.networkConfigState.dhcp.value,
+            SizedBox(
+              height: 60,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _virtualIPController,
+                      focusNode: _virtualIPFocusNode,
+                      enabled:
+                          !_services.networkConfigState.dhcp.value &&
+                          (ServiceManager()
+                                  .connectionState
+                                  .connectionState
+                                  .value ==
+                              CoState.idle),
                       onChanged: (value) {
-                        if (ServiceManager()
-                                .connectionState
-                                .connectionState
-                                .value ==
-                            CoState.idle) {
-                          _services.networkConfigState.updateDhcp(value);
+                        if (!_services.networkConfigState.dhcp.value) {
+                          // 实时更新IPv4值并立即验证
+                          _services.networkConfigState.updateIpv4(value);
+                          setState(() {
+                            _isValidIP = _isValidIPv4(value);
+                          });
                         }
                       },
+                      decoration: InputDecoration(
+                        labelText: LocaleKeys.virtual_network_ip.tr(),
+                        // 添加提示文本
+                        hintText: LocaleKeys.virtual_network_ip_hint.tr(),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lan, color: colorScheme.primary),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
+                        errorText:
+                            (!_services.networkConfigState.dhcp.value &&
+                                    !_isValidIP)
+                                ? LocaleKeys.invalid_ipv4_error.tr()
+                                : null,
+                      ),
                     ),
-                    Text(
-                      _services.networkConfigState.dhcp.value
-                          ? LocaleKeys.automatic.tr()
-                          : LocaleKeys.manual.tr(),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          if (_services.networkConfigState.dhcp.value)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                LocaleKeys.auto_assign_ip_notice.tr(),
-                style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Switch(
+                        value: _services.networkConfigState.dhcp.value,
+                        onChanged: (value) {
+                          if (ServiceManager()
+                                  .connectionState
+                                  .connectionState
+                                  .value ==
+                              CoState.idle) {
+                            _services.networkConfigState.updateDhcp(value);
+                          }
+                        },
+                      ),
+                      Text(
+                        _services.networkConfigState.dhcp.value
+                            ? LocaleKeys.automatic.tr()
+                            : LocaleKeys.manual.tr(),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            )
-          else
-            const SizedBox(height: 12),
-        ],
-      ),
-    );
+            ),
+
+            if (_services.networkConfigState.dhcp.value)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  LocaleKeys.auto_assign_ip_notice.tr(),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              )
+            else
+              const SizedBox(height: 12),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -4,6 +4,7 @@ import 'package:astral/shared/widgets/common/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 添加模拟数据模型
 class NetworkNode {
@@ -33,100 +34,99 @@ class VirtualIpBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var colorScheme = Theme.of(context).colorScheme;
-    return HomeBox(
-      widthSpan: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.network_check, color: colorScheme.primary, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                LocaleKeys.firewall.tr(),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-              ),
-              const Spacer(),
-              // 添加状态指示器
-              Container(
-                margin: const EdgeInsets.only(right: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(
-                    ServiceManager().connectionState.connectionState.value,
-                    colorScheme,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getStatusText(
-                    ServiceManager().connectionState.connectionState.value,
-                  ),
-                  style: TextStyle(
-                    color: colorScheme.onPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (Platform.isWindows) ...[
-            const SizedBox(height: 6),
+    return Watch((context) {
+      final connectionState = ServiceManager().connectionState.connectionState
+          .watch(context);
+      final firewallStatus = ServiceManager().firewallState.firewallStatus
+          .watch(context);
+      final ipv4 = ServiceManager().networkConfigState.ipv4.watch(context);
+
+      return HomeBox(
+        widthSpan: 2,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    Icon(Icons.shield, size: 20, color: colorScheme.primary),
-                    Text(
-                      '${LocaleKeys.firewall_label.tr()}: ',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      ServiceManager().firewallState.firewallStatus.value
-                          ? LocaleKeys.firewall_enabled.tr()
-                          : LocaleKeys.firewall_disabled.tr(),
-                      style: TextStyle(color: colorScheme.secondary),
-                    ),
-                  ],
+                Icon(Icons.network_check, color: colorScheme.primary, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  LocaleKeys.firewall.tr(),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 ),
-
                 const Spacer(),
-                Switch(
-                  value:
-                      ServiceManager()
-                          .firewallState
-                          .firewallStatus
-                          .value, // 需要在Aps中添加firewall_enabled状态
-                  onChanged: (bool value) {
-                    ServiceManager().firewall.setFirewall(value); // 切换防火墙状态
-                  },
-                  activeColor: colorScheme.primary,
+                // 添加状态指示器
+                Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(connectionState, colorScheme),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getStatusText(connectionState),
+                    style: TextStyle(
+                      color: colorScheme.onPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
                 ),
               ],
             ),
+            if (Platform.isWindows) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Icon(Icons.shield, size: 20, color: colorScheme.primary),
+                      Text(
+                        '${LocaleKeys.firewall_label.tr()}: ',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        firewallStatus
+                            ? LocaleKeys.firewall_enabled.tr()
+                            : LocaleKeys.firewall_disabled.tr(),
+                        style: TextStyle(color: colorScheme.secondary),
+                      ),
+                    ],
+                  ),
+
+                  const Spacer(),
+                  Switch(
+                    value: firewallStatus,
+                    onChanged: (bool value) {
+                      ServiceManager().firewall.setFirewall(value);
+                    },
+                    activeColor: colorScheme.primary,
+                  ),
+                ],
+              ),
+            ],
+            if (ipv4.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  Icon(Icons.public, size: 20, color: colorScheme.primary),
+                  Text(
+                    '${LocaleKeys.virtual_ip_label.tr()}: ',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(ipv4, style: TextStyle(color: colorScheme.secondary)),
+                ],
+              ),
+            ],
           ],
-          if (ServiceManager().networkConfigState.ipv4.value.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              children: [
-                Icon(Icons.public, size: 20, color: colorScheme.primary),
-                Text(
-                  '${LocaleKeys.virtual_ip_label.tr()}: ',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  ServiceManager().networkConfigState.ipv4.value,
-                  style: TextStyle(color: colorScheme.secondary),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 }
 

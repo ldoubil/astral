@@ -115,8 +115,18 @@ class AllSettingsCz {
   // getListenList
   Future<List<String>> getListenList() async {
     AllSettings? config = await _isar.allSettings.get(1);
-    if (config?.listenList == null) return [];
-    return config!.listenList!;
+    if (config?.listenList == null || config!.listenList!.isEmpty) {
+      // 返回默认值并保存到数据库
+      final defaultList = ["tcp://0.0.0.0:0", "udp://0.0.0.0:0"];
+      if (config != null) {
+        config.listenList = defaultList;
+        await _isar.writeTxn(() async {
+          await _isar.allSettings.put(config);
+        });
+      }
+      return defaultList;
+    }
+    return config.listenList!;
   }
 
   ///closeMinimize

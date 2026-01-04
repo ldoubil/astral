@@ -24,7 +24,7 @@ class ListenListPage extends BaseSettingsPage {
   @override
   Widget buildContent(BuildContext context) {
     return Watch((context) {
-      final listenList = ServiceManager().appSettingsState.listenList.value;
+      final listenList = ServiceManager().playerState.listenList.watch(context);
 
       if (listenList.isEmpty) {
         return buildEmptyState(

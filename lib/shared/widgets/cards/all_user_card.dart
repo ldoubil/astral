@@ -4,6 +4,7 @@ import 'package:astral/shared/utils/helpers/platform_version_parser.dart';
 import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 // 将列表项卡片抽取为独立的StatefulWidget
 class AllUserCard extends StatefulWidget {
@@ -43,7 +44,7 @@ class _AllUserCardState extends State<AllUserCard> {
     final connectionType = _mapConnectionType(
       player.cost,
       player.ipv4,
-      ServiceManager().networkConfigState.ipv4.value, // Assuming ServiceManager().networkConfigState.ipv4 provides the local IP
+      widget.localIPv4 ?? "", // 使用传入的 localIPv4 参数
     );
     final connectionTypeColor = _getConnectionTypeColor(
       connectionType,
@@ -601,52 +602,58 @@ class _AllUserCardState extends State<AllUserCard> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => isHovered = true),
-      onExit: (_) => setState(() => isHovered = false),
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: isHovered ? widget.colorScheme.primary : Colors.transparent,
-            width: 1,
+    return Watch((context) {
+      // 监听 localIPv4 变化以便重新计算连接类型
+      final localIPv4 = ServiceManager().networkConfigState.ipv4.watch(context);
+
+      return MouseRegion(
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color:
+                  isHovered ? widget.colorScheme.primary : Colors.transparent,
+              width: 1,
+            ),
           ),
-        ),
-        child: InkWell(
-          onTap: () {
-            // 复制IP地址到剪贴板
-            Clipboard.setData(ClipboardData(text: widget.player.ipv4));
-            // 显示复制成功提示
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('已复制IP: ${widget.player.ipv4}'),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
-          splashColor: widget.colorScheme.primary.withOpacity(0.3),
-          highlightColor: widget.colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: EdgeInsets.all(12),
-            width: double.infinity,
-            child: _buildDesktopPlayerListItem(
-              widget.player,
-              widget.colorScheme,
-              _getLatencyColor(widget.player.latencyMs),
-              _getConnectionIcon(
-                _mapConnectionType(
-                  widget.player.cost,
-                  widget.player.ipv4,
-                  ServiceManager().networkConfigState.ipv4.value,
+          child: InkWell(
+            onTap: () {
+              // 复制IP地址到剪贴板
+              Clipboard.setData(ClipboardData(text: widget.player.ipv4));
+              // 显示复制成功提示
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('已复制IP: ${widget.player.ipv4}'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            splashColor: widget.colorScheme.primary.withOpacity(0.3),
+            highlightColor: widget.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: EdgeInsets.all(12),
+              width: double.infinity,
+              child: _buildDesktopPlayerListItem(
+                widget.player,
+                widget.colorScheme,
+                _getLatencyColor(widget.player.latencyMs),
+                _getConnectionIcon(
+                  _mapConnectionType(
+                    widget.player.cost,
+                    widget.player.ipv4,
+                    localIPv4 ?? "",
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
