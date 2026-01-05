@@ -14,7 +14,9 @@ use windows::{
 #[cfg(target_os = "windows")]
 pub fn get_firewall_status(profile_index: u32) -> Result<bool> {
     unsafe {
-        CoInitializeEx(None, COINIT_APARTMENTTHREADED)?;
+        // CoInitializeEx 可能返回 S_FALSE (0x00000001) 表示已初始化，这是正常的
+        // RPC_E_CHANGED_MODE (0x80010106) 表示以不同模式初始化，也可以忽略
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_INPROC_SERVER)?;
 
@@ -38,7 +40,9 @@ pub fn get_firewall_status(_profile_index: u32) -> Result<bool, std::io::Error> 
 #[cfg(target_os = "windows")]
 pub fn set_firewall_status(profile_index: u32, enable: bool) -> Result<()> {
     unsafe {
-        CoInitializeEx(None, COINIT_APARTMENTTHREADED)?;
+        // CoInitializeEx 可能返回 S_FALSE (0x00000001) 表示已初始化，这是正常的
+        // RPC_E_CHANGED_MODE (0x80010106) 表示以不同模式初始化，也可以忽略
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_INPROC_SERVER)?;
 
