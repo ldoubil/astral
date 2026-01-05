@@ -365,29 +365,29 @@ class _ExplorePageState extends State<ExplorePage> {
                 ),
                 const SizedBox(height: 32),
 
-                // 数据管理部分
-                _buildSectionTitle(context, '数据管理'),
-                const SizedBox(height: 12),
-                _buildListTile(
-                  context,
-                  GameItem(
-                    title: '导出配置',
-                    subtitle: '导出所有配置数据到文件',
-                    icon: Icons.upload_file,
-                    onTap: _exportDatabase,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildListTile(
-                  context,
-                  GameItem(
-                    title: '导入配置',
-                    subtitle: '从文件导入配置数据',
-                    icon: Icons.download,
-                    onTap: _importDatabase,
-                  ),
-                ),
-                const SizedBox(height: 32),
+                // 数据管理部分 - 临时禁用
+                // _buildSectionTitle(context, '数据管理'),
+                // const SizedBox(height: 12),
+                // _buildListTile(
+                //   context,
+                //   GameItem(
+                //     title: '导出配置',
+                //     subtitle: '导出所有配置数据到文件',
+                //     icon: Icons.upload_file,
+                //     onTap: _exportDatabase,
+                //   ),
+                // ),
+                // const SizedBox(height: 8),
+                // _buildListTile(
+                //   context,
+                //   GameItem(
+                //     title: '导入配置',
+                //     subtitle: '从文件导入配置数据',
+                //     icon: Icons.download,
+                //     onTap: _importDatabase,
+                //   ),
+                // ),
+                // const SizedBox(height: 32),
               ]),
             ),
           ),
