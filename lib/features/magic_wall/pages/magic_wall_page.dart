@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:astral/src/rust/api/magic_wall.dart' as rust_api;
+import 'package:isar_community/isar.dart';
 
 class MagicWallGroupBundle {
   MagicWallGroupBundle({required this.group, required this.rules});
@@ -1720,7 +1721,7 @@ class _MagicWallGroupDialogState extends State<MagicWallGroupDialog> {
     final now = DateTime.now().millisecondsSinceEpoch;
     final group =
         MagicWallGroupModel()
-          ..id = widget.group?.id ?? 0
+          ..id = widget.group?.id ?? Isar.autoIncrement
           ..groupId = widget.group?.groupId ?? const Uuid().v4()
           ..name = name
           ..processName = process
@@ -1870,7 +1871,7 @@ class _MagicWallRuleDialogState extends State<MagicWallRuleDialog> {
 
     final rule =
         MagicWallRuleModel()
-          ..id = widget.rule?.id ?? 0
+          ..id = widget.rule?.id ?? Isar.autoIncrement
           ..ruleId = widget.rule?.ruleId ?? const Uuid().v4()
           ..groupId = _groupId
           ..name = _nameController.text.trim()

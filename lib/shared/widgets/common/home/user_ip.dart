@@ -148,9 +148,8 @@ class _UserIpBoxState extends State<UserIpBox> {
               focusNode: _usernameControllerFocusNode,
               enabled: (connectionState != CoState.idle) ? false : true,
               onChanged: (value) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _services.playerState.updatePlayerName(value);
-                });
+                // 调用Service层方法，同时更新State和持久化
+                _services.appSettings.updatePlayerName(value);
               },
               decoration: InputDecoration(
                 labelText: LocaleKeys.username.tr(),
@@ -224,8 +223,8 @@ class _UserIpBoxState extends State<UserIpBox> {
                               CoState.idle),
                       onChanged: (value) {
                         if (!_services.networkConfigState.dhcp.value) {
-                          // 实时更新IPv4值并立即验证
-                          _services.networkConfigState.updateIpv4(value);
+                          // 调用Service层方法，同时更新State和持久化
+                          _services.networkConfig.updateIpv4(value);
                           setState(() {
                             _isValidIP = _isValidIPv4(value);
                           });
@@ -262,7 +261,8 @@ class _UserIpBoxState extends State<UserIpBox> {
                                   .connectionState
                                   .value ==
                               CoState.idle) {
-                            _services.networkConfigState.updateDhcp(value);
+                            // 调用Service层方法，同时更新State和持久化
+                            _services.networkConfig.updateDhcp(value);
                           }
                         },
                       ),
