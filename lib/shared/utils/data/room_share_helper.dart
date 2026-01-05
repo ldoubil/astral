@@ -618,26 +618,6 @@ $roomSummary
         }
       }
 
-      // 检查重复
-      final existingRooms = await ServiceManager().room.getAllRooms();
-      final duplicate =
-          existingRooms.where((existing) {
-            if (cleanedRoom.encrypted && existing.encrypted) {
-              return existing.name == cleanedRoom.name &&
-                  existing.roomName == cleanedRoom.roomName &&
-                  existing.password == cleanedRoom.password;
-            } else if (!cleanedRoom.encrypted && !existing.encrypted) {
-              return existing.roomName == cleanedRoom.roomName &&
-                  existing.password == cleanedRoom.password;
-            }
-            return false;
-          }).firstOrNull;
-
-      if (duplicate != null) {
-        _showInfo(context, '房间已存在', '房间"${duplicate.name}"已在您的房间列表中');
-        return false;
-      }
-
       // 如果房间携带服务器列表，只保存房间自己的服务器列表
       // 合并操作延迟到连接时进行（这样能获取最新的全局启用服务器）
       // cleanedRoom.servers 已经包含分享时的服务器列表，不需要在此修改

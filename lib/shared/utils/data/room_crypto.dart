@@ -209,6 +209,8 @@ Room cleanRoom(Room room) {
     sortOrder: room.sortOrder,
     servers: room.servers,
     customParam: room.customParam.trim(),
+    hasNetworkConfig: room.hasNetworkConfig,
+    networkConfigJson: room.networkConfigJson,
   );
 }
 
