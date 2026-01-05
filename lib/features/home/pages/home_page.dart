@@ -1,12 +1,11 @@
-﻿import 'dart:io';
-import 'package:astral/core/services/service_manager.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/shared/widgets/common/home/about_home.dart';
 import 'package:astral/shared/widgets/common/home/banner_carousel.dart';
 import 'package:astral/shared/widgets/common/home/servers_home.dart';
 import 'package:astral/shared/widgets/common/home/user_ip.dart';
-import 'package:astral/shared/widgets/common/home/virtual_ip.dart';
 import 'package:astral/shared/widgets/common/home/connect_button.dart';
 import 'package:astral/shared/widgets/common/home/hitokoto_card.dart';
+import 'package:astral/shared/widgets/common/home/quick_network_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -61,8 +60,8 @@ class _HomePageState extends State<HomePage> {
                               crossAxisCellCount: columnCount,
                               child: BannerCarousel(),
                             ),
-                          if (!Platform.isAndroid) VirtualIpBox(),
                           UserIpBox(),
+                          QuickNetworkConfig(),
                           // TrafficStats(),
                           ServersHome(),
                           // UdpLog(),

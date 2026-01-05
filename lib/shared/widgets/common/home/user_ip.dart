@@ -288,51 +288,6 @@ class _UserIpBoxState extends State<UserIpBox> {
               )
             else
               const SizedBox(height: 12),
-
-            // 启用强制中转快捷开关
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.route, size: 20, color: colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '启用强制中转',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        Text(
-                          '禁用P2P直连，所有流量经服务器中转',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: _services.networkConfigState.disableP2p.value,
-                    onChanged: (value) {
-                      _services.networkConfig.updateDisableP2p(value);
-                    },
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       );
