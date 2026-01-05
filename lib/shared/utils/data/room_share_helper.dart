@@ -380,19 +380,18 @@ $roomSummary$shareOptions
                                 children: [
                                   Text(
                                     '分享房间',
-                                    style:
-                                        Theme.of(context).textTheme.headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   Text(
                                     room.name,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.onSurfaceVariant,
-                                            ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -417,8 +416,9 @@ $roomSummary$shareOptions
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceVariant
-                                    .withOpacity(0.3),
+                                color: colorScheme.surfaceVariant.withOpacity(
+                                  0.3,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: colorScheme.outlineVariant,
@@ -437,12 +437,12 @@ $roomSummary$shareOptions
                                       const SizedBox(width: 8),
                                       Text(
                                         '房间基本信息',
-                                        style: Theme.of(context)
-                                            .textTheme.labelMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: colorScheme.primary,
-                                            ),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.primary,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -462,23 +462,22 @@ $roomSummary$shareOptions
                                           children: [
                                             Text(
                                               '房间名称',
-                                              style: Theme.of(context)
-                                                  .textTheme.labelSmall
-                                                  ?.copyWith(
-                                                    color:
-                                                        colorScheme
-                                                            .onSurfaceVariant,
-                                                  ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelSmall?.copyWith(
+                                                color:
+                                                    colorScheme
+                                                        .onSurfaceVariant,
+                                              ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               room.name,
-                                              style: Theme.of(context)
-                                                  .textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w500,
-                                                  ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -532,13 +531,13 @@ $roomSummary$shareOptions
                                         hasServers && hasNetworkConfig
                                             ? '将分享 ${selectedServers.length} 个服务器 + ${networkConfigOptions.values.where((v) => v).length} 项配置'
                                             : hasServers
-                                                ? '将分享 ${selectedServers.length} 个服务器'
-                                                : '将分享 ${networkConfigOptions.values.where((v) => v).length} 项配置',
-                                        style: Theme.of(context)
-                                            .textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.secondary,
-                                            ),
+                                            ? '将分享 ${selectedServers.length} 个服务器'
+                                            : '将分享 ${networkConfigOptions.values.where((v) => v).length} 项配置',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.secondary,
+                                        ),
                                         maxLines: 2,
                                       ),
                                     ),
@@ -965,11 +964,7 @@ $roomSummary$shareOptions
       initiallyExpanded: false,
       title: Row(
         children: [
-          Icon(
-            Icons.tune_outlined,
-            size: 20,
-            color: colorScheme.secondary,
-          ),
+          Icon(Icons.tune_outlined, size: 20, color: colorScheme.secondary),
           const SizedBox(width: 8),
           Text(
             '高级选项',
@@ -1013,16 +1008,15 @@ $roomSummary$shareOptions
                   child: Column(
                     children:
                         enabledServerUrls.map((serverUrl) {
-                          final isSelected = selectedServers.contains(serverUrl);
+                          final isSelected = selectedServers.contains(
+                            serverUrl,
+                          );
                           return CheckboxListTile(
                             dense: true,
                             title: Text(
                               serverUrl,
-                              style: Theme.of(context)
-                                  .textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontFamily: 'monospace',
-                                  ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(fontFamily: 'monospace'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
