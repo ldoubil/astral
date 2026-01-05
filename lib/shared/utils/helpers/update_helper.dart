@@ -221,9 +221,7 @@ class UpdateChecker {
                     ? () => _handleDownload(context, releaseInfo)
                     : null,
             onNetDiskDownload:
-                releaseInfo != null
-                    ? () => _showNetDiskDownloadDialog(context)
-                    : null,
+                releaseInfo != null ? () => openNetDiskDownload(context) : null,
           ),
     );
   }
@@ -500,24 +498,28 @@ class UpdateChecker {
 
   /// 公开的网盘下载入口，供设置页面直接调用
   Future<void> openNetDiskDownload(BuildContext context) async {
-    await _showNetDiskDownloadDialog(context);
+    // 直接跳转到官方网站的下载与安装页面，避免解析远程 JSON
+    await _launchUrl('https://astral.fan/quick-start/download-install/');
   }
 
   Future<void> _showNetDiskDownloadDialog(BuildContext context) async {
-    // 显示加载对话框
+    // 显示加载对话框，并捕获对话框内部 context 用于后续保证能正确关闭
+    late BuildContext dialogContext;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('正在获取下载链接...'),
-              ],
-            ),
+      builder: (ctx) {
+        dialogContext = ctx;
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('正在获取下载链接...'),
+            ],
           ),
+        );
+      },
     );
 
     try {
@@ -526,10 +528,18 @@ class UpdateChecker {
           .get(Uri.parse('https://astral.fan/downloads.json'))
           .timeout(const Duration(seconds: 15));
 
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        // 如果上层 context 已经 unmounted，使用对话框自身的 context 关闭加载对话框
+        try {
+          Navigator.of(dialogContext).pop();
+        } catch (_) {}
+        return;
+      }
 
       // 关闭加载对话框
-      Navigator.of(context).pop();
+      try {
+        Navigator.of(dialogContext).pop();
+      } catch (_) {}
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
@@ -569,12 +579,18 @@ class UpdateChecker {
         _showErrorDialog(context, '获取下载链接失败: HTTP ${response.statusCode}');
       }
     } on TimeoutException {
+      // 使用 dialogContext 关闭加载对话框并展示错误
+      try {
+        Navigator.of(dialogContext).pop();
+      } catch (_) {}
       if (!context.mounted) return;
-      Navigator.of(context).pop();
       _showErrorDialog(context, '获取下载链接超时，请稍后重试');
     } catch (e) {
+      // 使用 dialogContext 关闭加载对话框并展示错误
+      try {
+        Navigator.of(dialogContext).pop();
+      } catch (_) {}
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // 关闭加载对话框
       _showErrorDialog(context, '获取下载链接失败: $e');
     }
   }

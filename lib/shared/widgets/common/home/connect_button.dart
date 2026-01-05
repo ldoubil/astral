@@ -324,9 +324,17 @@ class _ConnectButtonState extends State<ConnectButton>
       cidrs: services.vpnState.customVpn.value,
       forwards: forwards,
       severurl: () {
-        // 获取全局启用的服务器生成的URL列表
+        // 获取服务器 URL 列表的优先级：
+        // 1. 如果房间携带了服务器列表（hasServers=true），则只使用房间服务器
+        // 2. 否则使用全局启用的服务器
+        if (rom.hasServers && rom.servers.isNotEmpty) {
+          // 房间携带了服务器，只使用房间的服务器列表
+          debugPrint('🔧 使用房间携带的服务器列表 (${rom.servers.length} 个)');
+          return rom.servers;
+        }
+
+        // 使用全局启用的服务器
         final globalUrls = <String>[];
-        // 重新从 ServiceManager 获取最新的服务器列表
         final currentServers = ServiceManager().serverState.servers.value;
 
         for (var server in currentServers.where((server) => server.enable)) {
@@ -342,11 +350,7 @@ class _ConnectButtonState extends State<ConnectButton>
           if (server.https) globalUrls.add('https://${server.url}');
         }
 
-        // 合并房间服务器和全局服务器，然后去重
-        final mergedUrls = <String>[...rom.servers, ...globalUrls];
-        final deduplicatedUrls = mergedUrls.toSet().toList();
-
-        return deduplicatedUrls;
+        return globalUrls;
       }(),
       onurl:
           ServiceManager().appSettingsState.listenList.value

@@ -216,7 +216,18 @@ $roomSummary$shareOptions
   ///
   /// [context] 上下文
   /// [room] 要分享的房间对象
+  @Deprecated('使用 RoomShareDialog.show() 替代')
   static Future<void> showShareDialog(BuildContext context, Room room) async {
+    // 重定向到新的模块化对话框
+    final dialog = await import('package:astral/shared/widgets/dialogs/room_share/room_share_dialog.dart');
+    return dialog.RoomShareDialog.show(context, room);
+    // 分享模式：false = 普通分享, true = 高级分享
+    bool isAdvancedMode = false;
+    
+    // 普通模式选项
+    bool includeServersSimple = false;
+    bool includeNetworkConfigSimple = false;
+    
     // 服务器选择状态
     final selectedServers = <String>[];
 
@@ -261,59 +272,40 @@ $roomSummary$shareOptions
         return StatefulBuilder(
           builder: (context, setState) {
             // 构建要分享的房间对象
-            final hasServers = selectedServers.isNotEmpty;
-            final hasNetworkConfig = networkConfigOptions.values.any((v) => v);
-
+            bool hasServers = false;
+            bool hasNetworkConfig = false;
             NetworkConfigShare? networkConfig;
-            if (hasNetworkConfig) {
-              final currentConfig = NetworkConfigShare.fromCurrentConfig();
-              // 只保留用户选中的配置项
-              networkConfig = NetworkConfigShare(
-                dhcp:
-                    networkConfigOptions['dhcp']! ? currentConfig.dhcp : false,
-                defaultProtocol:
-                    networkConfigOptions['defaultProtocol']!
-                        ? currentConfig.defaultProtocol
-                        : null,
-                enableEncryption:
-                    networkConfigOptions['enableEncryption']!
-                        ? currentConfig.enableEncryption
-                        : null,
-                latencyFirst:
-                    networkConfigOptions['latencyFirst']!
-                        ? currentConfig.latencyFirst
-                        : null,
-                disableP2p:
-                    networkConfigOptions['disableP2p']!
-                        ? currentConfig.disableP2p
-                        : null,
-                disableUdpHolePunching:
-                    networkConfigOptions['disableUdpHolePunching']!
-                        ? currentConfig.disableUdpHolePunching
-                        : null,
-                disableSymHolePunching:
-                    networkConfigOptions['disableSymHolePunching']!
-                        ? currentConfig.disableSymHolePunching
-                        : null,
-                dataCompressAlgo:
-                    networkConfigOptions['dataCompressAlgo']!
-                        ? currentConfig.dataCompressAlgo
-                        : null,
-                enableKcpProxy:
-                    networkConfigOptions['enableKcpProxy']!
-                        ? currentConfig.enableKcpProxy
-                        : null,
-                enableQuicProxy:
-                    networkConfigOptions['enableQuicProxy']!
-                        ? currentConfig.enableQuicProxy
-                        : null,
-                bindDevice:
-                    networkConfigOptions['bindDevice']!
-                        ? currentConfig.bindDevice
-                        : null,
-                noTun:
-                    networkConfigOptions['noTun']! ? currentConfig.noTun : null,
-              );
+            
+            if (isAdvancedMode) {
+              // 高级模式：根据用户选择
+              hasServers = selectedServers.isNotEmpty;
+              hasNetworkConfig = networkConfigOptions.values.any((v) => v);
+              
+              if (hasNetworkConfig) {
+                final currentConfig = NetworkConfigShare.fromCurrentConfig();
+                networkConfig = NetworkConfigShare(
+                  dhcp: networkConfigOptions['dhcp']! ? currentConfig.dhcp : false,
+                  defaultProtocol: networkConfigOptions['defaultProtocol']! ? currentConfig.defaultProtocol : null,
+                  enableEncryption: networkConfigOptions['enableEncryption']! ? currentConfig.enableEncryption : null,
+                  latencyFirst: networkConfigOptions['latencyFirst']! ? currentConfig.latencyFirst : null,
+                  disableP2p: networkConfigOptions['disableP2p']! ? currentConfig.disableP2p : null,
+                  disableUdpHolePunching: networkConfigOptions['disableUdpHolePunching']! ? currentConfig.disableUdpHolePunching : null,
+                  disableSymHolePunching: networkConfigOptions['disableSymHolePunching']! ? currentConfig.disableSymHolePunching : null,
+                  dataCompressAlgo: networkConfigOptions['dataCompressAlgo']! ? currentConfig.dataCompressAlgo : null,
+                  enableKcpProxy: networkConfigOptions['enableKcpProxy']! ? currentConfig.enableKcpProxy : null,
+                  enableQuicProxy: networkConfigOptions['enableQuicProxy']! ? currentConfig.enableQuicProxy : null,
+                  bindDevice: networkConfigOptions['bindDevice']! ? currentConfig.bindDevice : null,
+                  noTun: networkConfigOptions['noTun']! ? currentConfig.noTun : null,
+                );
+              }
+            } else {
+              // 普通模式：全部携带或不携带
+              hasServers = includeServersSimple;
+              hasNetworkConfig = includeNetworkConfigSimple;
+              
+              if (hasNetworkConfig) {
+                networkConfig = NetworkConfigShare.fromCurrentConfig();
+              }
             }
 
             final roomToShare = Room(
@@ -325,7 +317,7 @@ $roomSummary$shareOptions
               password: room.password,
               tags: room.tags,
               sortOrder: room.sortOrder,
-              servers: hasServers ? selectedServers : [],
+              servers: hasServers ? (isAdvancedMode ? selectedServers : enabledServerUrls) : [],
               customParam:
                   hasServers
                       ? DateTime.now().millisecondsSinceEpoch.toString()
@@ -341,247 +333,414 @@ $roomSummary$shareOptions
               includeDeepLink: true,
             );
 
-            final colorScheme = Theme.of(context).colorScheme;
-
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: SingleChildScrollView(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(28),
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.share,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '分享房间',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  // 模式切换按钮
+                  IconButton(
+                    icon: Icon(
+                      isAdvancedMode ? Icons.tune : Icons.tune_outlined,
+                      color: isAdvancedMode ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                    tooltip: isAdvancedMode ? '切换到普通模式' : '切换到高级模式',
+                    onPressed: () {
+                      setState(() {
+                        isAdvancedMode = !isAdvancedMode;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ===== 顶部标题区域 =====
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      // 房间信息卡片
+                      Card(
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                room.name,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '房间ID: ${room.roomName}',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // 模式指示器
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isAdvancedMode 
+                            ? Theme.of(context).colorScheme.tertiaryContainer
+                            : Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.share,
-                                color: colorScheme.onPrimaryContainer,
-                                size: 24,
-                              ),
+                            Icon(
+                              isAdvancedMode ? Icons.engineering : Icons.bolt,
+                              size: 16,
+                              color: isAdvancedMode
+                                ? Theme.of(context).colorScheme.onTertiaryContainer
+                                : Theme.of(context).colorScheme.onSecondaryContainer,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '分享房间',
-                                    style:
-                                        Theme.of(context).textTheme.headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                  ),
-                                  Text(
-                                    room.name,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.onSurfaceVariant,
-                                            ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                            const SizedBox(width: 6),
+                            Text(
+                              isAdvancedMode ? '高级模式' : '普通模式',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isAdvancedMode
+                                  ? Theme.of(context).colorScheme.onTertiaryContainer
+                                  : Theme.of(context).colorScheme.onSecondaryContainer,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
 
-                      Divider(height: 1, color: colorScheme.outlineVariant),
-
-                      // ===== 主要内容区域 =====
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ===== 房间基本信息 =====
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceVariant
-                                    .withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: colorScheme.outlineVariant,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        size: 18,
-                                        color: colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '房间基本信息',
-                                        style: Theme.of(context)
-                                            .textTheme.labelMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: colorScheme.primary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.tag,
-                                        size: 16,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '房间名称',
-                                              style: Theme.of(context)
-                                                  .textTheme.labelSmall
-                                                  ?.copyWith(
-                                                    color:
-                                                        colorScheme
-                                                            .onSurfaceVariant,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              room.name,
-                                              style: Theme.of(context)
-                                                  .textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w500,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                      // 普通模式内容
+                      if (!isAdvancedMode) ...[
+                        Text(
+                          '分享选项',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Card(
+                          elevation: 0,
+                          color: Theme.of(context).colorScheme.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outlineVariant,
                             ),
-
-                            const SizedBox(height: 24),
-
-                            // ===== 高级选项折叠区域 =====
-                            if (enabledServerUrls.isNotEmpty ||
-                                networkConfigOptions.isNotEmpty)
-                              _buildAdvancedShareOptions(
-                                context,
-                                selectedServers,
-                                networkConfigOptions,
-                                enabledServerUrls,
-                                setState,
-                                colorScheme,
+                          ),
+                          child: Column(
+                            children: [
+                              SwitchListTile(
+                                title: const Text('携带服务器列表'),
+                                subtitle: Text('包含 ${enabledServerUrls.length} 个启用的服务器'),
+                                value: includeServersSimple,
+                                onChanged: (value) {
+                                  setState(() {
+                                    includeServersSimple = value;
+                                  });
+                                },
                               ),
-
-                            // ===== 分享选项摘要 =====
-                            if (hasServers || hasNetworkConfig) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.secondaryContainer
-                                      .withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.outline,
+                              Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+                              SwitchListTile(
+                                title: const Text('携带网络配置'),
+                                subtitle: const Text('包含所有当前网络设置'),
+                                value: includeNetworkConfigSimple,
+                                onChanged: (value) {
+                                  setState(() {
+                                    includeNetworkConfigSimple = value;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      
+                      // 高级模式内容
+                      if (isAdvancedMode) ...[
+                      // 服务器选择
+                      Text(
+                        '服务器',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child:
+                            enabledServerUrls.isEmpty
+                                ? Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    '没有启用的服务器',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
+                                )
+                                : Column(
+                                  children:
+                                      enabledServerUrls.map((serverUrl) {
+                                        final isSelected = selectedServers
+                                            .contains(serverUrl);
+                                        return CheckboxListTile(
+                                          dense: true,
+                                          title: Text(
+                                            serverUrl,
+                                            style:
+                                                Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                          ),
+                                          value: isSelected,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              if (value == true) {
+                                                selectedServers.add(serverUrl);
+                                              } else {
+                                                selectedServers.remove(
+                                                  serverUrl,
+                                                );
+                                              }
+                                            });
+                                          },
+                                        );
+                                      }).toList(),
                                 ),
-                                child: Row(
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 网络配置选择
+                      Text(
+                        '网络配置',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildConfigCheckbox(
+                              context,
+                              'DHCP',
+                              'dhcp',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '默认协议',
+                              'defaultProtocol',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '加密',
+                              'enableEncryption',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '延迟优先',
+                              'latencyFirst',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '禁用P2P',
+                              'disableP2p',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '禁用UDP打洞',
+                              'disableUdpHolePunching',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '禁用对称打洞',
+                              'disableSymHolePunching',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '数据压缩',
+                              'dataCompressAlgo',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              'KCP代理',
+                              'enableKcpProxy',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              'QUIC代理',
+                              'enableQuicProxy',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '绑定设备',
+                              'bindDevice',
+                              networkConfigOptions,
+                              setState,
+                            ),
+                            _buildConfigCheckbox(
+                              context,
+                              '禁用TUN',
+                              'noTun',
+                              networkConfigOptions,
+                              setState,
+                              isLast: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      ],
+                      
+                      const SizedBox(height: 16),
+
+                      // 分享摘要
+                      if (hasServers || hasNetworkConfig)
+                        Card(
+                          elevation: 0,
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
                                     Icon(
-                                      Icons.check_circle_outline,
-                                      size: 18,
-                                      color: colorScheme.secondary,
+                                      Icons.info_outline,
+                                      size: 20,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
                                     ),
                                     const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        hasServers && hasNetworkConfig
-                                            ? '将分享 ${selectedServers.length} 个服务器 + ${networkConfigOptions.values.where((v) => v).length} 项配置'
-                                            : hasServers
-                                                ? '将分享 ${selectedServers.length} 个服务器'
-                                                : '将分享 ${networkConfigOptions.values.where((v) => v).length} 项配置',
-                                        style: Theme.of(context)
-                                            .textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.secondary,
-                                            ),
-                                        maxLines: 2,
+                                    Text(
+                                      '分享将包含',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      Divider(height: 1, color: colorScheme.outlineVariant),
-
-                      // ===== 底部操作按钮 =====
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('取消'),
+                                const SizedBox(height: 8),
+                                if (hasServers)
+                                  Text(
+                                    '• ${isAdvancedMode ? selectedServers.length : enabledServerUrls.length} 个服务器',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                if (hasNetworkConfig)
+                                  Text(
+                                    isAdvancedMode
+                                      ? '• ${networkConfigOptions.values.where((v) => v).length} 项网络配置'
+                                      : '• 所有网络配置',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            FilledButton.icon(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                copyShareLink(
-                                  context,
-                                  roomToShare,
-                                  linkOnly: true,
-                                );
-                              },
-                              icon: const Icon(Icons.copy_outlined),
-                              label: const Text('复制链接'),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    copyShareLink(context, roomToShare, linkOnly: true);
+                  },
+                  icon: const Icon(Icons.copy),
+                  label: const Text('复制链接'),
+                ),
+              ],
             );
           },
         );
@@ -950,208 +1109,6 @@ $roomSummary$shareOptions
         _showError(context, '跳转失败', '无法跳转到房间页面: $e');
       }
     }
-  }
-
-  /// 构建高级分享选项 (折叠展开式设计)
-  static Widget _buildAdvancedShareOptions(
-    BuildContext context,
-    List<String> selectedServers,
-    Map<String, bool> networkConfigOptions,
-    List<String> enabledServerUrls,
-    StateSetter setState,
-    ColorScheme colorScheme,
-  ) {
-    return ExpansionTile(
-      initiallyExpanded: false,
-      title: Row(
-        children: [
-          Icon(
-            Icons.tune_outlined,
-            size: 20,
-            color: colorScheme.secondary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '高级选项',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.secondary,
-            ),
-          ),
-        ],
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      collapsedShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      backgroundColor: colorScheme.surface,
-      collapsedBackgroundColor: colorScheme.surfaceVariant.withOpacity(0.2),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 服务器选择
-              if (enabledServerUrls.isNotEmpty) ...[
-                Text(
-                  '🔗 服务器列表',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: colorScheme.outlineVariant),
-                  ),
-                  child: Column(
-                    children:
-                        enabledServerUrls.map((serverUrl) {
-                          final isSelected = selectedServers.contains(serverUrl);
-                          return CheckboxListTile(
-                            dense: true,
-                            title: Text(
-                              serverUrl,
-                              style: Theme.of(context)
-                                  .textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontFamily: 'monospace',
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            value: isSelected,
-                            onChanged: (value) {
-                              setState(() {
-                                if (value == true) {
-                                  selectedServers.add(serverUrl);
-                                } else {
-                                  selectedServers.remove(serverUrl);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // 网络配置选择
-              if (networkConfigOptions.isNotEmpty)
-                Text(
-                  '⚙️ 网络配置',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: colorScheme.outlineVariant),
-                ),
-                child: Column(
-                  children: [
-                    _buildConfigCheckbox(
-                      context,
-                      'DHCP',
-                      'dhcp',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '默认协议',
-                      'defaultProtocol',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '加密',
-                      'enableEncryption',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '延迟优先',
-                      'latencyFirst',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '禁用P2P',
-                      'disableP2p',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '禁用UDP打洞',
-                      'disableUdpHolePunching',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '禁用对称打洞',
-                      'disableSymHolePunching',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '数据压缩',
-                      'dataCompressAlgo',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      'KCP代理',
-                      'enableKcpProxy',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      'QUIC代理',
-                      'enableQuicProxy',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '绑定设备',
-                      'bindDevice',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      '禁用TUN',
-                      'noTun',
-                      networkConfigOptions,
-                      setState,
-                      isLast: true,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   /// 构建网络配置复选框
