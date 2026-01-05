@@ -311,11 +311,19 @@ class _BannerCarouselState extends State<BannerCarousel> {
                               actions: [
                                 TextButton.icon(
                                   onPressed: () async {
-                                    await ServiceManager().appSettings.updateEnableBannerCarousel(
-                                      false,
-                                    );
+                                    await ServiceManager().appSettings
+                                        .updateEnableBannerCarousel(false);
+                                    // 标记用户已经看到过轮播图提示
+                                    await ServiceManager().appSettings
+                                        .updateHasShownBannerTip(true);
                                     if (context.mounted) {
                                       Navigator.of(context).pop();
+                                      // 立即更新状态，隐藏轮播图
+                                      if (mounted) {
+                                        setState(() {
+                                          _hasError = true;
+                                        });
+                                      }
                                     }
                                   },
                                   icon: const Icon(Icons.visibility_off),

@@ -1,14 +1,42 @@
-﻿import 'package:isar_community/isar.dart';
+﻿import 'dart:math';
+import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/room.dart'; // 添加 Room 模型的导入
 
 class RoomCz {
   final Isar _isar;
+  bool _initialized = false;
 
-  RoomCz(this._isar) {
-    init();
+  RoomCz(this._isar);
+
+  Future<void> init() async {
+    if (_initialized) return;
+
+    // 如果没有任何房间，随机创建一个默认房间
+    if (await _isar.rooms.count() == 0) {
+      final random = Random();
+      final randomRoomId =
+          random.nextInt(900000) + 100000; // 6位随机数字 (100000-999999)
+      final randomPassword = random.nextInt(900000) + 100000; // 6位随机密码
+
+      final defaultRoom = Room(
+        name: "默认房间",
+        roomName: randomRoomId.toString(),
+        encrypted: true, // 默认使用加密
+        password: randomPassword.toString(),
+        messageKey: "",
+        tags: [],
+        sortOrder: 0,
+        servers: [],
+        customParam: "",
+      );
+
+      await _isar.writeTxn(() async {
+        await _isar.rooms.put(defaultRoom);
+      });
+    }
+
+    _initialized = true;
   }
-
-  Future<void> init() async {}
 
   // 添加房间
   Future<int> addRoom(Room room) async {
@@ -43,7 +71,11 @@ class RoomCz {
 
   // 根据标签查询房间（按排序字段排序）
   Future<List<Room>> getRoomsByTag(String tag) async {
-    return await _isar.rooms.filter().tagsElementEqualTo(tag).sortBySortOrder().findAll();
+    return await _isar.rooms
+        .filter()
+        .tagsElementEqualTo(tag)
+        .sortBySortOrder()
+        .findAll();
   }
 
   // 更新房间排序

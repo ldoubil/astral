@@ -73,5 +73,9 @@ class AppDatabase {
     AllSettings = AllSettingsCz(isar);
     ServerSetting = ServerCz(isar);
     MagicWallSetting = MagicWallModelCz(isar);
+
+    // 确保初始化完成
+    await RoomSetting.init();
+    await ServerSetting.init();
   }
 }

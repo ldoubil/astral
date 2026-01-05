@@ -3,12 +3,13 @@ import 'package:isar_community/isar.dart';
 
 class ServerCz {
   final Isar _isar;
+  bool _initialized = false;
 
-  ServerCz(this._isar) {
-    init();
-  }
+  ServerCz(this._isar);
 
   Future<void> init() async {
+    if (_initialized) return;
+
     // 如果没有初始服务器数据，添加默认服务器
     if (await _isar.serverMods.count() == 0) {
       final defaultServers = [
@@ -53,6 +54,8 @@ class ServerCz {
         }
       });
     }
+
+    _initialized = true;
   }
 
   // 添加服务器

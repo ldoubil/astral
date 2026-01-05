@@ -38,15 +38,6 @@ class AllSettingsCz {
         needsUpdate = true;
       }
 
-      // 修复从旧版本迁移导致的 enableBannerCarousel 为 false 的问题
-      // 判断逻辑：如果 enableBannerCarousel 为 false 且 hasShownBannerTip 也为 false
-      // 说明这很可能是从没有该字段的旧版本迁移过来的（Isar 默认初始化为 false）
-      // 而不是用户主动设置的，因为如果用户看到过并关闭了轮播图，hasShownBannerTip 应该是 true
-      if (!settings.enableBannerCarousel && !settings.hasShownBannerTip) {
-        settings.enableBannerCarousel = true;
-        needsUpdate = true;
-      }
-
       if (needsUpdate) {
         await _isar.writeTxn(() async {
           await _isar.allSettings.put(settings!);

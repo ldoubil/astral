@@ -544,7 +544,7 @@ class UpdateChecker {
             builder:
                 (context) => AlertDialog(
                   title: const Text('网盘下载'),
-                  content: Text('即将跳转到网盘下载 $version 版本'),
+                  content: const Text('即将跳转到下载页面'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -553,7 +553,9 @@ class UpdateChecker {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        _launchUrl(url);
+                        _launchUrl(
+                          'https://astral.fan/quick-start/download-install/',
+                        );
                       },
                       child: const Text('确定'),
                     ),
