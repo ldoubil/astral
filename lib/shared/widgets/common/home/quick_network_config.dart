@@ -16,7 +16,9 @@ class QuickNetworkConfig extends StatelessWidget {
 
     return Watch((context) {
       final disableP2p = services.networkConfigState.disableP2p.watch(context);
-      final firewallStatus = services.firewallState.firewallStatus.watch(context);
+      final firewallStatus = services.firewallState.firewallStatus.watch(
+        context,
+      );
 
       return HomeBox(
         widthSpan: 2,
@@ -102,11 +104,16 @@ class QuickNetworkConfig extends StatelessWidget {
             if (Platform.isWindows) ...[
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
