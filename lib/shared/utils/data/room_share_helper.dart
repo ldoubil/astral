@@ -305,7 +305,7 @@ $roomSummary
                     // 携带网络配置选项
                     CheckboxListTile(
                       title: const Text('携带网络配置'),
-                      subtitle: const Text('包含 IP、监听器、加密等设置'),
+                      subtitle: const Text('包含 DHCP、协议、加密、代理等设置'),
                       value: includeNetworkConfig,
                       onChanged: (value) {
                         setState(() {
@@ -531,7 +531,7 @@ $roomSummary
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children:
-                                  networkConfig
+                                  networkConfig!
                                       .toReadableSummary()
                                       .map(
                                         (line) => Padding(
@@ -593,7 +593,7 @@ $roomSummary
           applyNetworkConfig = shouldApply ?? false;
 
           // 如果用户选择应用配置
-          if (applyNetworkConfig) {
+          if (applyNetworkConfig && networkConfig != null) {
             await networkConfig.applyToConfig();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:astral/shared/utils/network/astral_udp.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -197,6 +198,23 @@ class _ConnectButtonState extends State<ConnectButton>
 
     final rom = ServiceManager().roomState.selectedRoom.value;
     if (rom == null) return;
+
+    // 🔧 新增：如果房间携带了网络配置，先应用配置
+    if (rom.hasNetworkConfig && rom.networkConfigJson.isNotEmpty) {
+      try {
+        final networkConfig = NetworkConfigShare.fromJsonString(
+          rom.networkConfigJson,
+        );
+        if (networkConfig != null) {
+          debugPrint('🔧 检测到房间携带网络配置，应用配置中...');
+          await networkConfig.applyToConfig();
+          debugPrint('✅ 房间网络配置已应用');
+        }
+      } catch (e) {
+        debugPrint('⚠️ 应用房间网络配置失败: $e');
+        // 继续执行连接流程，即使配置应用失败
+      }
+    }
 
     // 每次连接前先确保服务器已关闭，清理旧状态
     closeServer();
