@@ -112,7 +112,7 @@
   "smoltcp_stack": "smoltcp网络栈",
   "not_recommended": "不推荐",
   "smoltcp_stack_desc": "轻量级 TCP/IP 协议栈",
-  "disable_p2p": "强制中转",
+  "disable_p2p": "启用强制中转",
   "disable_p2p_desc": "关闭直连，通过服务器中转数据",
   "relay_peer_rpc": "中继对等RPC",
   "relay_peer_rpc_desc": "是否中继所有对等RPC",
