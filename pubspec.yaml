@@ -2,7 +2,7 @@ name: astral
 description: 'astral'
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.6.991
+version: 2.6.992
 
 isar_version: &isar_version 3.3.0 # define the version to be used
 
