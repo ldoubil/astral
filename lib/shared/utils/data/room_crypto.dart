@@ -7,7 +7,7 @@ const String encryptionSecret = '这就是密钥';
 
 /// 简单的分享链接生成方式
 /// 格式：base64url(gzip(json)) - 简洁且易于导入
-String encryptRoomWithJWT(Room room) {
+String encryptRoomWithJWT(Room room, {bool includeNetworkConfig = false}) {
   try {
     if (room.name.isEmpty) {
       throw ArgumentError('房间名称不能为空');
@@ -23,6 +23,11 @@ String encryptRoomWithJWT(Room room) {
       // 添加服务器列表和自定义参数
       if (room.servers.isNotEmpty) 's': room.servers,
       if (room.customParam.isNotEmpty) 'c': room.customParam,
+      // 新增：携带网络配置
+      if (includeNetworkConfig &&
+          room.hasNetworkConfig &&
+          room.networkConfigJson.isNotEmpty)
+        'net': jsonDecode(room.networkConfigJson),
     };
 
     final String jsonString = jsonEncode(roomData);
@@ -32,6 +37,9 @@ String encryptRoomWithJWT(Room room) {
     debugPrint(jsonEncode(roomData));
     debugPrint('【房间分享】服务器列表: ${room.servers}');
     debugPrint('【房间分享】自定义参数: ${room.customParam}');
+    if (includeNetworkConfig && room.hasNetworkConfig) {
+      debugPrint('【房间分享】携带网络配置: ${room.networkConfigJson}');
+    }
 
     final List<int> compressed = gzip.encode(utf8.encode(jsonString));
     String encoded = base64Url.encode(compressed);
@@ -61,6 +69,15 @@ Room? decryptRoomFromJWT(String token) {
     final String jsonString = utf8.decode(decompressed);
     final Map<String, dynamic> roomData = jsonDecode(jsonString);
 
+    // 解析网络配置（如果有）
+    String networkConfigJson = '';
+    bool hasNetworkConfig = false;
+    if (roomData.containsKey('net') && roomData['net'] != null) {
+      hasNetworkConfig = true;
+      networkConfigJson = jsonEncode(roomData['net']);
+      debugPrint('【房间导入】包含网络配置: $networkConfigJson');
+    }
+
     return Room(
       name: roomData['n'] ?? '',
       roomName: roomData['r'] ?? '',
@@ -71,6 +88,9 @@ Room? decryptRoomFromJWT(String token) {
       // 解析服务器列表和自定义参数
       servers: roomData['s'] != null ? List<String>.from(roomData['s']) : [],
       customParam: roomData['c'] ?? '',
+      // 新增：网络配置字段
+      hasNetworkConfig: hasNetworkConfig,
+      networkConfigJson: networkConfigJson,
     );
   } catch (e) {
     print('解密房间信息失败: $e');

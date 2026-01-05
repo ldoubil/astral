@@ -2,6 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:astral/core/models/room.dart';
+import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/shared/utils/data/room_crypto.dart';
 import 'package:astral/core/services/service_manager.dart';
 
@@ -27,7 +28,11 @@ class RoomShareHelper {
       // 清理房间数据
       final cleanedRoom = cleanRoom(room);
 
-      final shareCode = encryptRoomWithJWT(cleanedRoom);
+      // 根据房间是否携带网络配置来调用加密方法
+      final shareCode = encryptRoomWithJWT(
+        cleanedRoom,
+        includeNetworkConfig: cleanedRoom.hasNetworkConfig,
+      );
 
       if (includeDeepLink) {
         return '$appScheme://$roomPath?code=$shareCode';
@@ -196,12 +201,14 @@ $roomSummary
   }
 
   /// 显示房间分享对话框
-  /// 支持选择是否携带服务器列表
+  /// 支持选择是否携带服务器列表和网络配置
   ///
   /// [context] 上下文
   /// [room] 要分享的房间对象
   static Future<void> showShareDialog(BuildContext context, Room room) async {
     bool includeServers = false;
+    bool includeNetworkConfig = false;
+    NetworkConfigShare? networkConfig;
 
     // 预先加载所有启用的服务器列表
     final allServers = await ServiceManager().server.getAllServers();
@@ -227,15 +234,22 @@ $roomSummary
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            // 动态生成分享链接，考虑是否包含服务器
+            // 动态生成分享链接，考虑是否包含服务器和网络配置
             // 自定义参数自动生成（用于内部标记），不展示给用户
             final customParam =
                 includeServers
                     ? DateTime.now().millisecondsSinceEpoch.toString()
                     : '';
 
+            // 如果需要携带网络配置，则生成配置信息
+            String networkConfigJson = '';
+            if (includeNetworkConfig) {
+              networkConfig ??= NetworkConfigShare.fromCurrentConfig();
+              networkConfigJson = networkConfig!.toJsonString();
+            }
+
             final roomToShare =
-                includeServers
+                includeServers || includeNetworkConfig
                     ? Room(
                       id: room.id,
                       name: room.name,
@@ -245,12 +259,17 @@ $roomSummary
                       password: room.password,
                       tags: room.tags,
                       sortOrder: room.sortOrder,
-                      servers: enabledServerUrls,
+                      servers: includeServers ? enabledServerUrls : [],
                       customParam: customParam,
+                      hasNetworkConfig: includeNetworkConfig,
+                      networkConfigJson: networkConfigJson,
                     )
                     : room;
 
-            final shareLink = generateShareLink(roomToShare);
+            final shareLink = generateShareLink(
+              roomToShare,
+              includeDeepLink: true,
+            );
 
             return AlertDialog(
               title: Row(
@@ -283,6 +302,63 @@ $roomSummary
                         });
                       },
                     ),
+                    // 携带网络配置选项
+                    CheckboxListTile(
+                      title: const Text('携带网络配置'),
+                      subtitle: const Text('包含 IP、监听器、加密等设置'),
+                      value: includeNetworkConfig,
+                      onChanged: (value) {
+                        setState(() {
+                          includeNetworkConfig = value ?? false;
+                          if (includeNetworkConfig) {
+                            // 重新生成配置
+                            networkConfig =
+                                NetworkConfigShare.fromCurrentConfig();
+                          }
+                        });
+                      },
+                    ),
+                    // 显示网络配置预览
+                    if (includeNetworkConfig && networkConfig != null)
+                      Container(
+                        margin: const EdgeInsets.only(
+                          top: 8,
+                          left: 16,
+                          right: 16,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceVariant.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outline.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '网络配置预览',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            ...networkConfig!.toReadableSummary().map(
+                              (line) => Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  line,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -400,6 +476,148 @@ $roomSummary
       // 清理房间数据
       final cleanedRoom = cleanRoom(room);
 
+      // 如果房间携带网络配置，显示确认对话框
+      bool applyNetworkConfig = false;
+      if (cleanedRoom.hasNetworkConfig &&
+          cleanedRoom.networkConfigJson.isNotEmpty) {
+        try {
+          final networkConfig = NetworkConfigShare.fromJsonString(
+            cleanedRoom.networkConfigJson,
+          );
+
+          // 显示确认对话框
+          final shouldApply = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              bool applyConfig = true; // 默认勾选
+
+              return StatefulBuilder(
+                builder: (context, setState) {
+                  return AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(
+                          Icons.settings_suggest,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(child: Text('检测到网络配置')),
+                      ],
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '该房间包含以下网络配置：',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceVariant.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outline.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children:
+                                  networkConfig
+                                      .toReadableSummary()
+                                      .map(
+                                        (line) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 2,
+                                          ),
+                                          child: Text(
+                                            line,
+                                            style:
+                                                Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          CheckboxListTile(
+                            title: const Text('应用网络配置'),
+                            subtitle: const Text('将上述配置应用到当前设备'),
+                            value: applyConfig,
+                            onChanged: (value) {
+                              setState(() {
+                                applyConfig = value ?? false;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '提示：如果不应用，仅导入房间信息',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('取消'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, applyConfig),
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          );
+
+          applyNetworkConfig = shouldApply ?? false;
+
+          // 如果用户选择应用配置
+          if (applyNetworkConfig) {
+            await networkConfig.applyToConfig();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('网络配置已应用'),
+                    ],
+                  ),
+                  backgroundColor: Colors.blue[700],
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('解析或应用网络配置失败: $e');
+          // 即使配置应用失败，也继续导入房间
+        }
+      }
+
       // 检查重复
       final existingRooms = await ServiceManager().room.getAllRooms();
       final duplicate =
@@ -436,6 +654,10 @@ $roomSummary
         if (cleanedRoom.servers.isNotEmpty) {
           serverInfo = ' (已内置 ${cleanedRoom.servers.length} 个服务器)';
         }
+        String networkConfigInfo = '';
+        if (applyNetworkConfig) {
+          networkConfigInfo = '\n✓ 已应用网络配置';
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -453,7 +675,7 @@ $roomSummary
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '已成功添加并选中房间"${cleanedRoom.name}"$serverInfo',
+                        '已成功添加并选中房间"${cleanedRoom.name}"$serverInfo$networkConfigInfo',
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],

@@ -23,6 +23,13 @@ class Room {
   // 自定义参数（用于标识房间是否有自定义服务器，如为空则表示无自定义参数）
   String customParam = "";
 
+  // ========== 网络配置携带 ==========
+  /// 是否携带网络配置（用于判断是否应用携带的配置）
+  bool hasNetworkConfig = false;
+
+  /// 携带的网络配置 JSON（序列化的 NetworkConfigShare 对象）
+  String networkConfigJson = "";
+
   //构造
   Room({
     this.id = Isar.autoIncrement,
@@ -35,5 +42,7 @@ class Room {
     this.sortOrder = 0,
     this.servers = const [],
     this.customParam = "",
+    this.hasNetworkConfig = false,
+    this.networkConfigJson = "",
   });
 }
