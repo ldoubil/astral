@@ -309,11 +309,8 @@ class _ConnectButtonState extends State<ConnectButton>
         final globalUrls = <String>[];
         // 重新从 ServiceManager 获取最新的服务器列表
         final currentServers = ServiceManager().serverState.servers.value;
-        debugPrint('=== 当前服务器配置 ===');
-        debugPrint('服务器总数: ${currentServers.length}');
 
         for (var server in currentServers.where((server) => server.enable)) {
-          debugPrint('启用的服务器: ${server.name} - ${server.url}');
           if (server.tcp) globalUrls.add('tcp://${server.url}');
           if (server.udp) globalUrls.add('udp://${server.url}');
           if (server.ws) globalUrls.add('ws://${server.url}');
@@ -329,9 +326,6 @@ class _ConnectButtonState extends State<ConnectButton>
         // 合并房间服务器和全局服务器，然后去重
         final mergedUrls = <String>[...rom.servers, ...globalUrls];
         final deduplicatedUrls = mergedUrls.toSet().toList();
-
-        debugPrint('最终服务器URL列表: $deduplicatedUrls');
-        debugPrint('===================');
 
         return deduplicatedUrls;
       }(),
@@ -409,7 +403,6 @@ class _ConnectButtonState extends State<ConnectButton>
     _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
       if (ServiceManager().connectionState.connectionState.value ==
           CoState.connecting) {
-        debugPrint("连接超时");
         if (Platform.isAndroid) {
           _cancelNotification();
         }
@@ -535,8 +528,8 @@ class _ConnectButtonState extends State<ConnectButton>
         );
       }
     } catch (e) {
-      // 监控过程中出现错误时保持连接状态，但记录错误
-      debugPrint('Network monitoring error: $e');
+      // 监控过程中出现错误时保持连接状态
+      // 错误已被忽略以减少日志输出
     }
   }
 
@@ -571,7 +564,6 @@ class _ConnectButtonState extends State<ConnectButton>
     } else if (ServiceManager().connectionState.connectionState.value ==
         CoState.connected) {
       // 如果当前是已连接状态，则断开连接
-      debugPrint("断开连接");
       _disconnect();
     }
   }
@@ -646,125 +638,130 @@ class _ConnectButtonState extends State<ConnectButton>
     final colorScheme = Theme.of(context).colorScheme;
 
     // 使用 Watch widget 包裹整个内容，监听状态变化
-    return Watch((context) {
-      final connectionState = ServiceManager().connectionState.connectionState
-          .watch(context);
+    return RepaintBoundary(
+      child: Watch((context) {
+        final connectionState = ServiceManager().connectionState.connectionState
+            .watch(context);
 
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            SizedBox(
-              height: 14, // 固定高度，包含进度条高度(6px)和底部边距(8px)
-              width: 180, // 固定宽度与按钮一致
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 300),
-                offset:
-                    connectionState == CoState.connecting
-                        ? Offset.zero
-                        : const Offset(0, 1.0),
-                child: AnimatedOpacity(
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(
+                height: 14, // 固定高度，包含进度条高度(6px)和底部边距(8px)
+                width: 180, // 固定宽度与按钮一致
+                child: AnimatedSlide(
                   duration: const Duration(milliseconds: 300),
-                  opacity: connectionState == CoState.connecting ? 1.0 : 0.0,
-                  child: Container(
-                    width: 180,
-                    height: 6,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: TweenAnimationBuilder<double>(
-                      key: ValueKey(
-                        'progress_${connectionState == CoState.connecting}',
+                  offset:
+                      connectionState == CoState.connecting
+                          ? Offset.zero
+                          : const Offset(0, 1.0),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: connectionState == CoState.connecting ? 1.0 : 0.0,
+                    child: Container(
+                      width: 180,
+                      height: 6,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceVariant,
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      tween: Tween<double>(begin: 0.0, end: 1.0),
-                      duration: Duration(
-                        seconds: connectionTimeoutSeconds,
-                      ), // 使用变量控制动画时间
-                      curve: Curves.easeInOut,
-                      builder: (context, value, _) {
-                        // 更新进度值
-                        _progress = value * 100;
-                        return FractionallySizedBox(
-                          widthFactor: value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  colorScheme.tertiary,
-                                  colorScheme.primary,
-                                ],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
+                      child: TweenAnimationBuilder<double>(
+                        key: ValueKey(
+                          'progress_${connectionState == CoState.connecting}',
+                        ),
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: Duration(
+                          seconds: connectionTimeoutSeconds,
+                        ), // 使用变量控制动画时间
+                        curve: Curves.easeInOut,
+                        builder: (context, value, _) {
+                          // 更新进度值
+                          _progress = value * 100;
+                          return FractionallySizedBox(
+                            widthFactor: value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    colorScheme.tertiary,
+                                    colorScheme.primary,
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(3),
                               ),
-                              borderRadius: BorderRadius.circular(3),
                             ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // 按钮
+              Align(
+                alignment: Alignment.centerRight,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  width: connectionState != CoState.idle ? 180 : 100,
+                  height: 60,
+                  child: FloatingActionButton.extended(
+                    onPressed:
+                        connectionState == CoState.connecting
+                            ? null
+                            : _toggleConnection,
+                    heroTag: "connect_button",
+                    extendedPadding: const EdgeInsets.symmetric(horizontal: 2),
+                    splashColor:
+                        connectionState != CoState.idle
+                            ? colorScheme.onTertiary.withAlpha(51)
+                            : colorScheme.onPrimary.withAlpha(51),
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      switchInCurve: Curves.easeInOut,
+                      switchOutCurve: Curves.easeInOut,
+                      transitionBuilder: (
+                        Widget child,
+                        Animation<double> animation,
+                      ) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: animation,
+                            child: child,
                           ),
                         );
                       },
+                      child: _getButtonIcon(connectionState),
+                    ),
+                    label: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      switchInCurve: Curves.easeOutQuad,
+                      switchOutCurve: Curves.easeInQuad,
+                      child: _getButtonLabel(connectionState),
+                    ),
+                    backgroundColor: _getButtonColor(
+                      connectionState,
+                      colorScheme,
+                    ),
+                    foregroundColor: _getButtonForegroundColor(
+                      connectionState,
+                      colorScheme,
                     ),
                   ),
                 ),
               ),
-            ),
-            // 按钮
-            Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                width: connectionState != CoState.idle ? 180 : 100,
-                height: 60,
-                child: FloatingActionButton.extended(
-                  onPressed:
-                      connectionState == CoState.connecting
-                          ? null
-                          : _toggleConnection,
-                  heroTag: "connect_button",
-                  extendedPadding: const EdgeInsets.symmetric(horizontal: 2),
-                  splashColor:
-                      connectionState != CoState.idle
-                          ? colorScheme.onTertiary.withAlpha(51)
-                          : colorScheme.onPrimary.withAlpha(51),
-                  icon: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 150),
-                    switchInCurve: Curves.easeInOut,
-                    switchOutCurve: Curves.easeInOut,
-                    transitionBuilder: (
-                      Widget child,
-                      Animation<double> animation,
-                    ) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: ScaleTransition(scale: animation, child: child),
-                      );
-                    },
-                    child: _getButtonIcon(connectionState),
-                  ),
-                  label: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    switchInCurve: Curves.easeOutQuad,
-                    switchOutCurve: Curves.easeInQuad,
-                    child: _getButtonLabel(connectionState),
-                  ),
-                  backgroundColor: _getButtonColor(
-                    connectionState,
-                    colorScheme,
-                  ),
-                  foregroundColor: _getButtonForegroundColor(
-                    connectionState,
-                    colorScheme,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
+            ],
+          ),
+        );
+      }),
+    );
   }
 }
 
@@ -785,7 +782,6 @@ bool _isValidCIDR(String cidr) {
   );
 
   if (!cidrPattern.hasMatch(cidr)) {
-    debugPrint('⚠️ 无效路由条目已过滤: $cidr');
     return false;
   }
 

@@ -25,6 +25,12 @@ class FileLogger {
   Future<void> init() async {
     if (_isInitialized) return;
 
+    // 只在 Debug 模式下初始化文件日志
+    if (!kDebugMode) {
+      _isInitialized = true; // 标记为已初始化，但不创建文件
+      return;
+    }
+
     try {
       // 获取可执行文件所在目录
       final executablePath = Platform.resolvedExecutable;
@@ -79,7 +85,8 @@ class FileLogger {
     String message, {
     StackTrace? stackTrace,
   }) async {
-    if (!_isInitialized) return;
+    // Release 模式下不写入文件
+    if (!kDebugMode || !_isInitialized) return;
 
     final timestamp = DateTime.now().toString();
     final logEntry = '[$timestamp] [$level] $message';

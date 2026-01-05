@@ -17,7 +17,7 @@ import 'package:astral/src/rust/frb_generated.dart';
 import 'package:astral/app.dart';
 
 void main() async {
-  // 初始化文件日志系统（必须在最前面）
+  // 初始化文件日志系统（Release 模式下不会创建文件）
   await FileLogger().init();
   GlobalErrorHandler.initialize();
 
