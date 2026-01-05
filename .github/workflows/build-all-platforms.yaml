@@ -32,7 +32,7 @@ jobs:
           - os: ubuntu-24.04
             platform: android
             arch: universal
-            rust_target: "aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android"
+            rust_target: "aarch64-linux-android armv7-linux-androideabi x86_64-linux-android"
             artifact_name: astral-android-universal
             build_cmd: flutter build apk --release
             artifact_path: build/app/outputs/flutter-apk/app-release.apk
@@ -46,6 +46,8 @@ jobs:
             build_cmd: flutter build linux --release
             artifact_path: build/linux/x64/release/bundle
             package: true
+            deb_arch: amd64
+            rpm_arch: x86_64
             
           - os: ubuntu-22.04-arm
             platform: linux
@@ -55,6 +57,8 @@ jobs:
             build_cmd: flutter build linux --release
             artifact_path: build/linux/arm64/release/bundle
             package: true
+            deb_arch: arm64
+            rpm_arch: aarch64
             
           # Windows 构建
           - os: windows-2022
@@ -127,9 +131,12 @@ jobs:
         if: matrix.platform == 'android'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libc6-dev \
-            clang llvm libclang-dev \
-            protobuf-compiler
+          sudo apt-get install -y build-essential libc6-dev
+          sudo apt-get install -y libc6-dev-armhf-cross gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+          sudo apt-get install -y clang llvm libclang-dev
+          sudo apt-get install -y libc-dev
+          sudo apt-get install -y libc6-dev-i386 gcc-multilib g++-multilib
+          sudo apt-get install -y protobuf-compiler
             
       - name: ☕ 设置 JDK
         if: matrix.platform == 'android'
@@ -161,7 +168,6 @@ jobs:
       - name: 🔧 设置 bindgen 环境变量
         if: matrix.platform == 'android'
         run: |
-          echo "BINDGEN_EXTRA_CLANG_ARGS=-I/usr/include -I/usr/include/x86_64-linux-gnu" >> $GITHUB_ENV
           echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
           
       # ============= Linux 特定配置 =============
@@ -188,9 +194,10 @@ jobs:
         shell: pwsh
         
       - name: 🎯 启用平台支持
+        if: matrix.platform == 'linux' || matrix.platform == 'windows'
         run: |
           flutter config --enable-${{ matrix.platform }}-desktop
-        if: matrix.platform == 'linux' || matrix.platform == 'windows'
+          flutter create --platforms=${{ matrix.platform }} .
         shell: bash
         
       - name: 📚 安装 Flutter 依赖
@@ -227,11 +234,11 @@ jobs:
           install -Dm644 assets/logo.png "$STAGING/usr/share/pixmaps/astral.png"
           
           # 打包 deb
-          fpm -s dir -t deb -n astral -v 1.0.0 -a amd64 -C "$STAGING" .
+          fpm -s dir -t deb -n astral -v 1.0.0 -a ${{ matrix.deb_arch }} -C "$STAGING" .
           mv *.deb $GITHUB_WORKSPACE/release/${{ matrix.artifact_name }}.deb
           
           # 打包 rpm
-          fpm -s dir -t rpm -n astral -v 1.0.0 -a x86_64 -C "$STAGING" .
+          fpm -s dir -t rpm -n astral -v 1.0.0 -a ${{ matrix.rpm_arch }} -C "$STAGING" .
           mv *.rpm $GITHUB_WORKSPACE/release/${{ matrix.artifact_name }}.rpm
           
       # ============= Windows 特定处理 =============
