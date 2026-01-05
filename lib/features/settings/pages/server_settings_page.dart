@@ -1,5 +1,6 @@
 ﻿import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/models/server_mod.dart';
+import 'package:astral/core/states/server_status_state.dart';
 import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:astral/shared/utils/dialogs/server_dialog.dart';
 import 'package:astral/core/ui/base_settings_page.dart';
@@ -17,6 +18,38 @@ class ServerSettingsPage extends BaseStatefulSettingsPage {
 class _ServerSettingsPageState
     extends BaseStatefulSettingsPageState<ServerSettingsPage> {
   @override
+  void initState() {
+    super.initState();
+    // 启动服务器状态定期检测
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final servers = ServiceManager().serverState.servers.value;
+      ServiceManager().serverStatusState.startPeriodicCheck(
+        servers,
+        const Duration(seconds: 30),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ServiceManager().serverStatusState.stopPeriodicCheck();
+    super.dispose();
+  }
+
+  Color _getStatusColor(ServerStatus status, ColorScheme colorScheme) {
+    switch (status) {
+      case ServerStatus.online:
+        return Colors.green;
+      case ServerStatus.offline:
+        return Colors.red;
+      case ServerStatus.inUse:
+        return Colors.blue;
+      case ServerStatus.unknown:
+        return colorScheme.outline;
+    }
+  }
+
+  @override
   String get title => '服务器管理';
 
   @override
@@ -33,6 +66,8 @@ class _ServerSettingsPageState
 
     return Watch((context) {
       final servers = ServiceManager().serverState.servers.watch(context);
+      final serverStatuses = ServiceManager().serverStatusState.serverStatuses
+          .watch(context);
 
       if (servers.isEmpty) {
         return buildEmptyState(
@@ -66,6 +101,7 @@ class _ServerSettingsPageState
         },
         itemBuilder: (context, index) {
           final server = servers[index];
+          final status = serverStatuses[server.id] ?? ServerStatus.unknown;
 
           return ReorderableDragStartListener(
             key: ValueKey(server.id),
@@ -77,7 +113,7 @@ class _ServerSettingsPageState
                   width: 4,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: colorScheme.primary,
+                    color: _getStatusColor(status, colorScheme),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

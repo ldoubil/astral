@@ -14,6 +14,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:isar_community/isar.dart';
 
 class ConnectButton extends StatefulWidget {
   const ConnectButton({super.key});
@@ -483,6 +484,9 @@ class _ConnectButtonState extends State<ConnectButton>
       ServiceManager().connectionState.connectionState.value =
           CoState.connected;
       ServiceManager().connectionState.isConnecting.value = true;
+
+      // 标记当前正在使用的服务器
+      _markActiveServers();
     });
     if (Platform.isAndroid) {
       _startVpn(
@@ -569,7 +573,30 @@ class _ConnectButtonState extends State<ConnectButton>
     closeServer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ServiceManager().connectionState.connectionState.value = CoState.idle;
+
+      // 清除活跃服务器标记
+      ServiceManager().serverStatusState.setActiveServers({});
     });
+  }
+
+  /// 标记当前使用的服务器为活跃状态
+  void _markActiveServers() {
+    final rom = ServiceManager().roomState.selectedRoom.value;
+    if (rom == null) return;
+
+    final activeIds = <Id>{};
+
+    // 获取全局启用的服务器
+    final enabledServers =
+        ServiceManager().serverState.servers.value
+            .where((server) => server.enable)
+            .toList();
+
+    for (var server in enabledServers) {
+      activeIds.add(server.id);
+    }
+
+    ServiceManager().serverStatusState.setActiveServers(activeIds);
   }
 
   /// 切换连接状态的方法

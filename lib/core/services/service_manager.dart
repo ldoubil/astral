@@ -20,6 +20,7 @@ import 'package:astral/core/states/window_state.dart';
 import 'package:astral/core/states/firewall_state.dart';
 import 'package:astral/core/states/vpn_state.dart';
 import 'package:astral/core/states/app_settings_state.dart';
+import 'package:astral/core/states/server_status_state.dart';
 
 // Repositories
 import 'package:astral/core/repositories/theme_repository.dart';
@@ -81,6 +82,7 @@ class ServiceManager {
   late final FirewallState firewallState;
   late final VpnState vpnState;
   late final AppSettingsState appSettingsState;
+  late final ServerStatusState serverStatusState;
 
   // ========== Repositories（6个） ==========
   late final ThemeRepository _themeRepository;
@@ -117,6 +119,7 @@ class ServiceManager {
     firewallState = FirewallState();
     vpnState = VpnState();
     appSettingsState = AppSettingsState();
+    serverStatusState = ServerStatusState();
   }
 
   void _initializeRepositories() {

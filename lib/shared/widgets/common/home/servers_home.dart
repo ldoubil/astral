@@ -1,4 +1,5 @@
 ﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/server_status_state.dart';
 import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:astral/shared/widgets/common/home_box.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +7,45 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-class ServersHome extends StatelessWidget {
+class ServersHome extends StatefulWidget {
   const ServersHome({super.key});
+
+  @override
+  State<ServersHome> createState() => _ServersHomeState();
+}
+
+class _ServersHomeState extends State<ServersHome> {
+  @override
+  void initState() {
+    super.initState();
+    // 启动服务器状态定期检测（每30秒检测一次）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final servers = ServiceManager().serverState.servers.value;
+      ServiceManager().serverStatusState.startPeriodicCheck(
+        servers,
+        const Duration(seconds: 30),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ServiceManager().serverStatusState.stopPeriodicCheck();
+    super.dispose();
+  }
+
+  Color _getStatusColor(ServerStatus status, ColorScheme colorScheme) {
+    switch (status) {
+      case ServerStatus.online:
+        return Colors.green;
+      case ServerStatus.offline:
+        return Colors.red;
+      case ServerStatus.inUse:
+        return Colors.blue;
+      case ServerStatus.unknown:
+        return colorScheme.outline;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +68,14 @@ class ServersHome extends StatelessWidget {
           const SizedBox(height: 8),
           Watch((context) {
             final servers = ServiceManager().serverState.servers.watch(context);
+            final serverStatuses = ServiceManager()
+                .serverStatusState
+                .serverStatuses
+                .watch(context);
+
             var enabledServers =
                 servers.where((s) => s.enable == true).toList();
+
             if (enabledServers.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -44,10 +88,14 @@ class ServersHome extends StatelessWidget {
                 ),
               );
             }
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children:
                   enabledServers.map<Widget>((server) {
+                    final status =
+                        serverStatuses[server.id] ?? ServerStatus.unknown;
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(
@@ -71,7 +119,7 @@ class ServersHome extends StatelessWidget {
                             width: 4,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: colorScheme.primary,
+                              color: _getStatusColor(status, colorScheme),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
