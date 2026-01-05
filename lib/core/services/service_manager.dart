@@ -191,4 +191,11 @@ class ServiceManager {
   void reset() {
     _instance = null;
   }
+
+  /// 重新加载所有服务数据（用于数据库导入后刷新状态）
+  Future<void> reload() async {
+    debugPrint('开始重新加载所有服务数据...');
+    await init();
+    debugPrint('所有服务数据重新加载完成');
+  }
 }

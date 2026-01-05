@@ -110,7 +110,7 @@ class _MainScreenState extends State<MainScreen>
     NavigationItem(
       icon: Icons.explore_outlined,
       activeIcon: Icons.explore,
-      label: "发现",
+      label: "探索",
       page: const ExplorePage(),
     ),
 
@@ -136,7 +136,7 @@ class _MainScreenState extends State<MainScreen>
       final currentIndex = ServiceManager().uiState.selectedIndex.value;
       final itemCount = navigationItems.length;
 
-      // 如果当前索引超出范围（比如禁用了发现页面），自动回到主页
+      // 如果当前索引超出范围（比如禁用了探索页面），自动回到主页
       if (currentIndex >= itemCount && itemCount > 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (ServiceManager().uiState.selectedIndex.value >= itemCount) {

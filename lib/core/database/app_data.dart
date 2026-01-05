@@ -14,19 +14,20 @@ import 'package:astral/core/models/theme_settings.dart';
 import 'package:astral/core/models/converters/theme_settings_converter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:astral/core/services/service_manager.dart';
 
 class AppDatabase {
   static final AppDatabase _instance = AppDatabase._internal();
   factory AppDatabase() => _instance;
   AppDatabase._internal();
 
-  late final Isar isar;
-  late final ThemeSettingsRepository themeSettings;
-  late final NetConfigRepository netConfigSetting;
-  late final RoomCz RoomSetting;
-  late final AllSettingsCz AllSettings;
-  late final ServerCz ServerSetting;
-  late final MagicWallModelCz MagicWallSetting;
+  late Isar isar;
+  late ThemeSettingsRepository themeSettings;
+  late NetConfigRepository netConfigSetting;
+  late RoomCz RoomSetting;
+  late AllSettingsCz AllSettings;
+  late ServerCz ServerSetting;
+  late MagicWallModelCz MagicWallSetting;
 
   /// 初始化数据库
   Future<void> init([String? customDbDir]) async {
@@ -77,5 +78,78 @@ class AppDatabase {
     // 确保初始化完成
     await RoomSetting.init();
     await ServerSetting.init();
+  }
+
+  /// 导出数据库到指定路径
+  Future<String> exportDatabase(String exportPath) async {
+    // 获取数据库文件路径（需要在关闭前获取）
+    final dbPath = isar.directory!;
+    final dbFile = File(path.join(dbPath, 'default.isar'));
+
+    // 关闭当前数据库连接
+    await isar.close();
+
+    // 复制数据库文件到导出路径
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final exportFile = File(
+      path.join(exportPath, 'astral_backup_$timestamp.isar'),
+    );
+    await dbFile.copy(exportFile.path);
+
+    // 重新打开数据库
+    await init();
+
+    return exportFile.path;
+  }
+
+  /// 从文件导入数据库（完全替换）
+  /// 导入后会自动重新加载所有服务状态
+  Future<void> importDatabase(String importFilePath) async {
+    final importFile = File(importFilePath);
+    if (!await importFile.exists()) {
+      throw Exception('导入文件不存在');
+    }
+
+    // 获取数据库目录（需要在关闭前获取）
+    final dbPath = isar.directory!;
+    final dbFile = File(path.join(dbPath, 'default.isar'));
+
+    // 关闭当前数据库连接
+    await isar.close();
+
+    // 备份当前数据库（以防导入失败）
+    final backupFile = File(path.join(dbPath, 'default.isar.backup'));
+    if (await dbFile.exists()) {
+      await dbFile.copy(backupFile.path);
+    }
+
+    try {
+      // 删除旧数据库文件
+      if (await dbFile.exists()) {
+        await dbFile.delete();
+      }
+
+      // 复制导入文件到数据库位置
+      await importFile.copy(dbFile.path);
+
+      // 重新初始化数据库
+      await init();
+
+      // 重新加载所有服务数据
+      await ServiceManager().reload();
+
+      // 删除备份文件
+      if (await backupFile.exists()) {
+        await backupFile.delete();
+      }
+    } catch (e) {
+      // 导入失败，恢复备份
+      if (await backupFile.exists()) {
+        await backupFile.copy(dbFile.path);
+        await backupFile.delete();
+      }
+      await init();
+      rethrow;
+    }
   }
 }
