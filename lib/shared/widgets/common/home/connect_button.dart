@@ -147,7 +147,7 @@ class _ConnectButtonState extends State<ConnectButton>
         AndroidNotificationDetails(
           'astral_connection',
           'Astral 连接状态',
-          channelDescription: '显示 Astral VPN 连接状态和信息',
+          channelDescription: '显示 Astral 连接状态和信息',
           importance: Importance.low,
           priority: Priority.low,
           ongoing: true,
@@ -162,7 +162,7 @@ class _ConnectButtonState extends State<ConnectButton>
 
     await _notificationsPlugin!.show(
       _notificationId,
-      'Astral VPN - $status',
+      'Astral - $status',
       'IP: $ip | 连接时间: $duration',
       notificationDetails,
     );
@@ -198,7 +198,11 @@ class _ConnectButtonState extends State<ConnectButton>
     final rom = ServiceManager().roomState.selectedRoom.value;
     if (rom == null) return;
 
+    // 每次连接前先确保服务器已关闭，清理旧状态
+    closeServer();
+
     // 检查服务器列表是否为空，以及当前房间是否携带服务器
+    // 重要：每次都重新读取最新的服务器配置
     final enabledServers =
         ServiceManager().serverState.servers.value
             .where((server) => server.enable)
@@ -226,14 +230,16 @@ class _ConnectButtonState extends State<ConnectButton>
     }
 
     try {
-      // 初始化服务器
+      // 初始化服务器配置（使用最新的服务器列表）
       await _initializeServer(rom);
 
       // 开始连接流程
       await _beginConnectionProcess();
     } catch (e) {
       // 发生错误时重置状态
-      ServiceManager().connectionState.connectionState.value = CoState.idle;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ServiceManager().connectionState.connectionState.value = CoState.idle;
+      });
       rethrow;
     }
   }
@@ -301,9 +307,13 @@ class _ConnectButtonState extends State<ConnectButton>
       severurl: () {
         // 获取全局启用的服务器生成的URL列表
         final globalUrls = <String>[];
-        for (var server in services.serverState.servers.value.where(
-          (server) => server.enable,
-        )) {
+        // 重新从 ServiceManager 获取最新的服务器列表
+        final currentServers = ServiceManager().serverState.servers.value;
+        debugPrint('=== 当前服务器配置 ===');
+        debugPrint('服务器总数: ${currentServers.length}');
+
+        for (var server in currentServers.where((server) => server.enable)) {
+          debugPrint('启用的服务器: ${server.name} - ${server.url}');
           if (server.tcp) globalUrls.add('tcp://${server.url}');
           if (server.udp) globalUrls.add('udp://${server.url}');
           if (server.ws) globalUrls.add('ws://${server.url}');
@@ -319,6 +329,9 @@ class _ConnectButtonState extends State<ConnectButton>
         // 合并房间服务器和全局服务器，然后去重
         final mergedUrls = <String>[...rom.servers, ...globalUrls];
         final deduplicatedUrls = mergedUrls.toSet().toList();
+
+        debugPrint('最终服务器URL列表: $deduplicatedUrls');
+        debugPrint('===================');
 
         return deduplicatedUrls;
       }(),
@@ -365,10 +378,16 @@ class _ConnectButtonState extends State<ConnectButton>
   }
 
   Future<void> _beginConnectionProcess() async {
-    ServiceManager().connectionState.connectionState.value = CoState.connecting;
-    setState(() {
-      _progress = 0.0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ServiceManager().connectionState.connectionState.value =
+          CoState.connecting;
     });
+
+    if (mounted) {
+      setState(() {
+        _progress = 0.0;
+      });
+    }
 
     // 在安卓平台显示连接中通知
     if (Platform.isAndroid) {
@@ -440,12 +459,20 @@ class _ConnectButtonState extends State<ConnectButton>
     // 连接成功时取消超时定时器
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
-    setState(() {
-      _progress = 100;
-      _connectionDuration = 0;
+
+    if (mounted) {
+      setState(() {
+        _progress = 100;
+        _connectionDuration = 0;
+      });
+    }
+
+    // 使用 WidgetsBinding 延迟修改 Signal 到下一帧
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ServiceManager().connectionState.connectionState.value =
+          CoState.connected;
+      ServiceManager().connectionState.isConnecting.value = true;
     });
-    ServiceManager().connectionState.connectionState.value = CoState.connected;
-    ServiceManager().connectionState.isConnecting.value = true;
     if (Platform.isAndroid) {
       _startVpn(
         ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
@@ -489,8 +516,10 @@ class _ConnectButtonState extends State<ConnectButton>
       final data = jsonDecode(runningInfo);
 
       ServiceManager().networkConfig.updateIpv4(_extractIpv4Address(data));
-      ServiceManager().connectionState.netStatus.value =
-          await getNetworkStatus();
+      final netStatus = await getNetworkStatus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ServiceManager().connectionState.netStatus.value = netStatus;
+      });
 
       // 在安卓平台更新通知
       if (Platform.isAndroid &&
@@ -515,7 +544,9 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 该方法负责将按钮状态从已连接(connected)切换回空闲(idle)状态，
   /// 实现断开连接的功能
   void _disconnect() {
-    ServiceManager().connectionState.isConnecting.value = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ServiceManager().connectionState.isConnecting.value = false;
+    });
     if (Platform.isAndroid) {
       vpnPlugin?.stopVpn();
       // 取消通知
@@ -525,7 +556,9 @@ class _ConnectButtonState extends State<ConnectButton>
     _connectionTimer?.cancel();
     _connectionTimer = null;
     closeServer();
-    ServiceManager().connectionState.connectionState.value = CoState.idle;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ServiceManager().connectionState.connectionState.value = CoState.idle;
+    });
   }
 
   /// 切换连接状态的方法

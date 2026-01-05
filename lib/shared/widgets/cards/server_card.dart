@@ -109,16 +109,23 @@ class _ServerCardState extends State<ServerCard> {
                     // 开关
                     Transform.scale(
                       scale: 0.85,
-                      child: Switch(
-                        value: server.enable,
-                        onChanged: (value) {
-                          ServiceManager().server.setServerEnable(
-                            server,
-                            value,
-                          );
-                          setState(() {});
-                        },
-                      ),
+                      child: Watch((context) {
+                        // 监听服务器状态变化
+                        final currentServer = ServiceManager().serverState
+                            .getServerById(server.id);
+                        final isEnabled =
+                            currentServer?.enable ?? server.enable;
+
+                        return Switch(
+                          value: isEnabled,
+                          onChanged: (value) {
+                            ServiceManager().server.setServerEnable(
+                              server,
+                              value,
+                            );
+                          },
+                        );
+                      }),
                     ),
                     const SizedBox(width: 4),
                     // 更多操作菜单
