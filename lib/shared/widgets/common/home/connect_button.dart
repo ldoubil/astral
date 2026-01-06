@@ -240,7 +240,7 @@ class _ConnectButtonState extends State<ConnectButton>
       await _beginConnectionProcess();
     } catch (e) {
       // 发生错误时重置状态
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      untracked(() {
         ServiceManager().connectionState.connectionState.value = CoState.idle;
       });
       rethrow;
@@ -293,7 +293,7 @@ class _ConnectButtonState extends State<ConnectButton>
   }
 
   Future<void> _beginConnectionProcess() async {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    untracked(() {
       ServiceManager().connectionState.connectionState.value =
           CoState.connecting;
     });
@@ -351,15 +351,27 @@ class _ConnectButtonState extends State<ConnectButton>
   }
 
   Future<bool> _checkAndUpdateConnectionStatus() async {
-    final runningInfo = await getRunningInfo();
-    final data = jsonDecode(runningInfo);
+    try {
+      final runningInfo = await getRunningInfo();
+      if (runningInfo.isEmpty) {
+        return false;
+      }
 
-    final ipv4Address = _extractIpv4Address(data);
-    if (ipv4Address != "0.0.0.0" &&
-        ServiceManager().networkConfigState.ipv4.value != ipv4Address) {
-      ServiceManager().networkConfig.updateIpv4(ipv4Address);
+      final data = jsonDecode(runningInfo);
+      if (data == null || data is! Map<String, dynamic>) {
+        return false;
+      }
+
+      final ipv4Address = _extractIpv4Address(data);
+      if (ipv4Address != "0.0.0.0" &&
+          ServiceManager().networkConfigState.ipv4.value != ipv4Address) {
+        ServiceManager().networkConfig.updateIpv4(ipv4Address);
+      }
+      return ipv4Address != "0.0.0.0";
+    } catch (e) {
+      debugPrint('⚠️ 检查连接状态失败: $e');
+      return false;
     }
-    return ipv4Address != "0.0.0.0";
   }
 
   String _extractIpv4Address(Map<String, dynamic> data) {
@@ -381,8 +393,8 @@ class _ConnectButtonState extends State<ConnectButton>
       });
     }
 
-    // 使用 WidgetsBinding 延迟修改 Signal 到下一帧
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 使用untracked避免在effect中修改signal
+    untracked(() {
       ServiceManager().connectionState.connectionState.value =
           CoState.connected;
       ServiceManager().connectionState.isConnecting.value = true;
@@ -434,7 +446,9 @@ class _ConnectButtonState extends State<ConnectButton>
 
       ServiceManager().networkConfig.updateIpv4(_extractIpv4Address(data));
       final netStatus = await getNetworkStatus();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      // 使用untracked避免在effect中修改signal
+      untracked(() {
         ServiceManager().connectionState.netStatus.value = netStatus;
       });
 
@@ -461,7 +475,7 @@ class _ConnectButtonState extends State<ConnectButton>
   /// 该方法负责将按钮状态从已连接(connected)切换回空闲(idle)状态，
   /// 实现断开连接的功能
   void _disconnect() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    untracked(() {
       ServiceManager().connectionState.isConnecting.value = false;
     });
     if (Platform.isAndroid) {
@@ -473,7 +487,7 @@ class _ConnectButtonState extends State<ConnectButton>
     _connectionTimer?.cancel();
     _connectionTimer = null;
     closeServer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    untracked(() {
       ServiceManager().connectionState.connectionState.value = CoState.idle;
 
       // 清除活跃服务器标记
