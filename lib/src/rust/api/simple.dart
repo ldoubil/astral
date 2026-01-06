@@ -90,6 +90,7 @@ class FlagsC {
   final bool disableP2P;
   final bool relayAllPeerRpc;
   final bool disableUdpHolePunching;
+  final bool disableTcpHolePunching;
   final bool multiThread;
   final int dataCompressAlgo;
   final bool bindDevice;
@@ -117,6 +118,7 @@ class FlagsC {
     required this.disableP2P,
     required this.relayAllPeerRpc,
     required this.disableUdpHolePunching,
+    required this.disableTcpHolePunching,
     required this.multiThread,
     required this.dataCompressAlgo,
     required this.bindDevice,
@@ -146,6 +148,7 @@ class FlagsC {
       disableP2P.hashCode ^
       relayAllPeerRpc.hashCode ^
       disableUdpHolePunching.hashCode ^
+      disableTcpHolePunching.hashCode ^
       multiThread.hashCode ^
       dataCompressAlgo.hashCode ^
       bindDevice.hashCode ^
@@ -177,6 +180,7 @@ class FlagsC {
           disableP2P == other.disableP2P &&
           relayAllPeerRpc == other.relayAllPeerRpc &&
           disableUdpHolePunching == other.disableUdpHolePunching &&
+          disableTcpHolePunching == other.disableTcpHolePunching &&
           multiThread == other.multiThread &&
           dataCompressAlgo == other.dataCompressAlgo &&
           bindDevice == other.bindDevice &&

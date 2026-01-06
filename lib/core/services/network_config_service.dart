@@ -41,6 +41,7 @@ class NetworkConfigService {
     state.disableQuicInput.value = config.disableQuicInput;
     state.relayAllPeerRpc.value = config.relayAllPeerRpc;
     state.disableUdpHolePunching.value = config.disableUdpHolePunching;
+    state.disableTcpHolePunching.value = config.disableTcpHolePunching;
     state.disableSymHolePunching.value = config.disableSymHolePunching;
     state.multiThread.value = config.multiThread;
     state.bindDevice.value = config.bindDevice;
@@ -199,6 +200,11 @@ class NetworkConfigService {
   Future<void> updateDisableUdpHolePunching(bool value) async {
     state.disableUdpHolePunching.value = value;
     await _repository.updateDisableUdpHolePunching(value);
+  }
+
+  Future<void> updateDisableTcpHolePunching(bool value) async {
+    state.disableTcpHolePunching.value = value;
+    await _repository.updateDisableTcpHolePunching(value);
   }
 
   Future<void> updateDisableSymHolePunching(bool value) async {

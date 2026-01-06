@@ -210,6 +210,8 @@ class ServerConfigBuilder {
       relayAllPeerRpc: true,
       disableUdpHolePunching:
           rc?.disableUdpHolePunching ?? nc.disableUdpHolePunching.value,
+      disableTcpHolePunching:
+          rc?.disableTcpHolePunching ?? nc.disableTcpHolePunching.value,
       dataCompressAlgo: rc?.dataCompressAlgo ?? nc.dataCompressAlgo.value,
       bindDevice: (rc?.bindDevice == true) ? nc.bindDevice.value : false,
       enableKcpProxy: rc?.enableKcpProxy ?? nc.enableKcpProxy.value,

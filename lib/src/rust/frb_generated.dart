@@ -2271,8 +2271,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FlagsC dco_decode_flags_c(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 25)
-      throw Exception('unexpected arr length: expect 25 but see ${arr.length}');
+    if (arr.length != 26)
+      throw Exception('unexpected arr length: expect 26 but see ${arr.length}');
     return FlagsC(
       defaultProtocol: dco_decode_String(arr[0]),
       devName: dco_decode_String(arr[1]),
@@ -2287,18 +2287,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       disableP2P: dco_decode_bool(arr[10]),
       relayAllPeerRpc: dco_decode_bool(arr[11]),
       disableUdpHolePunching: dco_decode_bool(arr[12]),
-      multiThread: dco_decode_bool(arr[13]),
-      dataCompressAlgo: dco_decode_i_32(arr[14]),
-      bindDevice: dco_decode_bool(arr[15]),
-      enableKcpProxy: dco_decode_bool(arr[16]),
-      disableKcpInput: dco_decode_bool(arr[17]),
-      disableRelayKcp: dco_decode_bool(arr[18]),
-      proxyForwardBySystem: dco_decode_bool(arr[19]),
-      acceptDns: dco_decode_bool(arr[20]),
-      privateMode: dco_decode_bool(arr[21]),
-      enableQuicProxy: dco_decode_bool(arr[22]),
-      disableQuicInput: dco_decode_bool(arr[23]),
-      disableSymHolePunching: dco_decode_bool(arr[24]),
+      disableTcpHolePunching: dco_decode_bool(arr[13]),
+      multiThread: dco_decode_bool(arr[14]),
+      dataCompressAlgo: dco_decode_i_32(arr[15]),
+      bindDevice: dco_decode_bool(arr[16]),
+      enableKcpProxy: dco_decode_bool(arr[17]),
+      disableKcpInput: dco_decode_bool(arr[18]),
+      disableRelayKcp: dco_decode_bool(arr[19]),
+      proxyForwardBySystem: dco_decode_bool(arr[20]),
+      acceptDns: dco_decode_bool(arr[21]),
+      privateMode: dco_decode_bool(arr[22]),
+      enableQuicProxy: dco_decode_bool(arr[23]),
+      disableQuicInput: dco_decode_bool(arr[24]),
+      disableSymHolePunching: dco_decode_bool(arr[25]),
     );
   }
 
@@ -2886,6 +2887,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_disableP2P = sse_decode_bool(deserializer);
     var var_relayAllPeerRpc = sse_decode_bool(deserializer);
     var var_disableUdpHolePunching = sse_decode_bool(deserializer);
+    var var_disableTcpHolePunching = sse_decode_bool(deserializer);
     var var_multiThread = sse_decode_bool(deserializer);
     var var_dataCompressAlgo = sse_decode_i_32(deserializer);
     var var_bindDevice = sse_decode_bool(deserializer);
@@ -2912,6 +2914,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       disableP2P: var_disableP2P,
       relayAllPeerRpc: var_relayAllPeerRpc,
       disableUdpHolePunching: var_disableUdpHolePunching,
+      disableTcpHolePunching: var_disableTcpHolePunching,
       multiThread: var_multiThread,
       dataCompressAlgo: var_dataCompressAlgo,
       bindDevice: var_bindDevice,
@@ -3620,6 +3623,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.disableP2P, serializer);
     sse_encode_bool(self.relayAllPeerRpc, serializer);
     sse_encode_bool(self.disableUdpHolePunching, serializer);
+    sse_encode_bool(self.disableTcpHolePunching, serializer);
     sse_encode_bool(self.multiThread, serializer);
     sse_encode_i_32(self.dataCompressAlgo, serializer);
     sse_encode_bool(self.bindDevice, serializer);

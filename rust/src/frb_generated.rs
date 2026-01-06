@@ -2281,6 +2281,7 @@ impl SseDecode for crate::api::simple::FlagsC {
         let mut var_disableP2P = <bool>::sse_decode(deserializer);
         let mut var_relayAllPeerRpc = <bool>::sse_decode(deserializer);
         let mut var_disableUdpHolePunching = <bool>::sse_decode(deserializer);
+        let mut var_disableTcpHolePunching = <bool>::sse_decode(deserializer);
         let mut var_multiThread = <bool>::sse_decode(deserializer);
         let mut var_dataCompressAlgo = <i32>::sse_decode(deserializer);
         let mut var_bindDevice = <bool>::sse_decode(deserializer);
@@ -2307,6 +2308,7 @@ impl SseDecode for crate::api::simple::FlagsC {
             disable_p2p: var_disableP2P,
             relay_all_peer_rpc: var_relayAllPeerRpc,
             disable_udp_hole_punching: var_disableUdpHolePunching,
+            disable_tcp_hole_punching: var_disableTcpHolePunching,
             multi_thread: var_multiThread,
             data_compress_algo: var_dataCompressAlgo,
             bind_device: var_bindDevice,
@@ -3063,6 +3065,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::simple::FlagsC {
             self.disable_p2p.into_into_dart().into_dart(),
             self.relay_all_peer_rpc.into_into_dart().into_dart(),
             self.disable_udp_hole_punching.into_into_dart().into_dart(),
+            self.disable_tcp_hole_punching.into_into_dart().into_dart(),
             self.multi_thread.into_into_dart().into_dart(),
             self.data_compress_algo.into_into_dart().into_dart(),
             self.bind_device.into_into_dart().into_dart(),
@@ -3490,6 +3493,7 @@ impl SseEncode for crate::api::simple::FlagsC {
         <bool>::sse_encode(self.disable_p2p, serializer);
         <bool>::sse_encode(self.relay_all_peer_rpc, serializer);
         <bool>::sse_encode(self.disable_udp_hole_punching, serializer);
+        <bool>::sse_encode(self.disable_tcp_hole_punching, serializer);
         <bool>::sse_encode(self.multi_thread, serializer);
         <i32>::sse_encode(self.data_compress_algo, serializer);
         <bool>::sse_encode(self.bind_device, serializer);

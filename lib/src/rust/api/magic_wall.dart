@@ -6,8 +6,9 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `IS_RUNNING`, `MAGIC_WALL_RULES`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `deref`, `deref`, `fmt`, `fmt`, `initialize`, `initialize`
+// These functions are ignored because they are not marked as `pub`: `apply_rule`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `FILTER_TRACKER`, `FIREWALL`, `RULE_STORE`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `deref`, `deref`, `deref`, `fmt`, `fmt`, `initialize`, `initialize`, `initialize`
 
 /// 启动魔法墙引擎
 Future<void> startMagicWall() =>

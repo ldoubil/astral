@@ -30,7 +30,7 @@ class NetworkConfigState {
   final dataCompressAlgo = signal(1);
   final cidrproxy = signal<List<String>>([]);
 
-  // ========== 高级网络配置 (9个) ==========
+  // ========== 高级网络配置 (10个) ==========
   final relayNetworkWhitelist = signal('');
   final disableP2p = signal(false);
   final privateMode = signal(false);
@@ -38,6 +38,7 @@ class NetworkConfigState {
   final disableQuicInput = signal(false);
   final relayAllPeerRpc = signal(false);
   final disableUdpHolePunching = signal(false);
+  final disableTcpHolePunching = signal(false);
   final disableSymHolePunching = signal(false);
   final multiThread = signal(true);
 

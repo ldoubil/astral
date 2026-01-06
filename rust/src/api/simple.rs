@@ -358,6 +358,7 @@ pub struct FlagsC {
     pub disable_p2p: bool,
     pub relay_all_peer_rpc: bool,
     pub disable_udp_hole_punching: bool,
+    pub disable_tcp_hole_punching: bool,
     pub multi_thread: bool,
     pub data_compress_algo: i32,
     pub bind_device: bool,
@@ -447,6 +448,7 @@ pub fn create_server(
         flags.disable_p2p = flag.disable_p2p;
         flags.relay_all_peer_rpc = flag.relay_all_peer_rpc;
         flags.disable_udp_hole_punching = flag.disable_udp_hole_punching;
+        flags.disable_tcp_hole_punching = flag.disable_tcp_hole_punching;
         flags.multi_thread = flag.multi_thread;
         flags.data_compress_algo = flag.data_compress_algo;
         flags.bind_device = flag.bind_device;

@@ -92,6 +92,9 @@ class NetConfig {
   /// 是否禁用UDP打洞
   bool disable_udp_hole_punching = false; //x
 
+  /// 是否禁用TCP打洞
+  bool disable_tcp_hole_punching = false; //x
+
   /// 是否禁用对称NAT打洞
   bool disable_sym_hole_punching = false; //x
 

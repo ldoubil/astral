@@ -51,6 +51,8 @@ class NetworkConfigRepository {
       _db.netConfigSetting.getRelayAllPeerRpc();
   Future<bool> getDisableUdpHolePunching() =>
       _db.netConfigSetting.getDisableUdpHolePunching();
+  Future<bool> getDisableTcpHolePunching() =>
+      _db.netConfigSetting.getDisableTcpHolePunching();
   Future<bool> getDisableSymHolePunching() =>
       _db.netConfigSetting.getDisableSymHolePunching();
   Future<bool> getMultiThread() => _db.netConfigSetting.getMultiThread();
@@ -125,6 +127,8 @@ class NetworkConfigRepository {
       _db.netConfigSetting.updateRelayAllPeerRpc(value);
   Future<void> updateDisableUdpHolePunching(bool value) =>
       _db.netConfigSetting.updateDisableUdpHolePunching(value);
+  Future<void> updateDisableTcpHolePunching(bool value) =>
+      _db.netConfigSetting.updateDisableTcpHolePunching(value);
   Future<void> updateDisableSymHolePunching(bool value) =>
       _db.netConfigSetting.updateDisableSymHolePunching(value);
   Future<void> updateMultiThread(bool value) =>
@@ -187,6 +191,7 @@ class NetworkConfigRepository {
       disableQuicInput: await getDisableQuicInput(),
       relayAllPeerRpc: await getRelayAllPeerRpc(),
       disableUdpHolePunching: await getDisableUdpHolePunching(),
+      disableTcpHolePunching: await getDisableTcpHolePunching(),
       disableSymHolePunching: await getDisableSymHolePunching(),
       multiThread: await getMultiThread(),
       bindDevice: await getBindDevice(),
@@ -228,6 +233,7 @@ class NetworkConfig {
   final bool disableQuicInput;
   final bool relayAllPeerRpc;
   final bool disableUdpHolePunching;
+  final bool disableTcpHolePunching;
   final bool disableSymHolePunching;
   final bool multiThread;
   final bool bindDevice;
@@ -265,6 +271,7 @@ class NetworkConfig {
     required this.disableQuicInput,
     required this.relayAllPeerRpc,
     required this.disableUdpHolePunching,
+    required this.disableTcpHolePunching,
     required this.disableSymHolePunching,
     required this.multiThread,
     required this.bindDevice,

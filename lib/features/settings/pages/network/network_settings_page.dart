@@ -132,6 +132,20 @@ class NetworkSettingsPage extends BaseSettingsPage {
                 },
               ),
               SwitchListTile(
+                title: const Text('禁用TCP打洞'),
+                subtitle: const Text('禁用IPv4的TCP直连'),
+                value:
+                    ServiceManager()
+                        .networkConfigState
+                        .disableTcpHolePunching
+                        .value,
+                onChanged: (value) {
+                  ServiceManager().networkConfig.updateDisableTcpHolePunching(
+                    value,
+                  );
+                },
+              ),
+              SwitchListTile(
                 title: Text(LocaleKeys.disable_sym_hole_punching.tr()),
                 subtitle: Text(LocaleKeys.disable_sym_hole_punching_desc.tr()),
                 value:
@@ -195,15 +209,6 @@ class NetworkSettingsPage extends BaseSettingsPage {
                 value: ServiceManager().networkConfigState.enableKcpProxy.value,
                 onChanged: (value) {
                   ServiceManager().networkConfig.updateEnableKcpProxy(value);
-                },
-              ),
-              SwitchListTile(
-                title: Text(LocaleKeys.enable_quic_proxy.tr()),
-                subtitle: Text(LocaleKeys.enable_quic_proxy_desc.tr()),
-                value:
-                    ServiceManager().networkConfigState.enableQuicProxy.value,
-                onChanged: (value) {
-                  ServiceManager().networkConfig.updateEnableQuicProxy(value);
                 },
               ),
               SwitchListTile(

@@ -230,10 +230,10 @@ $roomSummary$shareOptions
       'latencyFirst': false,
       'disableP2p': false,
       'disableUdpHolePunching': false,
+      'disableTcpHolePunching': false,
       'disableSymHolePunching': false,
       'dataCompressAlgo': false,
       'enableKcpProxy': false,
-      'enableQuicProxy': false,
       'bindDevice': false,
       'noTun': false,
     };
@@ -292,6 +292,10 @@ $roomSummary$shareOptions
                     networkConfigOptions['disableUdpHolePunching']!
                         ? currentConfig.disableUdpHolePunching
                         : null,
+                disableTcpHolePunching:
+                    networkConfigOptions['disableTcpHolePunching']!
+                        ? currentConfig.disableTcpHolePunching
+                        : null,
                 disableSymHolePunching:
                     networkConfigOptions['disableSymHolePunching']!
                         ? currentConfig.disableSymHolePunching
@@ -303,10 +307,6 @@ $roomSummary$shareOptions
                 enableKcpProxy:
                     networkConfigOptions['enableKcpProxy']!
                         ? currentConfig.enableKcpProxy
-                        : null,
-                enableQuicProxy:
-                    networkConfigOptions['enableQuicProxy']!
-                        ? currentConfig.enableQuicProxy
                         : null,
                 bindDevice:
                     networkConfigOptions['bindDevice']!
@@ -1100,6 +1100,13 @@ $roomSummary$shareOptions
                     ),
                     _buildConfigCheckbox(
                       context,
+                      '禁用TCP打洞',
+                      'disableTcpHolePunching',
+                      networkConfigOptions,
+                      setState,
+                    ),
+                    _buildConfigCheckbox(
+                      context,
                       '禁用对称打洞',
                       'disableSymHolePunching',
                       networkConfigOptions,
@@ -1116,13 +1123,6 @@ $roomSummary$shareOptions
                       context,
                       'KCP代理',
                       'enableKcpProxy',
-                      networkConfigOptions,
-                      setState,
-                    ),
-                    _buildConfigCheckbox(
-                      context,
-                      'QUIC代理',
-                      'enableQuicProxy',
                       networkConfigOptions,
                       setState,
                     ),
