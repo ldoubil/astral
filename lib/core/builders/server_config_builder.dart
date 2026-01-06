@@ -93,7 +93,10 @@ class ServerConfigBuilder {
   }
 
   /// 构建服务器URL列表
-  ServerConfigBuilder withServers(dynamic room, List<ServerConfig> enabledServers) {
+  ServerConfigBuilder withServers(
+    dynamic room,
+    List<ServerConfig> enabledServers,
+  ) {
     // 房间服务器优先 - 直接检查列表，不依赖 hasServers 标志
     if (room.servers != null && room.servers.isNotEmpty) {
       _serverUrls = List<String>.from(room.servers);
