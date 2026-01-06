@@ -50,6 +50,8 @@ class NetworkConfigService {
     state.disableRelayKcp.value = config.disableRelayKcp;
     state.proxyForwardBySystem.value = config.proxyForwardBySystem;
     state.acceptDns.value = config.acceptDns;
+    state.tcpWhitelist.value = config.tcpWhitelist;
+    state.udpWhitelist.value = config.udpWhitelist;
   }
 
   // ========== 基础配置方法 ==========
@@ -263,5 +265,15 @@ class NetworkConfigService {
   Future<void> updateAcceptDns(bool value) async {
     state.acceptDns.value = value;
     await _repository.updateAcceptDns(value);
+  }
+
+  Future<void> updateTcpWhitelist(String value) async {
+    state.tcpWhitelist.value = value;
+    await _repository.updateTcpWhitelist(value);
+  }
+
+  Future<void> updateUdpWhitelist(String value) async {
+    state.udpWhitelist.value = value;
+    await _repository.updateUdpWhitelist(value);
   }
 }

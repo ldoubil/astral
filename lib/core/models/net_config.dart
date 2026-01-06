@@ -130,4 +130,10 @@ class NetConfig {
 
   /// 是否禁用QUIC输入
   bool disable_quic_input = false;
+
+  /// TCP端口白名单（逗号分隔，如: "80,443,8000-9000"）
+  String tcp_whitelist = '';
+
+  /// UDP端口白名单（逗号分隔，如: "53,5000-6000"）
+  String udp_whitelist = '';
 }

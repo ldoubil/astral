@@ -175,8 +175,18 @@ const NetConfigSchema = CollectionSchema(
       name: r'relay_network_whitelist',
       type: IsarType.string,
     ),
-    r'use_smoltcp': PropertySchema(
+    r'tcp_whitelist': PropertySchema(
       id: 36,
+      name: r'tcp_whitelist',
+      type: IsarType.string,
+    ),
+    r'udp_whitelist': PropertySchema(
+      id: 37,
+      name: r'udp_whitelist',
+      type: IsarType.string,
+    ),
+    r'use_smoltcp': PropertySchema(
+      id: 38,
       name: r'use_smoltcp',
       type: IsarType.bool,
     ),
@@ -248,6 +258,8 @@ int _netConfigEstimateSize(
     }
   }
   bytesCount += 3 + object.relay_network_whitelist.length * 3;
+  bytesCount += 3 + object.tcp_whitelist.length * 3;
+  bytesCount += 3 + object.udp_whitelist.length * 3;
   return bytesCount;
 }
 
@@ -298,7 +310,9 @@ void _netConfigSerialize(
   writer.writeBool(offsets[33], object.proxy_forward_by_system);
   writer.writeBool(offsets[34], object.relay_all_peer_rpc);
   writer.writeString(offsets[35], object.relay_network_whitelist);
-  writer.writeBool(offsets[36], object.use_smoltcp);
+  writer.writeString(offsets[36], object.tcp_whitelist);
+  writer.writeString(offsets[37], object.udp_whitelist);
+  writer.writeBool(offsets[38], object.use_smoltcp);
 }
 
 NetConfig _netConfigDeserialize(
@@ -352,7 +366,9 @@ NetConfig _netConfigDeserialize(
   object.proxy_forward_by_system = reader.readBool(offsets[33]);
   object.relay_all_peer_rpc = reader.readBool(offsets[34]);
   object.relay_network_whitelist = reader.readString(offsets[35]);
-  object.use_smoltcp = reader.readBool(offsets[36]);
+  object.tcp_whitelist = reader.readString(offsets[36]);
+  object.udp_whitelist = reader.readString(offsets[37]);
+  object.use_smoltcp = reader.readBool(offsets[38]);
   return object;
 }
 
@@ -443,6 +459,10 @@ P _netConfigDeserializeProp<P>(
     case 35:
       return (reader.readString(offset)) as P;
     case 36:
+      return (reader.readString(offset)) as P;
+    case 37:
+      return (reader.readString(offset)) as P;
+    case 38:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2876,6 +2896,288 @@ extension NetConfigQueryFilter
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'tcp_whitelist',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'tcp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'tcp_whitelist',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'tcp_whitelist', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  tcp_whitelistIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'tcp_whitelist', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'udp_whitelist',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'udp_whitelist',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'udp_whitelist',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'udp_whitelist', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  udp_whitelistIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'udp_whitelist', value: ''),
+      );
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition> use_smoltcpEqualTo(
     bool value,
   ) {
@@ -3302,6 +3604,30 @@ extension NetConfigQuerySortBy on QueryBuilder<NetConfig, NetConfig, QSortBy> {
   sortByRelay_network_whitelistDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'relay_network_whitelist', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByTcp_whitelist() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tcp_whitelist', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByTcp_whitelistDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tcp_whitelist', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByUdp_whitelist() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'udp_whitelist', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByUdp_whitelistDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'udp_whitelist', Sort.desc);
     });
   }
 
@@ -3736,6 +4062,30 @@ extension NetConfigQuerySortThenBy
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByTcp_whitelist() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tcp_whitelist', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByTcp_whitelistDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tcp_whitelist', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByUdp_whitelist() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'udp_whitelist', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByUdp_whitelistDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'udp_whitelist', Sort.desc);
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByUse_smoltcp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'use_smoltcp', Sort.asc);
@@ -3994,6 +4344,28 @@ extension NetConfigQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QDistinct> distinctByTcp_whitelist({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'tcp_whitelist',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QDistinct> distinctByUdp_whitelist({
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(
+        r'udp_whitelist',
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QDistinct> distinctByUse_smoltcp() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'use_smoltcp');
@@ -4228,6 +4600,18 @@ extension NetConfigQueryProperty
   relay_network_whitelistProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'relay_network_whitelist');
+    });
+  }
+
+  QueryBuilder<NetConfig, String, QQueryOperations> tcp_whitelistProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tcp_whitelist');
+    });
+  }
+
+  QueryBuilder<NetConfig, String, QQueryOperations> udp_whitelistProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'udp_whitelist');
     });
   }
 

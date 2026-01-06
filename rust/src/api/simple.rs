@@ -371,6 +371,8 @@ pub struct FlagsC {
     pub enable_quic_proxy: bool,
     pub disable_quic_input: bool,
     pub disable_sym_hole_punching: bool,
+    pub tcp_whitelist: String,
+    pub udp_whitelist: String,
 }
 
 pub struct Forward {
@@ -463,6 +465,27 @@ pub fn create_server(
         flags.disable_quic_input = flag.disable_quic_input;
         flags.disable_sym_hole_punching = flag.disable_sym_hole_punching;
         cfg.set_flags(flags);
+
+        // Set port whitelists
+        if !flag.tcp_whitelist.is_empty() {
+            let tcp_ports: Vec<String> = flag
+                .tcp_whitelist
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            cfg.set_tcp_whitelist(tcp_ports);
+        }
+        if !flag.udp_whitelist.is_empty() {
+            let udp_ports: Vec<String> = flag
+                .udp_whitelist
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            cfg.set_udp_whitelist(udp_ports);
+        }
+
         // Configure peer connections with proper error handling
         let mut peer_configs = Vec::new();
         for url in severurl {

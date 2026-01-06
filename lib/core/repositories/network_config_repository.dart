@@ -69,6 +69,8 @@ class NetworkConfigRepository {
   Future<bool> getProxyForwardBySystem() =>
       _db.netConfigSetting.getProxyForwardBySystem();
   Future<bool> getAcceptDns() => _db.netConfigSetting.getAcceptDns();
+  Future<String> getTcpWhitelist() => _db.netConfigSetting.getTcpWhitelist();
+  Future<String> getUdpWhitelist() => _db.netConfigSetting.getUdpWhitelist();
 
   // ========== 基础网络配置写入 ==========
 
@@ -158,6 +160,10 @@ class NetworkConfigRepository {
       _db.netConfigSetting.setCidrproxy(value);
   Future<void> setAutoSetMTU(bool value) =>
       _db.AllSettings.setAutoSetMTU(value);
+  Future<void> updateTcpWhitelist(String value) =>
+      _db.netConfigSetting.updateTcpWhitelist(value);
+  Future<void> updateUdpWhitelist(String value) =>
+      _db.netConfigSetting.updateUdpWhitelist(value);
 
   // ========== 批量操作 ==========
 
@@ -200,6 +206,8 @@ class NetworkConfigRepository {
       disableRelayKcp: await getDisableRelayKcp(),
       proxyForwardBySystem: await getProxyForwardBySystem(),
       acceptDns: await getAcceptDns(),
+      tcpWhitelist: await getTcpWhitelist(),
+      udpWhitelist: await getUdpWhitelist(),
     );
   }
 }
@@ -242,6 +250,8 @@ class NetworkConfig {
   final bool disableRelayKcp;
   final bool proxyForwardBySystem;
   final bool acceptDns;
+  final String tcpWhitelist;
+  final String udpWhitelist;
 
   NetworkConfig({
     required this.netns,
@@ -280,5 +290,7 @@ class NetworkConfig {
     required this.disableRelayKcp,
     required this.proxyForwardBySystem,
     required this.acceptDns,
+    required this.tcpWhitelist,
+    required this.udpWhitelist,
   });
 }

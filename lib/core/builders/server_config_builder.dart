@@ -2,7 +2,6 @@ import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/core/models/forwarding.dart';
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/states/firewall_state.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:flutter/foundation.dart';
 
@@ -84,7 +83,6 @@ class ServerConfigBuilder {
       if (config.disableP2p != null) overrides.add('P2P');
       if (config.disableUdpHolePunching != null) overrides.add('UDP打洞');
       if (config.enableKcpProxy != null) overrides.add('KCP代理');
-      if (config.enableQuicProxy != null) overrides.add('QUIC代理');
       if (config.noTun != null) overrides.add('TUN模式');
 
       if (overrides.isNotEmpty) {
@@ -220,10 +218,12 @@ class ServerConfigBuilder {
       proxyForwardBySystem: vpn.proxyForwardBySystem.value,
       acceptDns: vpn.acceptDns.value,
       privateMode: vpn.privateMode.value,
-      enableQuicProxy: rc?.enableQuicProxy ?? nc.enableQuicProxy.value,
+      enableQuicProxy: nc.enableQuicProxy.value,
       disableQuicInput: nc.disableQuicInput.value,
       disableSymHolePunching:
           rc?.disableSymHolePunching ?? nc.disableSymHolePunching.value,
+      tcpWhitelist: nc.tcpWhitelist.value,
+      udpWhitelist: nc.udpWhitelist.value,
     );
 
     _log('⚙️  运行标志配置完成 (加密: $enableEncryption)');

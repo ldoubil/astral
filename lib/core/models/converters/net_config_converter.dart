@@ -704,4 +704,38 @@ class NetConfigRepository {
       });
     }
   }
+
+  // 更新TCP端口白名单
+  Future<void> updateTcpWhitelist(String tcpWhitelist) async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    if (config != null) {
+      config.tcp_whitelist = tcpWhitelist;
+      await _isar.writeTxn(() async {
+        await _isar.netConfigs.put(config);
+      });
+    }
+  }
+
+  // 获取TCP端口白名单
+  Future<String> getTcpWhitelist() async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    return config?.tcp_whitelist ?? '';
+  }
+
+  // 更新UDP端口白名单
+  Future<void> updateUdpWhitelist(String udpWhitelist) async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    if (config != null) {
+      config.udp_whitelist = udpWhitelist;
+      await _isar.writeTxn(() async {
+        await _isar.netConfigs.put(config);
+      });
+    }
+  }
+
+  // 获取UDP端口白名单
+  Future<String> getUdpWhitelist() async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    return config?.udp_whitelist ?? '';
+  }
 }

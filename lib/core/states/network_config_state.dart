@@ -50,6 +50,10 @@ class NetworkConfigState {
   final proxyForwardBySystem = signal(false);
   final acceptDns = signal(false);
 
+  // ========== 白名单配置 (2个) ==========
+  final tcpWhitelist = signal('');
+  final udpWhitelist = signal('');
+
   // ========== 简单的状态更新方法 ==========
 
   void updateIpv4(String value) => ipv4.value = value;

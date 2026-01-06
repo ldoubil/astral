@@ -103,6 +103,8 @@ class FlagsC {
   final bool enableQuicProxy;
   final bool disableQuicInput;
   final bool disableSymHolePunching;
+  final String tcpWhitelist;
+  final String udpWhitelist;
 
   const FlagsC({
     required this.defaultProtocol,
@@ -131,6 +133,8 @@ class FlagsC {
     required this.enableQuicProxy,
     required this.disableQuicInput,
     required this.disableSymHolePunching,
+    required this.tcpWhitelist,
+    required this.udpWhitelist,
   });
 
   @override
@@ -160,7 +164,9 @@ class FlagsC {
       privateMode.hashCode ^
       enableQuicProxy.hashCode ^
       disableQuicInput.hashCode ^
-      disableSymHolePunching.hashCode;
+      disableSymHolePunching.hashCode ^
+      tcpWhitelist.hashCode ^
+      udpWhitelist.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -192,7 +198,9 @@ class FlagsC {
           privateMode == other.privateMode &&
           enableQuicProxy == other.enableQuicProxy &&
           disableQuicInput == other.disableQuicInput &&
-          disableSymHolePunching == other.disableSymHolePunching;
+          disableSymHolePunching == other.disableSymHolePunching &&
+          tcpWhitelist == other.tcpWhitelist &&
+          udpWhitelist == other.udpWhitelist;
 }
 
 class Forward {
