@@ -31,7 +31,7 @@ class RoomShareHelper {
       // 根据房间是否携带网络配置来调用加密方法
       final shareCode = encryptRoomWithJWT(
         cleanedRoom,
-        includeNetworkConfig: cleanedRoom.hasNetworkConfig,
+        includeNetworkConfig: cleanedRoom.networkConfigJson.isNotEmpty,
       );
 
       if (includeDeepLink) {
@@ -57,12 +57,14 @@ class RoomShareHelper {
 
     // 构建分享信息的选项说明
     String shareOptions = '';
-    if (room.hasServers || room.hasNetworkConfig) {
+    final hasServers = room.servers.isNotEmpty;
+    final hasNetworkConfig = room.networkConfigJson.isNotEmpty;
+    if (hasServers || hasNetworkConfig) {
       shareOptions = '\n📦 分享选项：\n';
-      if (room.hasServers) {
+      if (hasServers) {
         shareOptions += '  ✓ 携带服务器列表\n';
       }
-      if (room.hasNetworkConfig) {
+      if (hasNetworkConfig) {
         shareOptions += '  ✓ 携带网络配置\n';
       }
     }
@@ -330,8 +332,6 @@ $roomSummary$shareOptions
                   hasServers
                       ? DateTime.now().millisecondsSinceEpoch.toString()
                       : '',
-              hasServers: hasServers,
-              hasNetworkConfig: hasNetworkConfig,
               networkConfigJson:
                   hasNetworkConfig ? networkConfig!.toJsonString() : '',
             );
@@ -661,8 +661,7 @@ $roomSummary$shareOptions
 
       // 如果房间携带网络配置，显示确认对话框
       bool applyNetworkConfig = false;
-      if (cleanedRoom.hasNetworkConfig &&
-          cleanedRoom.networkConfigJson.isNotEmpty) {
+      if (cleanedRoom.networkConfigJson.isNotEmpty) {
         try {
           final networkConfig = NetworkConfigShare.fromJsonString(
             cleanedRoom.networkConfigJson,

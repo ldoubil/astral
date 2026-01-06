@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:astral/shared/utils/network/astral_udp.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/models/network_config_share.dart';
+import 'package:astral/core/builders/server_config_builder.dart';
 import 'package:astral/src/rust/api/firewall.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -200,23 +201,6 @@ class _ConnectButtonState extends State<ConnectButton>
     final rom = ServiceManager().roomState.selectedRoom.value;
     if (rom == null) return;
 
-    // 🔧 新增：如果房间携带了网络配置，先应用配置
-    if (rom.hasNetworkConfig && rom.networkConfigJson.isNotEmpty) {
-      try {
-        final networkConfig = NetworkConfigShare.fromJsonString(
-          rom.networkConfigJson,
-        );
-        if (networkConfig != null) {
-          debugPrint('🔧 检测到房间携带网络配置，应用配置中...');
-          await networkConfig.applyToConfig();
-          debugPrint('✅ 房间网络配置已应用');
-        }
-      } catch (e) {
-        debugPrint('⚠️ 应用房间网络配置失败: $e');
-        // 继续执行连接流程，即使配置应用失败
-      }
-    }
-
     // 每次连接前先确保服务器已关闭，清理旧状态
     closeServer();
 
@@ -269,128 +253,42 @@ class _ConnectButtonState extends State<ConnectButton>
       vpnPlugin?.prepareVpn();
     }
 
-    String currentIp = services.networkConfigState.ipv4.value;
-    bool forceDhcp = false;
-    String ipForServer = ""; // 默认为空，如果强制DHCP
-
-    if (currentIp.isEmpty ||
-        currentIp == "0.0.0.0" ||
-        !_isValidIpAddress(currentIp)) {
-      forceDhcp = true;
-    } else {
-      // IP有效且不是 "0.0.0.0"
-      ipForServer = currentIp;
-    }
-    List<Forward> forwards = [];
-    for (var conn in services.firewallState.connections.value) {
-      if (conn.enabled) {
-        for (var conn in conn.connections) {
-          // 根据协议类型添加转发规则
-          if (conn.proto == 'all') {
-            // ALL协议时添加TCP和UDP两条规则
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: 'tcp',
-              ),
-            );
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: 'udp',
-              ),
-            );
-          } else {
-            // TCP或UDP时只添加对应协议的规则
-            forwards.add(
-              Forward(
-                bindAddr: conn.bindAddr,
-                dstAddr: conn.dstAddr,
-                proto: conn.proto,
-              ),
-            );
-          }
-        }
+    // 🔧 解析房间配置（如果有）- 仅用于临时覆盖，不修改持久化配置
+    NetworkConfigShare? roomConfig;
+    if (rom.networkConfigJson.isNotEmpty) {
+      try {
+        roomConfig = NetworkConfigShare.fromJsonString(rom.networkConfigJson);
+        debugPrint('🔧 检测到房间配置，将临时覆盖默认设置');
+      } catch (e) {
+        debugPrint('⚠️ 解析房间配置失败: $e');
       }
     }
+
+    // 使用 Builder 构建配置
+    final config =
+        ServerConfigBuilder(services)
+            .withPlayerInfo()
+            .withRoom(rom)
+            .withRoomConfig(roomConfig) // 🔑 临时覆盖
+            .withServers(rom, services.serverState.servers.value)
+            .withListeners(services.playerState.listenList.value)
+            .withCidrs(services.vpnState.customVpn.value)
+            .withForwards(services.firewallState.connections.value)
+            .withFlags()
+            .build();
+
+    // 调用 Rust API
     await createServer(
-      username: services.playerState.playerName.value,
-      enableDhcp: forceDhcp ? true : services.networkConfigState.dhcp.value,
-      specifiedIp: forceDhcp ? "" : ipForServer, // 如果强制DHCP，则指定IP为空
-      roomName: rom.roomName,
-      roomPassword: rom.password,
-      cidrs: services.vpnState.customVpn.value,
-      forwards: forwards,
-      severurl: () {
-        // 获取服务器 URL 列表的优先级：
-        // 1. 如果房间携带了服务器列表（hasServers=true），则只使用房间服务器
-        // 2. 否则使用全局启用的服务器
-        if (rom.hasServers && rom.servers.isNotEmpty) {
-          // 房间携带了服务器，只使用房间的服务器列表
-          debugPrint('🔧 使用房间携带的服务器列表 (${rom.servers.length} 个)');
-          return rom.servers;
-        }
-
-        // 使用全局启用的服务器
-        final globalUrls = <String>[];
-        final currentServers = ServiceManager().serverState.servers.value;
-
-        for (var server in currentServers.where((server) => server.enable)) {
-          if (server.tcp) globalUrls.add('tcp://${server.url}');
-          if (server.udp) globalUrls.add('udp://${server.url}');
-          if (server.ws) globalUrls.add('ws://${server.url}');
-          if (server.wss) globalUrls.add('wss://${server.url}');
-          if (server.quic) globalUrls.add('quic://${server.url}');
-          if (server.wg) globalUrls.add('wg://${server.url}');
-          if (server.txt) globalUrls.add('txt://${server.url}');
-          if (server.srv) globalUrls.add('srv://${server.url}');
-          if (server.http) globalUrls.add('http://${server.url}');
-          if (server.https) globalUrls.add('https://${server.url}');
-        }
-
-        return globalUrls;
-      }(),
-      onurl:
-          ServiceManager().appSettingsState.listenList.value
-              .where((url) => !url.contains('[::]'))
-              .toList(),
-      flag: _buildFlags(ServiceManager()),
-    );
-  }
-
-  FlagsC _buildFlags(ServiceManager services) {
-    final networkConfig = services.networkConfigState;
-    final vpnState = services.vpnState;
-
-    return FlagsC(
-      defaultProtocol: networkConfig.defaultProtocol.value,
-      devName: networkConfig.devName.value,
-      enableEncryption: networkConfig.enableEncryption.value,
-      enableIpv6: networkConfig.enableIpv6.value,
-      mtu: networkConfig.enableEncryption.value ? 1360 : 1380,
-      multiThread: networkConfig.multiThread.value,
-      latencyFirst: networkConfig.latencyFirst.value,
-      enableExitNode: networkConfig.enableExitNode.value,
-      noTun: networkConfig.noTun.value,
-      useSmoltcp: networkConfig.useSmoltcp.value,
-      // relayNetworkWhitelist: networkConfig.relayNetworkWhitelist.value,
-      relayNetworkWhitelist: '*',
-      disableP2P: networkConfig.disableP2p.value,
-      relayAllPeerRpc: true,
-      disableUdpHolePunching: networkConfig.disableUdpHolePunching.value,
-      dataCompressAlgo: networkConfig.dataCompressAlgo.value,
-      bindDevice: networkConfig.bindDevice.value,
-      enableKcpProxy: networkConfig.enableKcpProxy.value,
-      disableKcpInput: networkConfig.disableKcpInput.value,
-      disableRelayKcp: false,
-      proxyForwardBySystem: vpnState.proxyForwardBySystem.value,
-      acceptDns: vpnState.acceptDns.value,
-      privateMode: vpnState.privateMode.value,
-      enableQuicProxy: networkConfig.enableQuicProxy.value,
-      disableQuicInput: networkConfig.disableQuicInput.value,
-      disableSymHolePunching: networkConfig.disableSymHolePunching.value,
+      username: config.username,
+      enableDhcp: config.enableDhcp,
+      specifiedIp: config.specifiedIp,
+      roomName: config.roomName,
+      roomPassword: config.roomPassword,
+      severurl: config.severurl,
+      onurl: config.onurl,
+      cidrs: config.cidrs,
+      forwards: config.forwards,
+      flag: config.flag,
     );
   }
 
