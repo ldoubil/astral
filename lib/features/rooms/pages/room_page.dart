@@ -93,7 +93,6 @@ class _RoomPageState extends State<RoomPage> {
                 sortOrder: room.sortOrder,
                 servers: room.servers,
                 customParam: room.customParam,
-                hasNetworkConfig: room.hasNetworkConfig,
                 networkConfigJson: room.networkConfigJson,
               );
               

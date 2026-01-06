@@ -29,7 +29,6 @@ class RoomService {
           sortOrder: room.sortOrder,
           servers: room.servers,
           customParam: room.customParam,
-          hasNetworkConfig: room.hasNetworkConfig,
           networkConfigJson: room.networkConfigJson,
         );
         await _repository.updateRoom(updatedRoom);
@@ -68,7 +67,6 @@ class RoomService {
       sortOrder: room.sortOrder,
       servers: room.servers,
       customParam: room.customParam,
-      hasNetworkConfig: room.hasNetworkConfig,
       networkConfigJson: room.networkConfigJson,
     );
     
@@ -105,7 +103,6 @@ class RoomService {
       sortOrder: room.sortOrder,
       servers: room.servers,
       customParam: room.customParam,
-      hasNetworkConfig: room.hasNetworkConfig,
       networkConfigJson: room.networkConfigJson,
     );
     
