@@ -27,43 +27,38 @@ const RoomSchema = CollectionSchema(
       name: r'encrypted',
       type: IsarType.bool,
     ),
-    r'hasNetworkConfig': PropertySchema(
-      id: 2,
-      name: r'hasNetworkConfig',
-      type: IsarType.bool,
-    ),
     r'messageKey': PropertySchema(
-      id: 3,
+      id: 2,
       name: r'messageKey',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(id: 4, name: r'name', type: IsarType.string),
+    r'name': PropertySchema(id: 3, name: r'name', type: IsarType.string),
     r'networkConfigJson': PropertySchema(
-      id: 5,
+      id: 4,
       name: r'networkConfigJson',
       type: IsarType.string,
     ),
     r'password': PropertySchema(
-      id: 6,
+      id: 5,
       name: r'password',
       type: IsarType.string,
     ),
     r'roomName': PropertySchema(
-      id: 7,
+      id: 6,
       name: r'roomName',
       type: IsarType.string,
     ),
     r'servers': PropertySchema(
-      id: 8,
+      id: 7,
       name: r'servers',
       type: IsarType.stringList,
     ),
     r'sortOrder': PropertySchema(
-      id: 9,
+      id: 8,
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'tags': PropertySchema(id: 10, name: r'tags', type: IsarType.stringList),
+    r'tags': PropertySchema(id: 9, name: r'tags', type: IsarType.stringList),
   },
 
   estimateSize: _roomEstimateSize,
@@ -118,15 +113,14 @@ void _roomSerialize(
 ) {
   writer.writeString(offsets[0], object.customParam);
   writer.writeBool(offsets[1], object.encrypted);
-  writer.writeBool(offsets[2], object.hasNetworkConfig);
-  writer.writeString(offsets[3], object.messageKey);
-  writer.writeString(offsets[4], object.name);
-  writer.writeString(offsets[5], object.networkConfigJson);
-  writer.writeString(offsets[6], object.password);
-  writer.writeString(offsets[7], object.roomName);
-  writer.writeStringList(offsets[8], object.servers);
-  writer.writeLong(offsets[9], object.sortOrder);
-  writer.writeStringList(offsets[10], object.tags);
+  writer.writeString(offsets[2], object.messageKey);
+  writer.writeString(offsets[3], object.name);
+  writer.writeString(offsets[4], object.networkConfigJson);
+  writer.writeString(offsets[5], object.password);
+  writer.writeString(offsets[6], object.roomName);
+  writer.writeStringList(offsets[7], object.servers);
+  writer.writeLong(offsets[8], object.sortOrder);
+  writer.writeStringList(offsets[9], object.tags);
 }
 
 Room _roomDeserialize(
@@ -138,16 +132,15 @@ Room _roomDeserialize(
   final object = Room(
     customParam: reader.readStringOrNull(offsets[0]) ?? "",
     encrypted: reader.readBoolOrNull(offsets[1]) ?? false,
-    hasNetworkConfig: reader.readBoolOrNull(offsets[2]) ?? false,
     id: id,
-    messageKey: reader.readStringOrNull(offsets[3]) ?? "",
-    name: reader.readStringOrNull(offsets[4]) ?? "",
-    networkConfigJson: reader.readStringOrNull(offsets[5]) ?? "",
-    password: reader.readStringOrNull(offsets[6]) ?? "",
-    roomName: reader.readStringOrNull(offsets[7]) ?? "",
-    servers: reader.readStringList(offsets[8]) ?? const [],
-    sortOrder: reader.readLongOrNull(offsets[9]) ?? 0,
-    tags: reader.readStringList(offsets[10]) ?? const [],
+    messageKey: reader.readStringOrNull(offsets[2]) ?? "",
+    name: reader.readStringOrNull(offsets[3]) ?? "",
+    networkConfigJson: reader.readStringOrNull(offsets[4]) ?? "",
+    password: reader.readStringOrNull(offsets[5]) ?? "",
+    roomName: reader.readStringOrNull(offsets[6]) ?? "",
+    servers: reader.readStringList(offsets[7]) ?? const [],
+    sortOrder: reader.readLongOrNull(offsets[8]) ?? 0,
+    tags: reader.readStringList(offsets[9]) ?? const [],
   );
   return object;
 }
@@ -164,7 +157,7 @@ P _roomDeserializeProp<P>(
     case 1:
       return (reader.readBoolOrNull(offset) ?? false) as P;
     case 2:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readStringOrNull(offset) ?? "") as P;
     case 3:
       return (reader.readStringOrNull(offset) ?? "") as P;
     case 4:
@@ -174,12 +167,10 @@ P _roomDeserializeProp<P>(
     case 6:
       return (reader.readStringOrNull(offset) ?? "") as P;
     case 7:
-      return (reader.readStringOrNull(offset) ?? "") as P;
-    case 8:
       return (reader.readStringList(offset) ?? const []) as P;
-    case 9:
+    case 8:
       return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 10:
+    case 9:
       return (reader.readStringList(offset) ?? const []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -427,16 +418,6 @@ extension RoomQueryFilter on QueryBuilder<Room, Room, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'encrypted', value: value),
-      );
-    });
-  }
-
-  QueryBuilder<Room, Room, QAfterFilterCondition> hasNetworkConfigEqualTo(
-    bool value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'hasNetworkConfig', value: value),
       );
     });
   }
@@ -1718,18 +1699,6 @@ extension RoomQuerySortBy on QueryBuilder<Room, Room, QSortBy> {
     });
   }
 
-  QueryBuilder<Room, Room, QAfterSortBy> sortByHasNetworkConfig() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasNetworkConfig', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Room, Room, QAfterSortBy> sortByHasNetworkConfigDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasNetworkConfig', Sort.desc);
-    });
-  }
-
   QueryBuilder<Room, Room, QAfterSortBy> sortByMessageKey() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'messageKey', Sort.asc);
@@ -1825,18 +1794,6 @@ extension RoomQuerySortThenBy on QueryBuilder<Room, Room, QSortThenBy> {
   QueryBuilder<Room, Room, QAfterSortBy> thenByEncryptedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'encrypted', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Room, Room, QAfterSortBy> thenByHasNetworkConfig() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasNetworkConfig', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Room, Room, QAfterSortBy> thenByHasNetworkConfigDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasNetworkConfig', Sort.desc);
     });
   }
 
@@ -1940,12 +1897,6 @@ extension RoomQueryWhereDistinct on QueryBuilder<Room, Room, QDistinct> {
     });
   }
 
-  QueryBuilder<Room, Room, QDistinct> distinctByHasNetworkConfig() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'hasNetworkConfig');
-    });
-  }
-
   QueryBuilder<Room, Room, QDistinct> distinctByMessageKey({
     bool caseSensitive = true,
   }) {
@@ -2024,12 +1975,6 @@ extension RoomQueryProperty on QueryBuilder<Room, Room, QQueryProperty> {
   QueryBuilder<Room, bool, QQueryOperations> encryptedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'encrypted');
-    });
-  }
-
-  QueryBuilder<Room, bool, QQueryOperations> hasNetworkConfigProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'hasNetworkConfig');
     });
   }
 

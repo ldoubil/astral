@@ -40,6 +40,7 @@ pub struct MagicWallStatus {
 // ============= Windows 实现 =============
 
 #[cfg(target_os = "windows")]
+#[cfg_attr(not(target_family = "wasm"), flutter_rust_bridge::frb(ignore))]
 mod wfp_impl {
     use super::*;
     use anyhow::{bail, Result};

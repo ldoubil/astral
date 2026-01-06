@@ -118,6 +118,8 @@
   "relay_peer_rpc_desc": "是否中继所有对等RPC",
   "disable_udp_hole_punching": "禁用UDP打洞",
   "disable_udp_hole_punching_desc": "禁用IPv4的UDP直连",
+  "disable_tcp_hole_punching": "禁用TCP打洞",
+  "disable_tcp_hole_punching_desc": "禁用IPv4的TCP直连",
   "enable_multi_thread": "启用多线程",
   "enable_multi_thread_desc": "是否启用多线程",
   "compression_algorithm": "数据压缩方式",

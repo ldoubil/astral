@@ -24,9 +24,7 @@ String encryptRoomWithJWT(Room room, {bool includeNetworkConfig = false}) {
       if (room.servers.isNotEmpty) 's': room.servers,
       if (room.customParam.isNotEmpty) 'c': room.customParam,
       // 新增：携带网络配置
-      if (includeNetworkConfig &&
-          room.hasNetworkConfig &&
-          room.networkConfigJson.isNotEmpty)
+      if (includeNetworkConfig && room.networkConfigJson.isNotEmpty)
         'net': jsonDecode(room.networkConfigJson),
     };
 
@@ -37,7 +35,7 @@ String encryptRoomWithJWT(Room room, {bool includeNetworkConfig = false}) {
     debugPrint(jsonEncode(roomData));
     debugPrint('【房间分享】服务器列表: ${room.servers}');
     debugPrint('【房间分享】自定义参数: ${room.customParam}');
-    if (includeNetworkConfig && room.hasNetworkConfig) {
+    if (includeNetworkConfig && room.networkConfigJson.isNotEmpty) {
       debugPrint('【房间分享】携带网络配置: ${room.networkConfigJson}');
     }
 
@@ -89,7 +87,6 @@ Room? decryptRoomFromJWT(String token) {
       servers: roomData['s'] != null ? List<String>.from(roomData['s']) : [],
       customParam: roomData['c'] ?? '',
       // 新增：网络配置字段
-      hasNetworkConfig: hasNetworkConfig,
       networkConfigJson: networkConfigJson,
     );
   } catch (e) {
@@ -209,7 +206,6 @@ Room cleanRoom(Room room) {
     sortOrder: room.sortOrder,
     servers: room.servers,
     customParam: room.customParam.trim(),
-    hasNetworkConfig: room.hasNetworkConfig,
     networkConfigJson: room.networkConfigJson,
   );
 }

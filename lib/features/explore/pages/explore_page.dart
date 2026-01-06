@@ -6,6 +6,7 @@ import 'package:astral/src/rust/api/forward.dart';
 import 'package:astral/src/rust/api/multicast.dart';
 import 'package:astral/features/nat_test/pages/nat_test_page.dart';
 import 'package:astral/features/magic_wall/pages/magic_wall_page.dart';
+import 'package:astral/features/settings/pages/network/port_whitelist_page.dart';
 import 'package:astral/core/database/app_data.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -337,6 +338,23 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                   const SizedBox(height: 8),
                 ],
+                _buildListTile(
+                  context,
+                  GameItem(
+                    title: '端口白名单',
+                    subtitle: '配置TCP/UDP端口访问白名单',
+                    icon: Icons.security_outlined,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PortWhitelistPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _buildListTile(
                   context,
                   GameItem(

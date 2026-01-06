@@ -358,6 +358,7 @@ pub struct FlagsC {
     pub disable_p2p: bool,
     pub relay_all_peer_rpc: bool,
     pub disable_udp_hole_punching: bool,
+    pub disable_tcp_hole_punching: bool,
     pub multi_thread: bool,
     pub data_compress_algo: i32,
     pub bind_device: bool,
@@ -370,6 +371,8 @@ pub struct FlagsC {
     pub enable_quic_proxy: bool,
     pub disable_quic_input: bool,
     pub disable_sym_hole_punching: bool,
+    pub tcp_whitelist: String,
+    pub udp_whitelist: String,
 }
 
 pub struct Forward {
@@ -447,6 +450,7 @@ pub fn create_server(
         flags.disable_p2p = flag.disable_p2p;
         flags.relay_all_peer_rpc = flag.relay_all_peer_rpc;
         flags.disable_udp_hole_punching = flag.disable_udp_hole_punching;
+        flags.disable_tcp_hole_punching = flag.disable_tcp_hole_punching;
         flags.multi_thread = flag.multi_thread;
         flags.data_compress_algo = flag.data_compress_algo;
         flags.bind_device = flag.bind_device;
@@ -461,6 +465,27 @@ pub fn create_server(
         flags.disable_quic_input = flag.disable_quic_input;
         flags.disable_sym_hole_punching = flag.disable_sym_hole_punching;
         cfg.set_flags(flags);
+
+        // Set port whitelists
+        if !flag.tcp_whitelist.is_empty() {
+            let tcp_ports: Vec<String> = flag
+                .tcp_whitelist
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            cfg.set_tcp_whitelist(tcp_ports);
+        }
+        if !flag.udp_whitelist.is_empty() {
+            let udp_ports: Vec<String> = flag
+                .udp_whitelist
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            cfg.set_udp_whitelist(udp_ports);
+        }
+
         // Configure peer connections with proper error handling
         let mut peer_configs = Vec::new();
         for url in severurl {

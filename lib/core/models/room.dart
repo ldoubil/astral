@@ -26,9 +26,6 @@ class Room {
   DateTime modifiedAt = DateTime.now();
 
   // ========== 网络配置携带 ==========
-  /// 是否携带网络配置（用于判断是否应用携带的配置）
-  bool hasNetworkConfig = false;
-
   /// 携带的网络配置 JSON（序列化的 NetworkConfigShare 对象）
   String networkConfigJson = "";
 
@@ -44,7 +41,6 @@ class Room {
     this.sortOrder = 0,
     this.servers = const [],
     this.customParam = "",
-    this.hasNetworkConfig = false,
     this.networkConfigJson = "",
     DateTime? initialModifiedAt,
   }) : this.modifiedAt = initialModifiedAt ?? DateTime.now();

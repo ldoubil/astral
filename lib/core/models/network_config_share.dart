@@ -5,7 +5,7 @@ import 'package:astral/core/services/service_manager.dart';
 /// 用于房间分享时携带网络配置（仅高级设置）
 class NetworkConfigShare {
   // 基础配置
-  final bool dhcp;
+  final bool? dhcp;
   final String? defaultProtocol;
 
   // 高级配置（可选）
@@ -13,40 +13,40 @@ class NetworkConfigShare {
   final bool? latencyFirst;
   final bool? disableP2p;
   final bool? disableUdpHolePunching;
+  final bool? disableTcpHolePunching;
   final bool? disableSymHolePunching;
   final int? dataCompressAlgo;
   final bool? enableKcpProxy;
-  final bool? enableQuicProxy;
   final bool? bindDevice;
   final bool? noTun;
 
   NetworkConfigShare({
-    required this.dhcp,
+    this.dhcp,
     this.defaultProtocol,
     this.enableEncryption,
     this.latencyFirst,
     this.disableP2p,
     this.disableUdpHolePunching,
+    this.disableTcpHolePunching,
     this.disableSymHolePunching,
     this.dataCompressAlgo,
     this.enableKcpProxy,
-    this.enableQuicProxy,
     this.bindDevice,
     this.noTun,
   });
 
   /// 序列化为JSON（使用短键名优化压缩）
   Map<String, dynamic> toJson() => {
-    'dhcp': dhcp ? 1 : 0,
+    if (dhcp != null) 'dhcp': dhcp! ? 1 : 0,
     if (defaultProtocol != null) 'proto': defaultProtocol,
     if (enableEncryption != null) 'enc': enableEncryption! ? 1 : 0,
     if (latencyFirst != null) 'lat': latencyFirst! ? 1 : 0,
     if (disableP2p != null) 'dp2p': disableP2p! ? 1 : 0,
     if (disableUdpHolePunching != null) 'dudp': disableUdpHolePunching! ? 1 : 0,
+    if (disableTcpHolePunching != null) 'dtcp': disableTcpHolePunching! ? 1 : 0,
     if (disableSymHolePunching != null) 'dsym': disableSymHolePunching! ? 1 : 0,
     if (dataCompressAlgo != null) 'comp': dataCompressAlgo,
     if (enableKcpProxy != null) 'kcp': enableKcpProxy! ? 1 : 0,
-    if (enableQuicProxy != null) 'quic': enableQuicProxy! ? 1 : 0,
     if (bindDevice != null) 'bind': bindDevice! ? 1 : 0,
     if (noTun != null) 'tun': noTun! ? 1 : 0,
   };
@@ -60,10 +60,10 @@ class NetworkConfigShare {
       latencyFirst: json['lat'] != null ? json['lat'] == 1 : null,
       disableP2p: json['dp2p'] != null ? json['dp2p'] == 1 : null,
       disableUdpHolePunching: json['dudp'] != null ? json['dudp'] == 1 : null,
+      disableTcpHolePunching: json['dtcp'] != null ? json['dtcp'] == 1 : null,
       disableSymHolePunching: json['dsym'] != null ? json['dsym'] == 1 : null,
       dataCompressAlgo: json['comp'],
       enableKcpProxy: json['kcp'] != null ? json['kcp'] == 1 : null,
-      enableQuicProxy: json['quic'] != null ? json['quic'] == 1 : null,
       bindDevice: json['bind'] != null ? json['bind'] == 1 : null,
       noTun: json['tun'] != null ? json['tun'] == 1 : null,
     );
@@ -80,11 +80,12 @@ class NetworkConfigShare {
       disableP2p: services.networkConfigState.disableP2p.value,
       disableUdpHolePunching:
           services.networkConfigState.disableUdpHolePunching.value,
+      disableTcpHolePunching:
+          services.networkConfigState.disableTcpHolePunching.value,
       disableSymHolePunching:
           services.networkConfigState.disableSymHolePunching.value,
       dataCompressAlgo: services.networkConfigState.dataCompressAlgo.value,
       enableKcpProxy: services.networkConfigState.enableKcpProxy.value,
-      enableQuicProxy: services.networkConfigState.enableQuicProxy.value,
       bindDevice: services.networkConfigState.bindDevice.value,
       noTun: services.networkConfigState.noTun.value,
     );
@@ -94,8 +95,10 @@ class NetworkConfigShare {
   Future<void> applyToConfig() async {
     final services = ServiceManager();
 
-    // 应用DHCP配置
-    await services.networkConfig.updateDhcp(dhcp);
+    // 应用DHCP配置（如果存在）
+    if (dhcp != null) {
+      await services.networkConfig.updateDhcp(dhcp!);
+    }
 
     // 应用高级配置（如果存在）
     if (defaultProtocol != null && defaultProtocol!.isNotEmpty) {
@@ -115,6 +118,11 @@ class NetworkConfigShare {
         disableUdpHolePunching!,
       );
     }
+    if (disableTcpHolePunching != null) {
+      await services.networkConfig.updateDisableTcpHolePunching(
+        disableTcpHolePunching!,
+      );
+    }
     if (disableSymHolePunching != null) {
       await services.networkConfig.updateDisableSymHolePunching(
         disableSymHolePunching!,
@@ -125,9 +133,6 @@ class NetworkConfigShare {
     }
     if (enableKcpProxy != null) {
       await services.networkConfig.updateEnableKcpProxy(enableKcpProxy!);
-    }
-    if (enableQuicProxy != null) {
-      await services.networkConfig.updateEnableQuicProxy(enableQuicProxy!);
     }
     if (bindDevice != null) {
       await services.networkConfig.updateBindDevice(bindDevice!);
@@ -141,7 +146,9 @@ class NetworkConfigShare {
   List<String> toReadableSummary() {
     final lines = <String>[];
 
-    lines.add('• DHCP: ${dhcp ? "自动" : "手动"}');
+    if (dhcp != null) {
+      lines.add('• DHCP: ${dhcp! ? "自动" : "手动"}');
+    }
 
     if (defaultProtocol != null && defaultProtocol!.isNotEmpty) {
       lines.add('• 默认协议: ${defaultProtocol!.toUpperCase()}');
@@ -158,6 +165,9 @@ class NetworkConfigShare {
     if (disableUdpHolePunching != null) {
       lines.add('• UDP打洞: ${disableUdpHolePunching! ? "禁用" : "启用"}');
     }
+    if (disableTcpHolePunching != null) {
+      lines.add('• TCP打洞: ${disableTcpHolePunching! ? "禁用" : "启用"}');
+    }
     if (disableSymHolePunching != null) {
       lines.add('• 对称打洞: ${disableSymHolePunching! ? "禁用" : "启用"}');
     }
@@ -167,9 +177,6 @@ class NetworkConfigShare {
     }
     if (enableKcpProxy != null) {
       lines.add('• KCP代理: ${enableKcpProxy! ? "开启" : "关闭"}');
-    }
-    if (enableQuicProxy != null) {
-      lines.add('• QUIC代理: ${enableQuicProxy! ? "开启" : "关闭"}');
     }
     if (bindDevice != null) {
       lines.add('• 绑定设备: ${bindDevice! ? "开启" : "关闭"}');

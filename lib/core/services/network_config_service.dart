@@ -41,6 +41,7 @@ class NetworkConfigService {
     state.disableQuicInput.value = config.disableQuicInput;
     state.relayAllPeerRpc.value = config.relayAllPeerRpc;
     state.disableUdpHolePunching.value = config.disableUdpHolePunching;
+    state.disableTcpHolePunching.value = config.disableTcpHolePunching;
     state.disableSymHolePunching.value = config.disableSymHolePunching;
     state.multiThread.value = config.multiThread;
     state.bindDevice.value = config.bindDevice;
@@ -49,6 +50,8 @@ class NetworkConfigService {
     state.disableRelayKcp.value = config.disableRelayKcp;
     state.proxyForwardBySystem.value = config.proxyForwardBySystem;
     state.acceptDns.value = config.acceptDns;
+    state.tcpWhitelist.value = config.tcpWhitelist;
+    state.udpWhitelist.value = config.udpWhitelist;
   }
 
   // ========== 基础配置方法 ==========
@@ -201,6 +204,11 @@ class NetworkConfigService {
     await _repository.updateDisableUdpHolePunching(value);
   }
 
+  Future<void> updateDisableTcpHolePunching(bool value) async {
+    state.disableTcpHolePunching.value = value;
+    await _repository.updateDisableTcpHolePunching(value);
+  }
+
   Future<void> updateDisableSymHolePunching(bool value) async {
     state.disableSymHolePunching.value = value;
     await _repository.updateDisableSymHolePunching(value);
@@ -257,5 +265,15 @@ class NetworkConfigService {
   Future<void> updateAcceptDns(bool value) async {
     state.acceptDns.value = value;
     await _repository.updateAcceptDns(value);
+  }
+
+  Future<void> updateTcpWhitelist(String value) async {
+    state.tcpWhitelist.value = value;
+    await _repository.updateTcpWhitelist(value);
+  }
+
+  Future<void> updateUdpWhitelist(String value) async {
+    state.udpWhitelist.value = value;
+    await _repository.updateUdpWhitelist(value);
   }
 }

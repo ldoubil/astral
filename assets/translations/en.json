@@ -118,6 +118,8 @@
   "relay_peer_rpc_desc": "Whether to relay all peer RPC",
   "disable_udp_hole_punching": "Disable UDP Hole Punching",
   "disable_udp_hole_punching_desc": "Whether to disable UDP hole punching",
+  "disable_tcp_hole_punching": "Disable TCP Hole Punching",
+  "disable_tcp_hole_punching_desc": "Disable IPv4 TCP direct connection",
   "enable_multi_thread": "Enable Multi-threading",
   "enable_multi_thread_desc": "Whether to enable multi-threading",
   "compression_algorithm": "Compression Algorithm",
