@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:astral/core/models/room.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/shared/utils/data/room_crypto.dart';
+import 'package:astral/shared/utils/data/duplicate_name_detection.dart';
 import 'package:astral/core/services/service_manager.dart';
 
 /// 房间分享助手类

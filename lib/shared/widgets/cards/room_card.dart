@@ -1,8 +1,9 @@
-﻿// 修改RoomCard类，接收 Room 对象和分类名称列表
+// 修改RoomCard类，接收 Room 对象和分类名称列表
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/models/room.dart';
 import 'package:astral/shared/widgets/common/home/connect_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 
 class RoomCard extends StatefulWidget {
   final Room room;
@@ -36,23 +37,15 @@ class _RoomCardState extends State<RoomCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Card(
-        color:
-            widget.isSelected
-                ? Theme.of(context).brightness == Brightness.dark
-                    ? HSLColor.fromColor(
-                      colorScheme.primary,
-                    ).withLightness(0.10).toColor()
-                    : HSLColor.fromColor(
-                      colorScheme.primary,
-                    ).withLightness(0.95).toColor()
-                : colorScheme.surfaceContainerLow,
+        color: widget.isSelected
+            ? Theme.of(context).brightness == Brightness.dark
+                ? HSLColor.fromColor(colorScheme.primary).withLightness(0.10).toColor()
+                : HSLColor.fromColor(colorScheme.primary).withLightness(0.95).toColor()
+            : colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color:
-                (widget.isSelected || _isHovered)
-                    ? colorScheme.primary
-                    : Colors.transparent,
+            color: (widget.isSelected || _isHovered) ? colorScheme.primary : Colors.transparent,
             width: (_isHovered && !widget.isSelected) ? 1 : 2,
           ),
         ),
@@ -104,56 +97,53 @@ class _RoomCardState extends State<RoomCard> {
                             constraints: const BoxConstraints(),
                             tooltip: '分享房间',
                           ),
-                        if (widget.onShare != null &&
-                            (widget.onDelete != null || widget.onEdit != null))
+                        if (widget.onShare != null && (widget.onDelete != null || widget.onEdit != null))
                           const SizedBox(width: 8),
                         if (widget.onDelete != null)
                           widget.isSelected
                               ? Tooltip(
-                                message: '不能删除正在连接的房间',
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete, size: 20),
-                                  onPressed: null,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  disabledColor: colorScheme.outline,
-                                ),
-                              )
+                                  message: '不能删除正在连接的房间',
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete, size: 20),
+                                    onPressed: null,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    disabledColor: colorScheme.outline,
+                                  ),
+                                )
                               : IconButton(
-                                icon: const Icon(Icons.delete, size: 20),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (context) => AlertDialog(
-                                          title: const Text('确认删除'),
-                                          content: const Text('确定要删除这个房间吗？'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () => Navigator.pop(context),
-                                              child: const Text('取消'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                widget.onDelete?.call();
-                                              },
-                                              child: const Text(
-                                                '删除',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                ),
+                                  icon: const Icon(Icons.delete, size: 20),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('确认删除'),
+                                        content: const Text('确定要删除这个房间吗？'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: const Text('取消'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              widget.onDelete?.call();
+                                            },
+                                            child: const Text(
+                                              '删除',
+                                              style: TextStyle(
+                                                color: Colors.red,
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                  );
-                                },
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                tooltip: '删除房间',
-                              ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  tooltip: '删除房间',
+                                ),
                         if (widget.onDelete != null && widget.onEdit != null)
                           const SizedBox(width: 8),
                         if (widget.onEdit != null)
@@ -173,6 +163,16 @@ class _RoomCardState extends State<RoomCard> {
                       ],
                     ),
                   ],
+                ),
+                const SizedBox(height: 2),
+                // 添加修改时间显示，转换为本地时间
+                Text(
+                  '修改时间: ${room.modifiedAt.toLocal().toString().substring(0, 19)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(

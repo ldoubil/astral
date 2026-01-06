@@ -22,6 +22,8 @@ class Room {
   List<String> servers = [];
   // 自定义参数（用于标识房间是否有自定义服务器，如为空则表示无自定义参数）
   String customParam = "";
+  // 修改时间戳
+  DateTime modifiedAt = DateTime.now();
 
   // ========== 网络配置携带 ==========
   /// 是否携带网络配置（用于判断是否应用携带的配置）
@@ -44,5 +46,6 @@ class Room {
     this.customParam = "",
     this.hasNetworkConfig = false,
     this.networkConfigJson = "",
-  });
+    DateTime? initialModifiedAt,
+  }) : this.modifiedAt = initialModifiedAt ?? DateTime.now();
 }
