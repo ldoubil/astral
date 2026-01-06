@@ -1,6 +1,5 @@
 ﻿import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/shared/utils/helpers/platform_version_parser.dart';
-import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:astral/core/services/service_manager.dart';
@@ -53,16 +52,24 @@ class _MiniUserCardState extends State<MiniUserCard> {
       return MouseRegion(
         onEnter: (_) => setState(() => isHovered = true),
         onExit: (_) => setState(() => isHovered = false),
-        child: Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isHovered ? colorScheme.primary : Colors.transparent,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 2),
+          decoration: BoxDecoration(
+            color:
+                isHovered
+                    ? colorScheme.primaryContainer.withOpacity(0.3)
+                    : colorScheme.surface,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color:
+                  isHovered
+                      ? colorScheme.primary.withOpacity(0.5)
+                      : Colors.transparent,
               width: 1,
             ),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             onTap: () {
               // 复制IP地址到剪贴板
               Clipboard.setData(ClipboardData(text: player.ipv4));
@@ -75,133 +82,112 @@ class _MiniUserCardState extends State<MiniUserCard> {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
                 children: [
-                  // 第一行：名称 类型 延迟 丢包
-                  Row(
-                    children: [
-                      Icon(Icons.person, color: colorScheme.primary, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Tooltip(
-                          message: displayName,
-                          child: Text(
-                            displayName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: null, // Plus用户高亮
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
+                  // 玩家图标和名称
+                  Icon(Icons.person, color: colorScheme.primary, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: Tooltip(
+                      message: displayName,
+                      child: Text(
+                        displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: colorScheme.onSurface,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: connectionTypeColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          connectionType,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      // 只有不是本机时才显示延迟和丢包
-                      if (connectionType != '本机') ...[
-                        const SizedBox(width: 10),
-                        Icon(
-                          Icons.timer_outlined,
-                          size: 16,
-                          color: latencyColor,
-                        ),
-                        Text(
-                          '${player.latencyMs.toStringAsFixed(0)}ms',
-                          style: TextStyle(
-                            color: latencyColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Icon(Icons.error_outline, size: 16, color: lossColor),
-                        Text(
-                          '${player.lossRate.toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            color: lossColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  // 第二行：IP地址 ET版本 打洞难易
-                  Row(
-                    children: [
-                      if (player.ipv4 != '' && player.ipv4 != "0.0.0.0")
-                        Icon(
-                          Icons.lan_outlined,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Tooltip(
-                          message: player.ipv4,
-                          child: Text(
-                            (player.ipv4 != '' && player.ipv4 != "0.0.0.0")
-                                ? player.ipv4
-                                : "",
-                            style: TextStyle(
-                              color: colorScheme.secondary,
-                              fontSize: 13,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        PlatformVersionParser.getPlatformIcon(player.version),
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
-                      Text(
-                        PlatformVersionParser.getVersionNumber(player.version),
+                  const SizedBox(width: 8),
+                  // IP地址
+                  Expanded(
+                    flex: 2,
+                    child: Tooltip(
+                      message: player.ipv4,
+                      child: Text(
+                        (player.ipv4 != '' && player.ipv4 != "0.0.0.0")
+                            ? player.ipv4
+                            : "-",
                         style: TextStyle(
                           color: colorScheme.secondary,
                           fontSize: 13,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (player.tunnelProto != '') ...[
-                        const SizedBox(width: 10),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 连接类型
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: connectionTypeColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      connectionType,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  // 只有不是本机时才显示延迟和丢包
+                  if (connectionType != '本机') ...[
+                    const SizedBox(width: 8),
+                    // 延迟
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Icon(
-                          Icons.router,
-                          size: 16,
-                          color: colorScheme.primary,
+                          Icons.timer_outlined,
+                          size: 14,
+                          color: latencyColor,
                         ),
-                        Text(
-                          _formatTunnelProto(player.tunnelProto),
-                          style: TextStyle(
-                            color: colorScheme.secondary,
-                            fontSize: 13,
+                        const SizedBox(width: 2),
+                        SizedBox(
+                          width: 40,
+                          child: Text(
+                            '${player.latencyMs.toStringAsFixed(0)}ms',
+                            style: TextStyle(
+                              color: latencyColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                    // 丢包率
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, size: 14, color: lossColor),
+                        const SizedBox(width: 2),
+                        SizedBox(
+                          width: 35,
+                          child: Text(
+                            '${player.lossRate.toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              color: lossColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

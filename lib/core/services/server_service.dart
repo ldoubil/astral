@@ -1,9 +1,8 @@
 ﻿import 'package:astral/core/states/server_state.dart';
 import 'package:astral/core/repositories/server_repository.dart';
-import 'package:astral/core/models/server_mod.dart';
-import 'package:flutter/foundation.dart';
+import 'package:astral/core/constants/servers.dart';
 
-/// 服务器服务：协调ServerState和ServerRepository
+/// 服务器服务：协调ServerState和ServerRepository（现在使用固定配置）
 class ServerService {
   final ServerState state;
   final ServerRepository _repository;
@@ -13,66 +12,37 @@ class ServerService {
   // ========== 初始化 ==========
 
   Future<void> init() async {
-    final servers = await _repository.getAllServers();
-    state.setServers(servers);
+    // 从数据库读取已启用的服务器索引列表
+    final enabledIndices = await _repository.getEnabledServerIndices();
+    state.setEnabledServerIndices(enabledIndices);
   }
 
   // ========== 业务方法 ==========
 
-  Future<void> addServer(ServerMod server) async {
-    try {
-      await _repository.addServer(server);
-      await _refreshServers();
-    } catch (e, stackTrace) {
-      debugPrint('添加服务器失败: $e\n$stackTrace');
-      rethrow;
-    }
+  /// 获取所有服务器配置（固定常量列表）
+  List<ServerConfig> getAllServers() {
+    return state.allServers;
   }
 
-  Future<void> deleteServer(ServerMod server) async {
-    await _repository.deleteServer(server);
-    await _refreshServers();
+  /// 获取已启用的服务器配置
+  List<ServerConfig> getEnabledServers() {
+    return state.enabledServers;
   }
 
-  Future<void> deleteServerById(int id) async {
-    await _repository.deleteServerById(id);
-    await _refreshServers();
+  /// 切换服务器启用状态
+  Future<void> toggleServerEnabled(int index, bool enabled) async {
+    state.toggleServerEnabled(index, enabled);
+    await _repository.toggleServerEnabled(index, enabled);
   }
 
-  Future<void> updateServer(ServerMod server) async {
-    await _repository.updateServer(server);
-    await _refreshServers();
+  /// 设置已启用的服务器索引列表
+  Future<void> setEnabledServerIndices(List<int> indices) async {
+    state.setEnabledServerIndices(indices);
+    await _repository.setEnabledServerIndices(indices);
   }
 
-  Future<void> reorderServers(List<ServerMod> reorderedServers) async {
-    await _repository.updateServersOrder(reorderedServers);
-    await _refreshServers();
-  }
-
-  Future<void> setServerEnable(ServerMod server, bool enable) async {
-    server.enable = enable;
-    await _repository.updateServer(server);
-    await _refreshServers();
-  }
-
-  Future<ServerMod?> getServerById(int id) async {
-    return await _repository.getServerById(id);
-  }
-
-  Future<List<ServerMod>> getAllServers() async {
-    final servers = await _repository.getAllServers();
-    state.setServers(servers);
-    return servers;
-  }
-
-  Future<List<ServerMod>> getEnabledServers() async {
-    return await _repository.getEnabledServers();
-  }
-
-  // ========== 内部辅助方法 ==========
-
-  Future<void> _refreshServers() async {
-    final servers = await _repository.getAllServers();
-    state.setServers(servers);
+  /// 检查某个服务器是否已启用
+  bool isServerEnabled(int index) {
+    return state.isServerEnabled(index);
   }
 }

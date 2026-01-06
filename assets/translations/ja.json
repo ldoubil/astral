@@ -146,8 +146,6 @@
   "player_list_card": "プレイヤーリストカード",
     "enable_discover_page": "発見ページを有効化",
     "enable_discover_page_desc": "メインナビゲーションに発見ページを表示",
-    "enable_banner_carousel": "バナーカルーセルを有効化",
-    "enable_banner_carousel_desc": "ホームページに広告カルーセルを表示",
   "player_list_card_desc": "シンプル表示するかどうか",
   "update_settings": "更新設定",
   "join_beta": "ベータ版に参加",

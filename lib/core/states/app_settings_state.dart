@@ -8,9 +8,6 @@ class AppSettingsState {
   // 监听列表
   final listenList = signal<List<String>>([]);
 
-  // 启用轮播图
-  final enableBannerCarousel = signal(true);
-
   // 日志列表
   final logs = signal<List<String>>([]);
 
@@ -22,11 +19,6 @@ class AppSettingsState {
   // 设置监听列表
   void setListenList(List<String> list) {
     listenList.value = list;
-  }
-
-  // 更新轮播图开关
-  void updateEnableBannerCarousel(bool value) {
-    enableBannerCarousel.value = value;
   }
 
   // 添加日志

@@ -1,61 +1,45 @@
-锘縤mport 'package:astral/core/database/app_data.dart';
-import 'package:astral/core/models/room.dart';
+import 'package:astral/core/database/app_data.dart';
+import 'package:astral/core/constants/rooms.dart';
 
-/// 鎴块棿绠＄悊鐨勬暟鎹寔涔呭寲
+/// 房间管理的数据持久化
+/// 现在只管理房间索引的保存和读取
 class RoomRepository {
   final AppDatabase _db;
 
   RoomRepository(this._db);
 
-  // ========== 鏌ヨ鎿嶄綔 ==========
+  // ========== 查询操作 ==========
 
-  Future<List<Room>> getAllRooms() async {
-    final rooms = await _db.RoomSetting.getAllRooms();
-    rooms.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-    return rooms;
+  /// 获取所有房间配置（固定常量列表）
+  List<RoomConfig> getAllRooms() {
+    return RoomsConstants.rooms;
   }
 
-  Future<Room?> getRoomById(int id) async {
-    return await _db.RoomSetting.getRoomById(id);
+  /// 根据索引获取房间配置
+  RoomConfig getRoomByIndex(int index) {
+    return RoomsConstants.getRoomByIndex(index);
   }
 
-  Future<Room?> getSelectedRoom() async {
-    return await _db.AllSettings.getRoom();
+  /// 获取当前选中的房间索引
+  Future<int> getSelectedRoomIndex() async {
+    return await _db.allSettings.getRoomIndex();
   }
 
-  // ========== 鍐欏叆鎿嶄綔 ==========
-
-  Future<void> addRoom(Room room) async {
-    await _db.RoomSetting.addRoom(room);
+  /// 获取当前选中的房间配置
+  Future<RoomConfig> getSelectedRoom() async {
+    return await _db.allSettings.getRoomConfig();
   }
 
-  Future<void> updateRoom(Room room) async {
-    await _db.RoomSetting.updateRoom(room);
+  // ========== 写入操作 ==========
+
+  /// 设置选中的房间（通过索引）
+  Future<void> setSelectedRoomIndex(int index) async {
+    await _db.allSettings.updateRoomIndex(index);
   }
 
-  Future<void> deleteRoom(int id) async {
-    await _db.RoomSetting.deleteRoom(id);
-  }
-
-  Future<void> updateRoomsOrder(List<Room> rooms) async {
-    await _db.RoomSetting.updateRoomsOrder(rooms);
-  }
-
-  Future<void> setSelectedRoom(Room room) async {
-    await _db.AllSettings.updateRoom(room);
-  }
-
-  // ========== 鎵归噺鎿嶄綔 ==========
-
-  Future<void> batchUpdate(List<Room> rooms) async {
-    for (final room in rooms) {
-      await _db.RoomSetting.updateRoom(room);
-    }
-  }
-
-  Future<void> batchDelete(List<int> ids) async {
-    for (final id in ids) {
-      await _db.RoomSetting.deleteRoom(id);
-    }
+  /// 设置选中的房间（通过房间名称）
+  Future<void> setSelectedRoomByName(String roomName) async {
+    final index = RoomsConstants.getIndexByRoomName(roomName);
+    await _db.allSettings.updateRoomIndex(index);
   }
 }

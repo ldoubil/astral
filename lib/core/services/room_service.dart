@@ -1,8 +1,9 @@
 ﻿import 'package:astral/core/states/room_state.dart';
 import 'package:astral/core/repositories/room_repository.dart';
-import 'package:astral/core/models/room.dart';
+import 'package:astral/core/constants/rooms.dart';
 
 /// 房间服务：协调RoomState和RoomRepository
+/// 现在使用固定的房间常量列表，只管理房间索引的选择
 class RoomService {
   final RoomState state;
   final RoomRepository _repository;
@@ -12,55 +13,47 @@ class RoomService {
   // ========== 初始化 ==========
 
   Future<void> init() async {
-    final rooms = await _repository.getAllRooms();
-    state.setRooms(rooms);
-
-    final selectedRoom = await _repository.getSelectedRoom();
-    state.selectRoom(selectedRoom);
+    // 从数据库读取选中的房间索引
+    final selectedIndex = await _repository.getSelectedRoomIndex();
+    state.selectRoomByIndex(selectedIndex);
   }
 
   // ========== 业务方法 ==========
 
-  Future<void> addRoom(Room room) async {
-    await _repository.addRoom(room);
-    await _refreshRooms();
+  /// 获取所有房间配置（固定常量列表）
+  List<RoomConfig> getAllRooms() {
+    return state.allRooms;
   }
 
-  Future<void> deleteRoom(int id) async {
-    await _repository.deleteRoom(id);
-    await _refreshRooms();
+  /// 通过索引选择房间
+  Future<void> selectRoomByIndex(int index) async {
+    await _repository.setSelectedRoomIndex(index);
+    state.selectRoomByIndex(index);
   }
 
-  Future<void> updateRoom(Room room) async {
-    await _repository.updateRoom(room);
-    await _refreshRooms();
+  /// 通过房间名称选择房间
+  Future<void> selectRoomByName(String roomName) async {
+    await _repository.setSelectedRoomByName(roomName);
+    state.selectRoomByName(roomName);
   }
 
-  Future<void> reorderRooms(List<Room> reorderedRooms) async {
-    await _repository.updateRoomsOrder(reorderedRooms);
-    await _refreshRooms();
+  /// 获取当前选中的房间配置
+  RoomConfig getSelectedRoom() {
+    return state.selectedRoom;
   }
 
-  Future<void> setRoom(Room room) async {
-    await _repository.setSelectedRoom(room);
-    final selectedRoom = await _repository.getSelectedRoom();
-    state.selectRoom(selectedRoom);
+  /// 获取当前选中的房间索引
+  int getSelectedRoomIndex() {
+    return state.selectedRoomIndex.value;
   }
 
-  Future<Room?> getRoomById(int id) async {
-    return await _repository.getRoomById(id);
+  /// 根据索引获取房间配置
+  RoomConfig getRoomByIndex(int index) {
+    return RoomsConstants.getRoomByIndex(index);
   }
 
-  Future<List<Room>> getAllRooms() async {
-    final rooms = await _repository.getAllRooms();
-    state.setRooms(rooms);
-    return rooms;
-  }
-
-  // ========== 内部辅助方法 ==========
-
-  Future<void> _refreshRooms() async {
-    final rooms = await _repository.getAllRooms();
-    state.setRooms(rooms);
+  /// 获取房间总数
+  int getRoomCount() {
+    return state.roomCount;
   }
 }

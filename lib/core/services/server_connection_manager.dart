@@ -46,17 +46,14 @@ class ServerConnectionManager {
       return false;
     }
 
-    final room = services.roomState.selectedRoom.value;
+    final room = services.roomState.selectedRoom;
     if (room == null) return false;
 
     // 清理旧连接
     await closeServer();
 
     // 检查服务器配置
-    final enabledServers =
-        services.serverState.servers.value
-            .where((server) => server.enable)
-            .toList();
+    final enabledServers = services.serverState.enabledServers;
     final hasRoomServers = room.servers.isNotEmpty;
 
     if (enabledServers.isEmpty && !hasRoomServers) {
@@ -113,7 +110,6 @@ class ServerConnectionManager {
 
     batch(() {
       services.connectionState.connectionState.value = CoState.idle;
-      services.serverStatusState.setActiveServers({});
     });
   }
 
@@ -138,7 +134,7 @@ class ServerConnectionManager {
             .withPlayerInfo()
             .withRoom(room)
             .withRoomConfig(roomConfig)
-            .withServers(room, services.serverState.servers.value)
+            .withServers(room, services.serverState.enabledServers)
             .withListeners(services.playerState.listenList.value)
             .withCidrs(services.vpnState.customVpn.value)
             .withForwards(services.firewallState.connections.value)
@@ -245,7 +241,6 @@ class ServerConnectionManager {
       ServiceManager().connectionState.connectionState.value =
           CoState.connected;
       ServiceManager().connectionState.isConnecting.value = true;
-      _markActiveServers();
     });
 
     // 启动VPN（Android）
@@ -322,24 +317,6 @@ class ServerConnectionManager {
     final addr =
         virtualIpv4?.isEmpty ?? true ? 0 : virtualIpv4['address']['addr'] ?? 0;
     return intToIp(addr);
-  }
-
-  /// 标记活跃服务器
-  void _markActiveServers() {
-    final room = ServiceManager().roomState.selectedRoom.value;
-    if (room == null) return;
-
-    final activeIds = <Id>{};
-    final enabledServers =
-        ServiceManager().serverState.servers.value
-            .where((server) => server.enable)
-            .toList();
-
-    for (var server in enabledServers) {
-      activeIds.add(server.id);
-    }
-
-    ServiceManager().serverStatusState.setActiveServers(activeIds);
   }
 
   /// 清理资源

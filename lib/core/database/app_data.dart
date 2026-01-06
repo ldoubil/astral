@@ -1,13 +1,9 @@
 ﻿import 'dart:io';
 import 'package:astral/core/models/all_settings.dart';
 import 'package:astral/core/models/net_config.dart';
-import 'package:astral/core/models/room.dart';
-import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/models/magic_wall_model.dart';
 import 'package:astral/core/models/converters/all_settings_converter.dart';
 import 'package:astral/core/models/converters/net_config_converter.dart';
-import 'package:astral/core/models/converters/room_converter.dart';
-import 'package:astral/core/models/converters/server_converter.dart';
 import 'package:astral/core/models/converters/magic_wall_converter.dart';
 import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/theme_settings.dart';
@@ -24,9 +20,7 @@ class AppDatabase {
   late Isar isar;
   late ThemeSettingsRepository themeSettings;
   late NetConfigRepository netConfigSetting;
-  late RoomCz RoomSetting;
-  late AllSettingsCz AllSettings;
-  late ServerCz ServerSetting;
+  late AllSettingsCz allSettings;
   late MagicWallModelCz MagicWallSetting;
 
   /// 初始化数据库
@@ -61,23 +55,25 @@ class AppDatabase {
     isar = await Isar.open([
       ThemeSettingsSchema,
       NetConfigSchema,
-      RoomSchema,
       AllSettingsSchema,
-      ServerModSchema,
       MagicWallRuleModelSchema,
       MagicWallGroupModelSchema,
       MagicWallEventLogModelSchema,
     ], directory: dbDir);
     themeSettings = ThemeSettingsRepository(isar);
     netConfigSetting = NetConfigRepository(isar);
-    RoomSetting = RoomCz(isar);
-    AllSettings = AllSettingsCz(isar);
-    ServerSetting = ServerCz(isar);
+    allSettings = AllSettingsCz(isar);
     MagicWallSetting = MagicWallModelCz(isar);
+  }
 
-    // 确保初始化完成
-    await RoomSetting.init();
-    await ServerSetting.init();
+  /// 获取全局设置实例
+  Future<AllSettings> getAllSettingsInstance() async {
+    return await AllSettingsCz.getInstance(isar);
+  }
+
+  /// 更新全局设置
+  Future<void> updateAllSettings(void Function(AllSettings) updater) async {
+    await AllSettingsCz.updateSettings(isar, updater);
   }
 
   /// 导出数据库到指定路径

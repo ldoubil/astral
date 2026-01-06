@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/shared/utils/helpers/regex_patterns.dart'; // 添加这行导入
 import 'package:astral/core/app_s/log_capture.dart';
 import 'package:astral/core/app_s/file_logger.dart';
@@ -10,6 +9,7 @@ import 'package:astral/core/app_s/global_error_handler.dart';
 import 'package:astral/core/database/app_data.dart';
 import 'package:astral/core/constants/window_manager.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/magic_wall_auto_service.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -83,7 +83,6 @@ Future<void> _initializeApp() async {
     await services.init();
     FileLogger().info('ServiceManager initialized');
 
-    AppInfoUtil.init();
     FileLogger().info('AppInfoUtil initialized');
 
     await LogCapture().startCapture();
@@ -98,6 +97,21 @@ Future<void> _initializeApp() async {
         (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       await WindowManagerUtils.initializeWindow();
       FileLogger().info('Window manager initialized');
+    }
+
+    // 启动魔法墙自动服务（仅 Windows）
+    if (!kIsWeb && Platform.isWindows) {
+      try {
+        await MagicWallAutoService().start();
+        FileLogger().info('Magic Wall Auto Service started');
+      } catch (e, stack) {
+        FileLogger().warning('Failed to start Magic Wall Auto Service: $e');
+        GlobalErrorHandler.logError(
+          'Failed to start Magic Wall Auto Service',
+          error: e,
+          stack: stack,
+        );
+      }
     }
 
     _runApp();

@@ -1,5 +1,6 @@
 ﻿import 'dart:io';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/magic_wall_auto_service.dart';
 import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
 import 'package:astral/shared/widgets/common/theme_selector.dart';
 import 'package:astral/shared/widgets/common/windows_controls.dart';
@@ -245,6 +246,9 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
             if (_isChristmasSeason) const SizedBox(width: 8),
+            // 魔法墙状态指示器（仅Windows）
+            if (Platform.isWindows) _buildMagicWallStatus(colorScheme),
+            if (Platform.isWindows) const SizedBox(width: 8),
             IconButton(
               icon: Icon(
                 // 根据当前主题模式选择对应图标
@@ -374,6 +378,45 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
               const WindowControls(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建魔法墙状态指示器
+  Widget _buildMagicWallStatus(ColorScheme colorScheme) {
+    final service = MagicWallAutoService();
+    final isRunning = service.isRunning && service.engineStarted;
+
+    return Tooltip(
+      message: isRunning ? '魔法墙运行中 (自动管理)' : '魔法墙未运行',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color:
+              isRunning
+                  ? Colors.green.withOpacity(0.2)
+                  : Colors.grey.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.security,
+              size: 14,
+              color: isRunning ? Colors.green : Colors.grey,
+            ),
+            const SizedBox(width: 4),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isRunning ? Colors.green : Colors.grey,
+                shape: BoxShape.circle,
+              ),
+            ),
           ],
         ),
       ),

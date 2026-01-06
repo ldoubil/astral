@@ -1,15 +1,8 @@
-﻿import 'package:astral/shared/utils/ui/random_name.dart';
-import 'package:astral/shared/utils/dialogs/add_room_dialog.dart';
-import 'package:astral/shared/utils/dialogs/edit_room_dialog.dart';
-import 'package:astral/shared/utils/data/room_share_helper.dart';
-import 'package:astral/features/home/pages/user_page.dart';
-import 'package:astral/shared/widgets/cards/room_card.dart';
-import 'package:astral/shared/widgets/common/room_reorder_sheet.dart';
+﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/shared/widgets/cards/all_user_card.dart';
+import 'package:astral/shared/widgets/cards/mini_user_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/models/room.dart';
-import 'package:uuid/uuid.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 class RoomPage extends StatefulWidget {
@@ -19,303 +12,163 @@ class RoomPage extends StatefulWidget {
   State<RoomPage> createState() => _RoomPageState();
 }
 
-// 在_RoomPageState类中添加排序相关方法
 class _RoomPageState extends State<RoomPage> {
-  final _services = ServiceManager();
-  bool isHovered = false;
-  bool _isReorderMode = false; // 添加重排序模式标志
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // 使用 Riverpod 监听节点数据
+    return Scaffold(
+      // 房间设置按钮已移除（固定房间列表）
+      body: Watch((context) {
+        final netStatus = ServiceManager().connectionState.netStatus.watch(
+          context,
+        );
+        final isConnecting = ServiceManager().connectionState.isConnecting
+            .watch(context);
+        if (!isConnecting) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.cloud_off_rounded,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '无数据',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (netStatus == null || netStatus.nodes.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 64,
+                  color: colorScheme.primary.withOpacity(0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '房间内暂无成员',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '当前没有其他玩家连接到房间',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // 获取排序选项
+          final sortOption = ServiceManager().displayState.sortOption.watch(
+            context,
+          );
+          // 获取排序顺序
+          final sortOrder = ServiceManager().displayState.sortOrder.watch(
+            context,
+          );
+          // 获取原始节点列表并固定过滤只显示玩家（排除服务器）
+          var nodes =
+              netStatus.nodes
+                  .where((node) => !node.hostname.startsWith('PublicServer_'))
+                  .toList();
+
+          // 根据排序选项对节点进行排序
+          if (sortOption == 1) {
+            // 按延迟排序
+            nodes.sort((a, b) {
+              int comparison = a.latencyMs.compareTo(b.latencyMs);
+              return sortOrder == 0 ? comparison : -comparison;
+            });
+          } else if (sortOption == 2) {
+            // 按用户名长度排序
+            nodes.sort((a, b) {
+              int comparison = a.hostname.length.compareTo(b.hostname.length);
+              return sortOrder == 0 ? comparison : -comparison;
+            });
+          }
+          // 如果sortOption为0，则不排序
+
+          // 返回一个可滚动的视图
+          return CustomScrollView(
+            // 始终允许滚动,即使内容不足一屏
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // 为网格添加内边距
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+                // 使用瀑布流网格布局
+                sliver: SliverMasonryGrid(
+                  // 配置网格布局参数
+                  gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                    // 根据屏幕宽度动态计算列数
+                    crossAxisCount: _getColumnCount(
+                      MediaQuery.of(context).size.width,
+                    ),
+                  ),
+                  // 设置网格项之间的间距
+                  mainAxisSpacing: 8.0,
+                  crossAxisSpacing: 8.0,
+                  // 配置子项构建器
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      // 获取当前索引对应的玩家数据
+                      final player = nodes[index];
+                      final userListSimple = ServiceManager()
+                          .displayState
+                          .userListSimple
+                          .watch(context);
+                      final localIPv4 = ServiceManager().networkConfigState.ipv4
+                          .watch(context);
+                      // 根据简单列表模式选项返回不同的卡片组件
+                      return userListSimple
+                          ? MiniUserCard(
+                            player: player,
+                            colorScheme: colorScheme,
+                            localIPv4: localIPv4,
+                          )
+                          : AllUserCard(
+                            player: player,
+                            colorScheme: colorScheme,
+                            localIPv4: localIPv4,
+                          );
+                    },
+                    // 设置子项数量为过滤后的节点数量
+                    childCount: nodes.length,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+      }),
+    );
+  }
 
   // 根据宽度计算列数
   int _getColumnCount(double width) {
     if (width >= 1200) {
-      return 4;
-    } else if (width >= 900) {
       return 3;
-    } else if (width >= 600) {
+    } else if (width >= 900) {
       return 2;
     }
-    return 1;
+    return 1; // 窄屏使用单列
   }
-
-  // 显示输入分享码的弹窗
-  void _showPasteDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String shareCode = '';
-        return AlertDialog(
-          title: const Text('导入房间'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                onChanged: (value) {
-                  shareCode = value;
-                },
-                decoration: const InputDecoration(
-                  hintText: '请输入分享码或链接',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await RoomShareHelper.importFromClipboard(context);
-                  },
-                  icon: const Icon(Icons.paste),
-                  label: const Text('从剪贴板导入'),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (shareCode.isNotEmpty) {
-                  Navigator.of(context).pop();
-                  await RoomShareHelper.importRoom(context, shareCode);
-                }
-              },
-              child: const Text('导入'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 构建房间列表视图
-  Widget _buildRoomsView(BuildContext context, BoxConstraints constraints) {
-    final columnCount = _getColumnCount(constraints.maxWidth);
-
-    return Watch((context) {
-      final rooms = _services.roomState.rooms.watch(context);
-      final selectedRoom = _services.roomState.selectedRoom.watch(context);
-
-      // 如果是重排序模式，使用ReorderableListView
-      if (_isReorderMode) {
-        return ReorderableListView.builder(
-          padding: const EdgeInsets.all(12.0),
-          itemCount: rooms.length,
-          onReorder: (oldIndex, newIndex) {
-            if (newIndex > oldIndex) {
-              newIndex -= 1;
-            }
-            final List<Room> reorderedRooms = List.from(rooms);
-            final Room item = reorderedRooms.removeAt(oldIndex);
-            reorderedRooms.insert(newIndex, item);
-            _services.room.reorderRooms(reorderedRooms);
-          },
-          itemBuilder: (context, index) {
-            final room = rooms[index];
-            return Card(
-              key: ValueKey(room.id),
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              child: ListTile(
-                leading: const Icon(Icons.drag_handle),
-                title: Text(room.name),
-                subtitle: Text('排序: ${room.sortOrder}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showEditRoomDialog(context, room: room);
-                  },
-                ),
-              ),
-            );
-          },
-        );
-      }
-
-      // 正常的网格视图
-      return CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(16.0),
-            sliver: SliverMasonryGrid.count(
-              crossAxisCount: columnCount,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childCount: rooms.length,
-              itemBuilder: (context, index) {
-                final room = rooms[index];
-                final isSelected = selectedRoom?.id == room.id;
-                return RoomCard(
-                  room: room,
-                  isSelected: isSelected,
-                  onEdit: () {
-                    showEditRoomDialog(context, room: room);
-                  },
-                  onDelete: () {
-                    _services.room.deleteRoom(room.id);
-                  },
-                  onShare: () {
-                    RoomShareHelper.showShareDialog(context, room);
-                  },
-                );
-              },
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
-          ),
-        ],
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Watch((context) {
-      // 监听连接状态
-      final isConnected = _services.connectionState.connectionState.watch(
-        context,
-      );
-      // 获取当前选中房间
-      final selectedRoom = _services.roomState.selectedRoom.watch(context);
-
-      return Scaffold(
-        body: Column(
-          children: [
-            // 顶部显示当前选中房间信息
-            if (selectedRoom != null && isConnected == CoState.connected)
-              MouseRegion(
-                onEnter: (_) => setState(() => isHovered = true),
-                onExit: (_) => setState(() => isHovered = false),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 0),
-                  child: Card(
-                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color:
-                            isHovered
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minWidth: double.infinity,
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap:
-                              isConnected == CoState.connected
-                                  ? () {
-                                    RoomShareHelper.copyShareLink(
-                                      context,
-                                      selectedRoom,
-                                      linkOnly: true,
-                                    );
-                                  }
-                                  : () {},
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            title: Text('当前房间: ${selectedRoom.name}'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '连接状态: ${isConnected == CoState.connected
-                                      ? '已连接'
-                                      : isConnected == CoState.connecting
-                                      ? '连接中'
-                                      : '未连接'}${isConnected == CoState.connected ? ' (点击分享房间)' : ''}',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            Expanded(
-              child:
-                  isConnected != CoState.idle
-                      // 已连接：显示用户列表
-                      ? const UserPage()
-                      // 未连接：显示房间列表
-                      : LayoutBuilder(
-                        builder: (context, constraints) {
-                          return _buildRoomsView(context, constraints);
-                        },
-                      ),
-            ),
-          ],
-        ),
-        floatingActionButton:
-            isConnected != CoState.idle
-                ? null // 已连接时不显示按钮
-                : Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // 排序按钮移到最前
-                    FloatingActionButton(
-                      heroTag: 'room_sort',
-                      onPressed: () {
-                        RoomReorderSheet.show(
-                          context,
-                          _services.roomState.rooms.value,
-                        );
-                      },
-                      child: const Icon(Icons.sort),
-                    ),
-                    const SizedBox(width: 16),
-                    // 黏贴按钮居中
-                    FloatingActionButton(
-                      heroTag: 'paste',
-                      onPressed: _showPasteDialog,
-                      child: const Icon(Icons.paste),
-                    ),
-                    const SizedBox(width: 16),
-                    // 增加按钮最后
-                    FloatingActionButton(
-                      heroTag: 'add',
-                      onPressed: () => showAddRoomDialog(context),
-                      child: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-      );
-    });
-  }
-}
-
-void addEncryptedRoom(
-  bool isEncrypted,
-  String? name,
-  String? roomname,
-  String? password,
-) {
-  var room = Room(
-    name: name ?? RandomName(), // 如果 name 为 null，则使用空字符串
-    encrypted: isEncrypted,
-    roomName:
-        isEncrypted ? Uuid().v4() : (roomname ?? ""), // 如果未加密，则使用随机UUID作为房间名
-    password: isEncrypted ? Uuid().v4() : (password ?? ""), // 如果未加密，则生成一个随机密码
-    messageKey: isEncrypted ? Uuid().v4() : "",
-    tags: [],
-  );
-  ServiceManager().room.addRoom(room);
 }

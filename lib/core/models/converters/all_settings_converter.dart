@@ -1,7 +1,7 @@
 ﻿import 'dart:io';
 
 import 'package:astral/core/models/all_settings.dart';
-import 'package:astral/core/models/room.dart';
+import 'package:astral/core/constants/rooms.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:isar_community/isar.dart';
 
@@ -11,6 +11,37 @@ class AllSettingsCz {
   AllSettingsCz(this._isar) {
     init();
   }
+
+  /// 获取全局设置实例（静态访问）
+  static Future<AllSettings> getInstance(Isar isar) async {
+    AllSettings? settings = await isar.allSettings.get(1);
+    if (settings == null) {
+      settings = AllSettings();
+      settings.playerName = await _getDeviceName();
+      settings.sortOption = 0;
+      settings.sortOrder = 0;
+      settings.displayMode = 0;
+
+      await isar.writeTxn(() async {
+        await isar.allSettings.put(settings!);
+      });
+    }
+    return settings;
+  }
+
+  /// 更新全局设置（静态访问）
+  static Future<void> updateSettings(
+    Isar isar,
+    void Function(AllSettings) updater,
+  ) async {
+    final settings = await getInstance(isar);
+    updater(settings);
+
+    await isar.writeTxn(() async {
+      await isar.allSettings.put(settings);
+    });
+  }
+
   Future<void> init() async {
     AllSettings? settings = await _isar.allSettings.get(1);
 
@@ -44,40 +75,6 @@ class AllSettingsCz {
         });
       }
     }
-  }
-
-  /// 设置轮播图开关
-  Future<void> setEnableBannerCarousel(bool enable) async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    if (settings != null) {
-      settings.enableBannerCarousel = enable;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(settings);
-      });
-    }
-  }
-
-  /// 获取轮播图开关
-  Future<bool> getEnableBannerCarousel() async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    return settings?.enableBannerCarousel ?? true;
-  }
-
-  /// 设置是否已显示轮播图提示
-  Future<void> setHasShownBannerTip(bool hasShown) async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    if (settings != null) {
-      settings.hasShownBannerTip = hasShown;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(settings);
-      });
-    }
-  }
-
-  /// 获取是否已显示轮播图提示
-  Future<bool> getHasShownBannerTip() async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    return settings?.hasShownBannerTip ?? false;
   }
 
   /// 设置用户简约模式
@@ -187,22 +184,34 @@ class AllSettingsCz {
     }
   }
 
-  // 设置房间
-  Future<void> updateRoom(Room room) async {
+  // 设置房间索引
+  Future<void> updateRoomIndex(int index) async {
     AllSettings? config = await _isar.allSettings.get(1);
     if (config != null) {
-      config.room = room.id;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(config);
-      });
+      if (index >= 0 && index < RoomsConstants.count) {
+        config.roomIndex = index;
+        await _isar.writeTxn(() async {
+          await _isar.allSettings.put(config);
+        });
+      }
     }
   }
 
-  // 获取当前房间ID
-  Future<Room?> getRoom() async {
+  // 获取当前房间索引
+  Future<int> getRoomIndex() async {
     AllSettings? config = await _isar.allSettings.get(1);
-    if (config?.room == null) return null;
-    return await _isar.rooms.get(config!.room!);
+    if (config == null) return 0;
+    // 确保索引在有效范围内
+    if (config.roomIndex < 0 || config.roomIndex >= RoomsConstants.count) {
+      return 0;
+    }
+    return config.roomIndex;
+  }
+
+  // 获取当前房间配置
+  Future<RoomConfig> getRoomConfig() async {
+    final index = await getRoomIndex();
+    return RoomsConstants.getRoomByIndex(index);
   }
 
   // 获取所有设置
@@ -525,7 +534,7 @@ class AllSettingsCz {
     return 0;
   }
 
-  Future<String> _getDeviceName() async {
+  static Future<String> _getDeviceName() async {
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 

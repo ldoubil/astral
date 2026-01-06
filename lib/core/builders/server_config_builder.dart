@@ -1,4 +1,4 @@
-import 'package:astral/core/models/server_mod.dart';
+import 'package:astral/core/constants/servers.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/core/models/forwarding.dart';
 import 'package:astral/core/services/service_manager.dart';
@@ -93,7 +93,7 @@ class ServerConfigBuilder {
   }
 
   /// 构建服务器URL列表
-  ServerConfigBuilder withServers(dynamic room, List<ServerMod> globalServers) {
+  ServerConfigBuilder withServers(dynamic room, List<ServerConfig> enabledServers) {
     // 房间服务器优先 - 直接检查列表，不依赖 hasServers 标志
     if (room.servers != null && room.servers.isNotEmpty) {
       _serverUrls = List<String>.from(room.servers);
@@ -103,7 +103,7 @@ class ServerConfigBuilder {
 
     // 否则使用全局启用的服务器
     final urls = <String>[];
-    for (var server in globalServers.where((s) => s.enable)) {
+    for (var server in enabledServers) {
       if (server.tcp) urls.add('tcp://${server.url}');
       if (server.udp) urls.add('udp://${server.url}');
       if (server.ws) urls.add('ws://${server.url}');

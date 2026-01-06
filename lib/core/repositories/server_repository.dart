@@ -1,7 +1,6 @@
 ﻿import 'package:astral/core/database/app_data.dart';
-import 'package:astral/core/models/server_mod.dart';
 
-/// 服务器管理的数据持久化
+/// 服务器管理的数据持久化（现在只管理启用索引列表）
 class ServerRepository {
   final AppDatabase _db;
 
@@ -9,56 +8,32 @@ class ServerRepository {
 
   // ========== 查询操作 ==========
 
-  Future<List<ServerMod>> getAllServers() async {
-    return await _db.ServerSetting.getAllServers();
-  }
-
-  Future<ServerMod?> getServerById(int id) async {
-    return await _db.ServerSetting.getServerById(id);
-  }
-
-  Future<List<ServerMod>> getEnabledServers() async {
-    final all = await getAllServers();
-    return all.where((s) => s.enable).toList();
+  /// 获取已启用的服务器索引列表
+  Future<List<int>> getEnabledServerIndices() async {
+    final settings = await _db.getAllSettingsInstance();
+    return settings.enabledServerIndices;
   }
 
   // ========== 写入操作 ==========
 
-  Future<void> addServer(ServerMod server) async {
-    await _db.ServerSetting.addServer(server);
+  /// 设置已启用的服务器索引列表
+  Future<void> setEnabledServerIndices(List<int> indices) async {
+    await _db.updateAllSettings((settings) {
+      settings.enabledServerIndices = indices;
+    });
   }
 
-  Future<void> updateServer(ServerMod server) async {
-    await _db.ServerSetting.updateServer(server);
-  }
+  /// 切换某个服务器的启用状态
+  Future<void> toggleServerEnabled(int index, bool enabled) async {
+    final current = await getEnabledServerIndices();
+    final list = List<int>.from(current);
 
-  Future<void> deleteServer(ServerMod server) async {
-    await _db.ServerSetting.deleteServer(server);
-  }
-
-  Future<void> deleteServerById(int id) async {
-    await _db.ServerSetting.deleteServerid(id);
-  }
-
-  Future<void> updateServersOrder(List<ServerMod> servers) async {
-    await _db.ServerSetting.updateServersOrder(servers);
-  }
-
-  // ========== 批量操作 ==========
-
-  Future<void> batchUpdateEnabled(List<int> ids, bool enabled) async {
-    for (final id in ids) {
-      final server = await getServerById(id);
-      if (server != null) {
-        server.enable = enabled;
-        await updateServer(server);
-      }
+    if (enabled && !list.contains(index)) {
+      list.add(index);
+    } else if (!enabled && list.contains(index)) {
+      list.remove(index);
     }
-  }
 
-  Future<void> batchDelete(List<int> ids) async {
-    for (final id in ids) {
-      await deleteServerById(id);
-    }
+    await setEnabledServerIndices(list);
   }
 }

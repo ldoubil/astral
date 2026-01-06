@@ -56,14 +56,11 @@ class _ConnectButtonState extends State<ConnectButton>
 
   /// 处理连接请求
   Future<void> _handleConnect() async {
-    final rom = ServiceManager().roomState.selectedRoom.value;
+    final rom = ServiceManager().roomState.selectedRoom;
     if (rom == null) return;
 
     // 检查服务器配置
-    final enabledServers =
-        ServiceManager().serverState.servers.value
-            .where((server) => server.enable)
-            .toList();
+    final enabledServers = ServiceManager().serverState.enabledServers;
     final hasRoomServers = rom.servers.isNotEmpty;
 
     if (enabledServers.isEmpty && !hasRoomServers) {

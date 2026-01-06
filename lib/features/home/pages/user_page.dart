@@ -6,7 +6,6 @@ import 'package:astral/shared/widgets/common/network_topology.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/shared/widgets/common/room_settings_sheet.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 class UserPage extends StatefulWidget {
@@ -37,13 +36,7 @@ class _UserPageState extends State<UserPage> {
             child: Icon(_showTopology ? Icons.list : Icons.hub),
             tooltip: _showTopology ? '列表视图' : '拓扑图',
           ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'room_settings',
-            onPressed: () => RoomSettingsSheet.show(context),
-            child: const Icon(Icons.bar_chart),
-            tooltip: '房间设置',
-          ),
+          // 房间设置按钮已移除（固定房间列表）
         ],
       ),
       body: Watch((context) {

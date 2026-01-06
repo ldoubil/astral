@@ -1,96 +1,86 @@
-ï»¿import 'package:astral/core/database/app_data.dart';
+import 'package:astral/core/database/app_data.dart';
 
-/// åº”ç”¨é€šç”¨è®¾ç½®çš„æ•°æ®æŒä¹…åŒ–
+/// Ó¦ÓÃÍ¨ÓÃÉèÖÃµÄÊı¾İ³Ö¾Ã»¯
 class AppSettingsRepository {
   final AppDatabase _db;
 
   AppSettingsRepository(this._db);
 
-  // ========== ç©å®¶è®¾ç½® ==========
+  // ========== Íæ¼ÒÉèÖÃ ==========
 
-  Future<String> getPlayerName() => _db.AllSettings.getPlayerName();
+  Future<String> getPlayerName() => _db.allSettings.getPlayerName();
   Future<void> setPlayerName(String name) =>
-      _db.AllSettings.setPlayerName(name);
+      _db.allSettings.setPlayerName(name);
 
-  // ========== ç›‘å¬åˆ—è¡¨ ==========
+  // ========== ¼àÌıÁĞ±í ==========
 
-  Future<List<String>> getListenList() => _db.AllSettings.getListenList();
+  Future<List<String>> getListenList() => _db.allSettings.getListenList();
   Future<void> setListenList(List<String> list) =>
-      _db.AllSettings.setListenList(list);
+      _db.allSettings.setListenList(list);
   Future<void> updateListenList(int index, String value) =>
-      _db.AllSettings.updateListenList(index, value);
+      _db.allSettings.updateListenList(index, value);
 
-  // ========== æ’åºä¸æ˜¾ç¤º ==========
+  // ========== ÅÅĞòÓëÏÔÊ¾ ==========
 
-  Future<bool> getUserMinimal() => _db.AllSettings.getUserMinimal();
+  Future<bool> getUserMinimal() => _db.allSettings.getUserMinimal();
   Future<void> setUserMinimal(bool value) =>
-      _db.AllSettings.setUserMinimal(value);
-  Future<int> getSortOption() => _db.AllSettings.getSortOption();
-  Future<void> setSortOption(int value) => _db.AllSettings.setSortOption(value);
-  Future<int> getSortOrder() => _db.AllSettings.getSortOrder();
-  Future<void> setSortOrder(int value) => _db.AllSettings.setSortOrder(value);
-  Future<int> getDisplayMode() => _db.AllSettings.getDisplayMode();
+      _db.allSettings.setUserMinimal(value);
+  Future<int> getSortOption() => _db.allSettings.getSortOption();
+  Future<void> setSortOption(int value) => _db.allSettings.setSortOption(value);
+  Future<int> getSortOrder() => _db.allSettings.getSortOrder();
+  Future<void> setSortOrder(int value) => _db.allSettings.setSortOrder(value);
+  Future<int> getDisplayMode() => _db.allSettings.getDisplayMode();
   Future<void> setDisplayMode(int value) =>
-      _db.AllSettings.setDisplayMode(value);
+      _db.allSettings.setDisplayMode(value);
 
-  // ========== å¯åŠ¨è®¾ç½® ==========
+  // ========== Æô¶¯ÉèÖÃ ==========
 
-  Future<bool> getStartup() => _db.AllSettings.getStartup();
-  Future<void> setStartup(bool value) => _db.AllSettings.setStartup(value);
-  Future<bool> getStartupMinimize() => _db.AllSettings.getStartupMinimize();
+  Future<bool> getStartup() => _db.allSettings.getStartup();
+  Future<void> setStartup(bool value) => _db.allSettings.setStartup(value);
+  Future<bool> getStartupMinimize() => _db.allSettings.getStartupMinimize();
   Future<void> setStartupMinimize(bool value) =>
-      _db.AllSettings.setStartupMinimize(value);
+      _db.allSettings.setStartupMinimize(value);
   Future<bool> getStartupAutoConnect() =>
-      _db.AllSettings.getStartupAutoConnect();
+      _db.allSettings.getStartupAutoConnect();
   Future<void> setStartupAutoConnect(bool value) =>
-      _db.AllSettings.setStartupAutoConnect(value);
+      _db.allSettings.setStartupAutoConnect(value);
 
-  // ========== æ›´æ–°è®¾ç½® ==========
+  // ========== ¸üĞÂÉèÖÃ ==========
 
-  Future<bool> getBeta() => _db.AllSettings.getBeta();
-  Future<void> setBeta(bool value) => _db.AllSettings.setBeta(value);
-  Future<bool> getAutoCheckUpdate() => _db.AllSettings.getAutoCheckUpdate();
+  Future<bool> getBeta() => _db.allSettings.getBeta();
+  Future<void> setBeta(bool value) => _db.allSettings.setBeta(value);
+  Future<bool> getAutoCheckUpdate() => _db.allSettings.getAutoCheckUpdate();
   Future<void> setAutoCheckUpdate(bool value) =>
-      _db.AllSettings.setAutoCheckUpdate(value);
+      _db.allSettings.setAutoCheckUpdate(value);
   Future<String> getDownloadAccelerate() =>
-      _db.AllSettings.getDownloadAccelerate();
+      _db.allSettings.getDownloadAccelerate();
   Future<void> setDownloadAccelerate(String value) =>
-      _db.AllSettings.setDownloadAccelerate(value);
-  Future<String?> getLatestVersion() => _db.AllSettings.getLatestVersion();
+      _db.allSettings.setDownloadAccelerate(value);
+  Future<String?> getLatestVersion() => _db.allSettings.getLatestVersion();
   Future<void> setLatestVersion(String value) =>
-      _db.AllSettings.setLatestVersion(value);
+      _db.allSettings.setLatestVersion(value);
 
-  // ========== é€šçŸ¥è®¾ç½® ==========
+  // ========== ´°¿ÚÉèÖÃ ==========
 
-  Future<bool> getEnableBannerCarousel() =>
-      _db.AllSettings.getEnableBannerCarousel();
-  Future<void> setEnableBannerCarousel(bool value) =>
-      _db.AllSettings.setEnableBannerCarousel(value);
-  Future<bool> getHasShownBannerTip() => _db.AllSettings.getHasShownBannerTip();
-  Future<void> setHasShownBannerTip(bool value) =>
-      _db.AllSettings.setHasShownBannerTip(value);
-
-  // ========== çª—å£è®¾ç½® ==========
-
-  Future<bool> getCloseMinimize() => _db.AllSettings.getCloseMinimize();
+  Future<bool> getCloseMinimize() => _db.allSettings.getCloseMinimize();
   Future<void> setCloseMinimize(bool value) =>
-      _db.AllSettings.closeMinimize(value);
+      _db.allSettings.closeMinimize(value);
 
-  // ========== è‡ªå®šä¹‰VPN ==========
+  // ========== ×Ô¶¨ÒåVPN ==========
 
-  Future<List<String>> getCustomVpn() => _db.AllSettings.getCustomVpn();
+  Future<List<String>> getCustomVpn() => _db.allSettings.getCustomVpn();
   Future<void> setCustomVpn(List<String> value) =>
-      _db.AllSettings.setCustomVpn(value);
+      _db.allSettings.setCustomVpn(value);
   Future<void> updateCustomVpn(int index, String value) =>
-      _db.AllSettings.updateCustomVpn(index, value);
+      _db.allSettings.updateCustomVpn(index, value);
 
-  // ========== MTUè®¾ç½® ==========
+  // ========== MTUÉèÖÃ ==========
 
-  Future<bool> getAutoSetMTU() => _db.AllSettings.getAutoSetMTU();
+  Future<bool> getAutoSetMTU() => _db.allSettings.getAutoSetMTU();
   Future<void> setAutoSetMTU(bool value) =>
-      _db.AllSettings.setAutoSetMTU(value);
+      _db.allSettings.setAutoSetMTU(value);
 
-  // ========== æ‰¹é‡æ“ä½œ ==========
+  // ========== ÅúÁ¿²Ù×÷ ==========
 
   Future<AppSettings> loadAll() async {
     return AppSettings(
@@ -107,8 +97,6 @@ class AppSettingsRepository {
       autoCheckUpdate: await getAutoCheckUpdate(),
       downloadAccelerate: await getDownloadAccelerate(),
       latestVersion: await getLatestVersion(),
-      enableBannerCarousel: await getEnableBannerCarousel(),
-      hasShownBannerTip: await getHasShownBannerTip(),
       closeMinimize: await getCloseMinimize(),
       customVpn: await getCustomVpn(),
       autoSetMTU: await getAutoSetMTU(),
@@ -116,7 +104,7 @@ class AppSettingsRepository {
   }
 }
 
-/// åº”ç”¨è®¾ç½®æ•°æ®ç±»
+/// Ó¦ÓÃÉèÖÃÊı¾İÀà
 class AppSettings {
   final String playerName;
   final List<String> listenList;
@@ -131,8 +119,6 @@ class AppSettings {
   final bool autoCheckUpdate;
   final String downloadAccelerate;
   final String? latestVersion;
-  final bool enableBannerCarousel;
-  final bool hasShownBannerTip;
   final bool closeMinimize;
   final List<String> customVpn;
   final bool autoSetMTU;
@@ -151,8 +137,6 @@ class AppSettings {
     required this.autoCheckUpdate,
     required this.downloadAccelerate,
     required this.latestVersion,
-    required this.enableBannerCarousel,
-    required this.hasShownBannerTip,
     required this.closeMinimize,
     required this.customVpn,
     required this.autoSetMTU,

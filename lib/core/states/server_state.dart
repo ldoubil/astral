@@ -1,60 +1,44 @@
-﻿import 'package:astral/core/models/server_mod.dart';
+﻿import 'package:astral/core/constants/servers.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
-/// 服务器状态（纯Signal）
+/// 服务器状态（基于固定配置和索引管理）
 class ServerState {
-  // 服务器列表
-  final servers = signal<List<ServerMod>>([]);
+  // 已启用的服务器索引列表
+  final enabledServerIndices = signal<List<int>>([0, 1, 2]);
 
-  // 状态更新方法
-  void setServers(List<ServerMod> serverList) {
-    servers.value = serverList;
+  // ========== 计算属性 ==========
+
+  /// 获取所有服务器配置（固定常量）
+  List<ServerConfig> get allServers => ServersConstants.servers;
+
+  /// 获取已启用的服务器配置
+  List<ServerConfig> get enabledServers {
+    return enabledServerIndices.value
+        .where((i) => i >= 0 && i < ServersConstants.servers.length)
+        .map((i) => ServersConstants.servers[i])
+        .toList();
   }
 
-  void addServer(ServerMod server) {
-    final list = List<ServerMod>.from(servers.value);
-    list.add(server);
-    servers.value = list;
+  // ========== 状态更新方法 ==========
+
+  /// 设置已启用的服务器索引列表
+  void setEnabledServerIndices(List<int> indices) {
+    enabledServerIndices.value = indices;
   }
 
-  void removeServer(int id) {
-    final list = servers.value.where((s) => s.id != id).toList();
-    servers.value = list;
-  }
-
-  void updateServer(ServerMod updatedServer) {
-    final list =
-        servers.value.map((s) {
-          return s.id == updatedServer.id ? updatedServer : s;
-        }).toList();
-    servers.value = list;
-  }
-
-  void reorderServers(List<ServerMod> reordered) {
-    servers.value = reordered;
-  }
-
-  void toggleServerEnabled(int id, bool enabled) {
-    final list =
-        servers.value.map((s) {
-          if (s.id == id) {
-            s.enable = enabled;
-          }
-          return s;
-        }).toList();
-    servers.value = list;
-  }
-
-  // 查询方法
-  ServerMod? getServerById(int id) {
-    try {
-      return servers.value.firstWhere((s) => s.id == id);
-    } catch (e) {
-      return null;
+  /// 切换某个服务器的启用状态
+  void toggleServerEnabled(int index, bool enabled) {
+    final list = List<int>.from(enabledServerIndices.value);
+    if (enabled && !list.contains(index)) {
+      list.add(index);
+    } else if (!enabled && list.contains(index)) {
+      list.remove(index);
     }
+    enabledServerIndices.value = list;
   }
 
-  List<ServerMod> getEnabledServers() {
-    return servers.value.where((s) => s.enable).toList();
+  /// 是否启用某个服务器
+  bool isServerEnabled(int index) {
+    return enabledServerIndices.value.contains(index);
   }
 }

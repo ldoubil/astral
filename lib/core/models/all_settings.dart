@@ -6,8 +6,11 @@ class AllSettings {
   /// 主键ID，固定为1因为只需要一个实例
   Id id = 1;
 
-  /// 当前启用的房间
-  int? room;
+  /// 当前选中的房间索引（对应 RoomsConstants.rooms 列表的索引，从0开始）
+  int roomIndex = 0;
+
+  /// 已启用的服务器索引列表（对应 ServersConstants.servers 列表的索引）
+  List<int> enabledServerIndices = [0, 1, 2];
 
   /// 玩家名称
   String? playerName;
@@ -62,10 +65,4 @@ class AllSettings {
 
   /// 最新版本号
   String? latestVersion;
-
-  /// 启用轮播图
-  bool enableBannerCarousel = true;
-
-  /// 是否已显示轮播图首次提示
-  bool hasShownBannerTip = false;
 }

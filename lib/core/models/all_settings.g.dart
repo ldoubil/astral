@@ -48,61 +48,60 @@ const AllSettingsSchema = CollectionSchema(
       name: r'downloadAccelerate',
       type: IsarType.string,
     ),
-    r'enableBannerCarousel': PropertySchema(
+    r'enabledServerIndices': PropertySchema(
       id: 7,
-      name: r'enableBannerCarousel',
-      type: IsarType.bool,
-    ),
-    r'hasShownBannerTip': PropertySchema(
-      id: 8,
-      name: r'hasShownBannerTip',
-      type: IsarType.bool,
+      name: r'enabledServerIndices',
+      type: IsarType.longList,
     ),
     r'latestVersion': PropertySchema(
-      id: 9,
+      id: 8,
       name: r'latestVersion',
       type: IsarType.string,
     ),
     r'listenList': PropertySchema(
-      id: 10,
+      id: 9,
       name: r'listenList',
       type: IsarType.stringList,
     ),
     r'playerName': PropertySchema(
-      id: 11,
+      id: 10,
       name: r'playerName',
       type: IsarType.string,
     ),
-    r'room': PropertySchema(id: 12, name: r'room', type: IsarType.long),
+    r'roomIndex': PropertySchema(
+      id: 11,
+      name: r'roomIndex',
+      type: IsarType.long,
+    ),
     r'serverSortField': PropertySchema(
-      id: 13,
+      id: 12,
       name: r'serverSortField',
       type: IsarType.string,
     ),
     r'sortOption': PropertySchema(
-      id: 14,
+      id: 13,
       name: r'sortOption',
       type: IsarType.long,
     ),
     r'sortOrder': PropertySchema(
-      id: 15,
+      id: 14,
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'startup': PropertySchema(id: 16, name: r'startup', type: IsarType.bool),
+    r'startup': PropertySchema(id: 15, name: r'startup', type: IsarType.bool),
     r'startupAutoConnect': PropertySchema(
-      id: 17,
+      id: 16,
       name: r'startupAutoConnect',
       type: IsarType.bool,
     ),
     r'startupMinimize': PropertySchema(
-      id: 18,
+      id: 17,
       name: r'startupMinimize',
       type: IsarType.bool,
     ),
-    r'userId': PropertySchema(id: 19, name: r'userId', type: IsarType.string),
+    r'userId': PropertySchema(id: 18, name: r'userId', type: IsarType.string),
     r'userListSimple': PropertySchema(
-      id: 20,
+      id: 19,
       name: r'userListSimple',
       type: IsarType.bool,
     ),
@@ -137,6 +136,7 @@ int _allSettingsEstimateSize(
     }
   }
   bytesCount += 3 + object.downloadAccelerate.length * 3;
+  bytesCount += 3 + object.enabledServerIndices.length * 8;
   {
     final value = object.latestVersion;
     if (value != null) {
@@ -184,20 +184,19 @@ void _allSettingsSerialize(
   writer.writeStringList(offsets[4], object.customVpn);
   writer.writeLong(offsets[5], object.displayMode);
   writer.writeString(offsets[6], object.downloadAccelerate);
-  writer.writeBool(offsets[7], object.enableBannerCarousel);
-  writer.writeBool(offsets[8], object.hasShownBannerTip);
-  writer.writeString(offsets[9], object.latestVersion);
-  writer.writeStringList(offsets[10], object.listenList);
-  writer.writeString(offsets[11], object.playerName);
-  writer.writeLong(offsets[12], object.room);
-  writer.writeString(offsets[13], object.serverSortField);
-  writer.writeLong(offsets[14], object.sortOption);
-  writer.writeLong(offsets[15], object.sortOrder);
-  writer.writeBool(offsets[16], object.startup);
-  writer.writeBool(offsets[17], object.startupAutoConnect);
-  writer.writeBool(offsets[18], object.startupMinimize);
-  writer.writeString(offsets[19], object.userId);
-  writer.writeBool(offsets[20], object.userListSimple);
+  writer.writeLongList(offsets[7], object.enabledServerIndices);
+  writer.writeString(offsets[8], object.latestVersion);
+  writer.writeStringList(offsets[9], object.listenList);
+  writer.writeString(offsets[10], object.playerName);
+  writer.writeLong(offsets[11], object.roomIndex);
+  writer.writeString(offsets[12], object.serverSortField);
+  writer.writeLong(offsets[13], object.sortOption);
+  writer.writeLong(offsets[14], object.sortOrder);
+  writer.writeBool(offsets[15], object.startup);
+  writer.writeBool(offsets[16], object.startupAutoConnect);
+  writer.writeBool(offsets[17], object.startupMinimize);
+  writer.writeString(offsets[18], object.userId);
+  writer.writeBool(offsets[19], object.userListSimple);
 }
 
 AllSettings _allSettingsDeserialize(
@@ -214,21 +213,20 @@ AllSettings _allSettingsDeserialize(
   object.customVpn = reader.readStringList(offsets[4]) ?? [];
   object.displayMode = reader.readLong(offsets[5]);
   object.downloadAccelerate = reader.readString(offsets[6]);
-  object.enableBannerCarousel = reader.readBool(offsets[7]);
-  object.hasShownBannerTip = reader.readBool(offsets[8]);
+  object.enabledServerIndices = reader.readLongList(offsets[7]) ?? [];
   object.id = id;
-  object.latestVersion = reader.readStringOrNull(offsets[9]);
-  object.listenList = reader.readStringList(offsets[10]);
-  object.playerName = reader.readStringOrNull(offsets[11]);
-  object.room = reader.readLongOrNull(offsets[12]);
-  object.serverSortField = reader.readString(offsets[13]);
-  object.sortOption = reader.readLong(offsets[14]);
-  object.sortOrder = reader.readLong(offsets[15]);
-  object.startup = reader.readBool(offsets[16]);
-  object.startupAutoConnect = reader.readBool(offsets[17]);
-  object.startupMinimize = reader.readBool(offsets[18]);
-  object.userId = reader.readStringOrNull(offsets[19]);
-  object.userListSimple = reader.readBool(offsets[20]);
+  object.latestVersion = reader.readStringOrNull(offsets[8]);
+  object.listenList = reader.readStringList(offsets[9]);
+  object.playerName = reader.readStringOrNull(offsets[10]);
+  object.roomIndex = reader.readLong(offsets[11]);
+  object.serverSortField = reader.readString(offsets[12]);
+  object.sortOption = reader.readLong(offsets[13]);
+  object.sortOrder = reader.readLong(offsets[14]);
+  object.startup = reader.readBool(offsets[15]);
+  object.startupAutoConnect = reader.readBool(offsets[16]);
+  object.startupMinimize = reader.readBool(offsets[17]);
+  object.userId = reader.readStringOrNull(offsets[18]);
+  object.userListSimple = reader.readBool(offsets[19]);
   return object;
 }
 
@@ -254,32 +252,30 @@ P _allSettingsDeserializeProp<P>(
     case 6:
       return (reader.readString(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLongList(offset) ?? []) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readStringOrNull(offset)) as P;
-    case 10:
       return (reader.readStringList(offset)) as P;
-    case 11:
+    case 10:
       return (reader.readStringOrNull(offset)) as P;
+    case 11:
+      return (reader.readLong(offset)) as P;
     case 12:
-      return (reader.readLongOrNull(offset)) as P;
-    case 13:
       return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readLong(offset)) as P;
     case 14:
       return (reader.readLong(offset)) as P;
     case 15:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 16:
       return (reader.readBool(offset)) as P;
     case 17:
       return (reader.readBool(offset)) as P;
     case 18:
-      return (reader.readBool(offset)) as P;
-    case 19:
       return (reader.readStringOrNull(offset)) as P;
-    case 20:
+    case 19:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -814,11 +810,11 @@ extension AllSettingsQueryFilter
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
-  enableBannerCarouselEqualTo(bool value) {
+  enabledServerIndicesElementEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(
-          property: r'enableBannerCarousel',
+          property: r'enabledServerIndices',
           value: value,
         ),
       );
@@ -826,10 +822,118 @@ extension AllSettingsQueryFilter
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
-  hasShownBannerTipEqualTo(bool value) {
+  enabledServerIndicesElementGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'hasShownBannerTip', value: value),
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'enabledServerIndices',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesElementLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'enabledServerIndices',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'enabledServerIndices',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'enabledServerIndices',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'enabledServerIndices', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'enabledServerIndices', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'enabledServerIndices',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'enabledServerIndices',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  enabledServerIndicesLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'enabledServerIndices',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
       );
     });
   }
@@ -1423,73 +1527,52 @@ extension AllSettingsQueryFilter
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomIsNull() {
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  roomIndexEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
-        const FilterCondition.isNull(property: r'room'),
+        FilterCondition.equalTo(property: r'roomIndex', value: value),
       );
     });
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
-  roomIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const FilterCondition.isNotNull(property: r'room'),
-      );
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(property: r'room', value: value),
-      );
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomGreaterThan(
-    int? value, {
-    bool include = false,
-  }) {
+  roomIndexGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
           include: include,
-          property: r'room',
+          property: r'roomIndex',
           value: value,
         ),
       );
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomLessThan(
-    int? value, {
-    bool include = false,
-  }) {
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  roomIndexLessThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.lessThan(
           include: include,
-          property: r'room',
+          property: r'roomIndex',
           value: value,
         ),
       );
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomBetween(
-    int? lower,
-    int? upper, {
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  roomIndexBetween(
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.between(
-          property: r'room',
+          property: r'roomIndex',
           lower: lower,
           includeLower: includeLower,
           upper: upper,
@@ -2036,34 +2119,6 @@ extension AllSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByEnableBannerCarousel() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableBannerCarousel', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByEnableBannerCarouselDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableBannerCarousel', Sort.desc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByHasShownBannerTip() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasShownBannerTip', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByHasShownBannerTipDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasShownBannerTip', Sort.desc);
-    });
-  }
-
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByLatestVersion() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'latestVersion', Sort.asc);
@@ -2089,15 +2144,15 @@ extension AllSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByRoom() {
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByRoomIndex() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'room', Sort.asc);
+      return query.addSortBy(r'roomIndex', Sort.asc);
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByRoomDesc() {
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByRoomIndexDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'room', Sort.desc);
+      return query.addSortBy(r'roomIndex', Sort.desc);
     });
   }
 
@@ -2281,34 +2336,6 @@ extension AllSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByEnableBannerCarousel() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableBannerCarousel', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByEnableBannerCarouselDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableBannerCarousel', Sort.desc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByHasShownBannerTip() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasShownBannerTip', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByHasShownBannerTipDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'hasShownBannerTip', Sort.desc);
-    });
-  }
-
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -2346,15 +2373,15 @@ extension AllSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByRoom() {
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByRoomIndex() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'room', Sort.asc);
+      return query.addSortBy(r'roomIndex', Sort.asc);
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByRoomDesc() {
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByRoomIndexDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'room', Sort.desc);
+      return query.addSortBy(r'roomIndex', Sort.desc);
     });
   }
 
@@ -2510,16 +2537,9 @@ extension AllSettingsQueryWhereDistinct
   }
 
   QueryBuilder<AllSettings, AllSettings, QDistinct>
-  distinctByEnableBannerCarousel() {
+  distinctByEnabledServerIndices() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'enableBannerCarousel');
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QDistinct>
-  distinctByHasShownBannerTip() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'hasShownBannerTip');
+      return query.addDistinctBy(r'enabledServerIndices');
     });
   }
 
@@ -2548,9 +2568,9 @@ extension AllSettingsQueryWhereDistinct
     });
   }
 
-  QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByRoom() {
+  QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByRoomIndex() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'room');
+      return query.addDistinctBy(r'roomIndex');
     });
   }
 
@@ -2664,17 +2684,10 @@ extension AllSettingsQueryProperty
     });
   }
 
-  QueryBuilder<AllSettings, bool, QQueryOperations>
-  enableBannerCarouselProperty() {
+  QueryBuilder<AllSettings, List<int>, QQueryOperations>
+  enabledServerIndicesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'enableBannerCarousel');
-    });
-  }
-
-  QueryBuilder<AllSettings, bool, QQueryOperations>
-  hasShownBannerTipProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'hasShownBannerTip');
+      return query.addPropertyName(r'enabledServerIndices');
     });
   }
 
@@ -2697,9 +2710,9 @@ extension AllSettingsQueryProperty
     });
   }
 
-  QueryBuilder<AllSettings, int?, QQueryOperations> roomProperty() {
+  QueryBuilder<AllSettings, int, QQueryOperations> roomIndexProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'room');
+      return query.addPropertyName(r'roomIndex');
     });
   }
 

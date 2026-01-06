@@ -61,9 +61,6 @@ class AppSettingsService {
     updateState.setDownloadAccelerate(settings.downloadAccelerate);
     updateState.setLatestVersion(settings.latestVersion);
 
-    appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
-    notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
-
     windowState.setCloseMinimize(settings.closeMinimize);
 
     vpnState.setCustomVpn(settings.customVpn);
@@ -158,18 +155,6 @@ class AppSettingsService {
   Future<void> updateLatestVersion(String version) async {
     updateState.setLatestVersion(version);
     await _repository.setLatestVersion(version);
-  }
-
-  // ========== 通知设置 ==========
-
-  Future<void> updateEnableBannerCarousel(bool enable) async {
-    appSettingsState.updateEnableBannerCarousel(enable);
-    await _repository.setEnableBannerCarousel(enable);
-  }
-
-  Future<void> updateHasShownBannerTip(bool hasShown) async {
-    notificationState.setHasShownBannerTip(hasShown);
-    await _repository.setHasShownBannerTip(hasShown);
   }
 
   // ========== 窗口设置 ==========
