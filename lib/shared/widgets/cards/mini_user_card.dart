@@ -49,8 +49,6 @@ class _MiniUserCardState extends State<MiniUserCard> {
       );
       final latencyColor = _getLatencyColor(player.latencyMs);
       final lossColor = _getPacketLossColor(player.lossRate);
-      final natTypeString = _mapNatType(player.nat);
-      final natTypeColor = _getNatTypeColor(natTypeString);
 
       return MouseRegion(
         onEnter: (_) => setState(() => isHovered = true),
@@ -186,16 +184,6 @@ class _MiniUserCardState extends State<MiniUserCard> {
                           color: colorScheme.secondary,
                           fontSize: 13,
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Icon(
-                        _getNatTypeIcon(natTypeString),
-                        size: 16,
-                        color: natTypeColor,
-                      ),
-                      Text(
-                        natTypeString,
-                        style: TextStyle(color: natTypeColor, fontSize: 13),
                       ),
                       if (player.tunnelProto != '') ...[
                         const SizedBox(width: 10),

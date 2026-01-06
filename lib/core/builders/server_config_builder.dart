@@ -77,7 +77,7 @@ class ServerConfigBuilder {
     _roomConfig = config;
     if (config != null) {
       final overrides = <String>[];
-      if (config.dhcp) overrides.add('DHCP');
+      if (config.dhcp != null) overrides.add('DHCP');
       if (config.defaultProtocol != null) overrides.add('协议');
       if (config.enableEncryption != null) overrides.add('加密');
       if (config.latencyFirst != null) overrides.add('低延迟');

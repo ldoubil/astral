@@ -5,7 +5,7 @@ import 'package:astral/core/services/service_manager.dart';
 /// 用于房间分享时携带网络配置（仅高级设置）
 class NetworkConfigShare {
   // 基础配置
-  final bool dhcp;
+  final bool? dhcp;
   final String? defaultProtocol;
 
   // 高级配置（可选）
@@ -21,7 +21,7 @@ class NetworkConfigShare {
   final bool? noTun;
 
   NetworkConfigShare({
-    required this.dhcp,
+    this.dhcp,
     this.defaultProtocol,
     this.enableEncryption,
     this.latencyFirst,
@@ -37,7 +37,7 @@ class NetworkConfigShare {
 
   /// 序列化为JSON（使用短键名优化压缩）
   Map<String, dynamic> toJson() => {
-    'dhcp': dhcp ? 1 : 0,
+    if (dhcp != null) 'dhcp': dhcp! ? 1 : 0,
     if (defaultProtocol != null) 'proto': defaultProtocol,
     if (enableEncryption != null) 'enc': enableEncryption! ? 1 : 0,
     if (latencyFirst != null) 'lat': latencyFirst! ? 1 : 0,
@@ -94,8 +94,10 @@ class NetworkConfigShare {
   Future<void> applyToConfig() async {
     final services = ServiceManager();
 
-    // 应用DHCP配置
-    await services.networkConfig.updateDhcp(dhcp);
+    // 应用DHCP配置（如果存在）
+    if (dhcp != null) {
+      await services.networkConfig.updateDhcp(dhcp!);
+    }
 
     // 应用高级配置（如果存在）
     if (defaultProtocol != null && defaultProtocol!.isNotEmpty) {
@@ -141,7 +143,9 @@ class NetworkConfigShare {
   List<String> toReadableSummary() {
     final lines = <String>[];
 
-    lines.add('• DHCP: ${dhcp ? "自动" : "手动"}');
+    if (dhcp != null) {
+      lines.add('• DHCP: ${dhcp! ? "自动" : "手动"}');
+    }
 
     if (defaultProtocol != null && defaultProtocol!.isNotEmpty) {
       lines.add('• 默认协议: ${defaultProtocol!.toUpperCase()}');

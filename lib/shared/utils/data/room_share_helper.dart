@@ -271,8 +271,7 @@ $roomSummary$shareOptions
               final currentConfig = NetworkConfigShare.fromCurrentConfig();
               // 只保留用户选中的配置项
               networkConfig = NetworkConfigShare(
-                dhcp:
-                    networkConfigOptions['dhcp']! ? currentConfig.dhcp : false,
+                dhcp: networkConfigOptions['dhcp']! ? currentConfig.dhcp : null,
                 defaultProtocol:
                     networkConfigOptions['defaultProtocol']!
                         ? currentConfig.defaultProtocol
@@ -772,7 +771,12 @@ $roomSummary$shareOptions
             },
           );
 
-          applyNetworkConfig = shouldApply ?? false;
+          // 如果用户点击取消，直接返回
+          if (shouldApply == null) {
+            return false;
+          }
+
+          applyNetworkConfig = shouldApply;
 
           // 如果用户选择应用配置
           if (applyNetworkConfig && networkConfig != null) {
