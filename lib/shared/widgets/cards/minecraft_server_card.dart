@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 
 /// Minecraft服务器信息
 class MinecraftServerInfo {
@@ -69,18 +71,39 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
     if (mounted) setState(() {});
   }
 
+  // 创建一个忽略证书验证的HTTP客户端（仅用于特定API）
+  http.Client _createHttpClient() {
+    final ioClient =
+        HttpClient()
+          ..badCertificateCallback = (
+            X509Certificate cert,
+            String host,
+            int port,
+          ) {
+            // 仅对 motd.minebbs.com 忽略证书验证
+            return host == 'motd.minebbs.com';
+          };
+    return IOClient(ioClient);
+  }
+
   Future<void> _fetchServerInfo() async {
+    final client = _createHttpClient();
     try {
-      final response = await http
+      print('🔍 正在查询服务器: ${_serverInfo.host}:${_serverInfo.port}');
+
+      final response = await client
           .get(
             Uri.parse(
               'https://motd.minebbs.com/api/status?ip=${_serverInfo.host}&port=${_serverInfo.port}&stype=auto&srv=false',
             ),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
+
+      print('📡 API响应状态码: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
+        print('📦 API返回数据: ${jsonData['status']}');
 
         if (jsonData['status'] == 'online') {
           if (mounted) {
@@ -105,21 +128,35 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
                   _serverInfo.serverIcon = iconData;
                 }
               }
+              print('✅ 服务器信息获取成功: ${_serverInfo.motd}');
             });
           }
         } else {
-          throw '服务器离线';
+          print('⚠️ 服务器状态: ${jsonData['status']}');
+          throw '服务器离线或无法访问';
         }
       } else {
+        print('❌ HTTP错误: ${response.statusCode}');
         throw 'HTTP ${response.statusCode}';
       }
-    } catch (e) {
+    } on TimeoutException {
+      print('⏱️ 请求超时');
       if (mounted) {
         setState(() {
           _serverInfo.isLoading = false;
-          _serverInfo.errorMessage = '无法获取服务器信息';
+          _serverInfo.errorMessage = '查询超时，请检查网络连接';
         });
       }
+    } catch (e) {
+      print('❌ 获取服务器信息失败: $e');
+      if (mounted) {
+        setState(() {
+          _serverInfo.isLoading = false;
+          _serverInfo.errorMessage = '无法获取服务器信息\n${e.toString()}';
+        });
+      }
+    } finally {
+      client.close();
     }
   }
 
