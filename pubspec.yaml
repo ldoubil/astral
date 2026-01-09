@@ -4,7 +4,6 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 2.6.9996
 
-isar_version: &isar_version 3.3.0 # define the version to be used
 
 environment:
   sdk: ^3.7.0
@@ -22,7 +21,7 @@ dependencies:
   flutter_rust_bridge: ^2.11.1
   signals_flutter: ^6.0.2
   isar_community_flutter_libs: # contains Isar Core
-    version: *isar_version
+    version: 3.3.0
   window_manager: ^0.4.3
   flutter_colorpicker: ^1.1.0
   flutter_staggered_grid_view: ^0.7.0
@@ -36,7 +35,7 @@ dependencies:
   device_info_plus: ^11.4.0
   toml: ^0.16.0
   isar_community:
-    version: *isar_version
+    version: 3.3.0
   package_info_plus: ^8.3.0
   url_launcher: ^6.3.1
   path_provider: ^2.1.5
@@ -67,7 +66,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   isar_community_generator:
-    version: *isar_version
+    version: 3.3.0
 
 flutter:
   uses-material-design: true
