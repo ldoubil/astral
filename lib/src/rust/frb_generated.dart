@@ -2361,22 +2361,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   KVNodeInfo dco_decode_kv_node_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 13)
-      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
+    if (arr.length != 14)
+      throw Exception('unexpected arr length: expect 14 but see ${arr.length}');
     return KVNodeInfo(
-      hostname: dco_decode_String(arr[0]),
-      ipv4: dco_decode_String(arr[1]),
-      latencyMs: dco_decode_f_64(arr[2]),
-      nat: dco_decode_String(arr[3]),
-      hops: dco_decode_list_node_hop_stats(arr[4]),
-      lossRate: dco_decode_f_32(arr[5]),
-      connections: dco_decode_list_kv_node_connection_stats(arr[6]),
-      tunnelProto: dco_decode_String(arr[7]),
-      connType: dco_decode_String(arr[8]),
-      rxBytes: dco_decode_u_64(arr[9]),
-      txBytes: dco_decode_u_64(arr[10]),
-      version: dco_decode_String(arr[11]),
-      cost: dco_decode_i_32(arr[12]),
+      peerId: dco_decode_u_32(arr[0]),
+      hostname: dco_decode_String(arr[1]),
+      ipv4: dco_decode_String(arr[2]),
+      latencyMs: dco_decode_f_64(arr[3]),
+      nat: dco_decode_String(arr[4]),
+      hops: dco_decode_list_node_hop_stats(arr[5]),
+      lossRate: dco_decode_f_32(arr[6]),
+      connections: dco_decode_list_kv_node_connection_stats(arr[7]),
+      tunnelProto: dco_decode_String(arr[8]),
+      connType: dco_decode_String(arr[9]),
+      rxBytes: dco_decode_u_64(arr[10]),
+      txBytes: dco_decode_u_64(arr[11]),
+      version: dco_decode_String(arr[12]),
+      cost: dco_decode_i_32(arr[13]),
     );
   }
 
@@ -2511,13 +2512,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   NodeHopStats dco_decode_node_hop_stats(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return NodeHopStats(
-      targetIp: dco_decode_String(arr[0]),
-      latencyMs: dco_decode_f_64(arr[1]),
-      packetLoss: dco_decode_f_32(arr[2]),
-      nodeName: dco_decode_String(arr[3]),
+      peerId: dco_decode_u_32(arr[0]),
+      targetIp: dco_decode_String(arr[1]),
+      latencyMs: dco_decode_f_64(arr[2]),
+      packetLoss: dco_decode_f_32(arr[3]),
+      nodeName: dco_decode_String(arr[4]),
     );
   }
 
@@ -2991,6 +2993,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   KVNodeInfo sse_decode_kv_node_info(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_peerId = sse_decode_u_32(deserializer);
     var var_hostname = sse_decode_String(deserializer);
     var var_ipv4 = sse_decode_String(deserializer);
     var var_latencyMs = sse_decode_f_64(deserializer);
@@ -3007,6 +3010,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_version = sse_decode_String(deserializer);
     var var_cost = sse_decode_i_32(deserializer);
     return KVNodeInfo(
+      peerId: var_peerId,
       hostname: var_hostname,
       ipv4: var_ipv4,
       latencyMs: var_latencyMs,
@@ -3221,11 +3225,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   NodeHopStats sse_decode_node_hop_stats(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_peerId = sse_decode_u_32(deserializer);
     var var_targetIp = sse_decode_String(deserializer);
     var var_latencyMs = sse_decode_f_64(deserializer);
     var var_packetLoss = sse_decode_f_32(deserializer);
     var var_nodeName = sse_decode_String(deserializer);
     return NodeHopStats(
+      peerId: var_peerId,
       targetIp: var_targetIp,
       latencyMs: var_latencyMs,
       packetLoss: var_packetLoss,
@@ -3692,6 +3698,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_kv_node_info(KVNodeInfo self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.peerId, serializer);
     sse_encode_String(self.hostname, serializer);
     sse_encode_String(self.ipv4, serializer);
     sse_encode_f_64(self.latencyMs, serializer);
@@ -3876,6 +3883,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_node_hop_stats(NodeHopStats self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.peerId, serializer);
     sse_encode_String(self.targetIp, serializer);
     sse_encode_f_64(self.latencyMs, serializer);
     sse_encode_f_32(self.packetLoss, serializer);
