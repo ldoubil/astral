@@ -16,32 +16,17 @@ class NetworkTopologyView extends StatefulWidget {
 
 class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   NodeFlowController<_NodeData, dynamic>? _controller;
-  List<String> _lastNodeIds = []; // 记录上次的节点ID列表
 
   @override
   void initState() {
     super.initState();
-    _updateGraph();
+    _syncGraph();
   }
 
   @override
   void didUpdateWidget(NetworkTopologyView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 只在节点数量或ID列表发生变化时才更新
-    final currentNodeIds = widget.nodes.map((n) => n.ipv4).toList();
-    if (currentNodeIds.length != _lastNodeIds.length ||
-        !_listEquals(currentNodeIds, _lastNodeIds)) {
-      _updateGraph();
-    }
-  }
-
-  // 比较两个列表是否相等
-  bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
+    _syncGraph();
   }
 
   @override
@@ -50,268 +35,317 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     super.dispose();
   }
 
-  void _updateGraph() {
-    final nodes = widget.nodes;
-    final newNodes = <Node<_NodeData>>[];
-    final newConnections = <Connection>[];
-
-    // 获取本机IP
+  void _syncGraph() {
     final localIp = ServiceManager().networkConfigState.ipv4.value;
+    final existingPositions = <String, Offset>{};
+    if (_controller != null) {
+      for (final nodeId in _controller!.nodeIds) {
+        final node = _controller!.getNode(nodeId);
+        if (node != null) existingPositions[nodeId] = node.position.value;
+      }
+    }
 
-    // 找到本机节点
+    final model = _buildGraphModel(
+      widget.nodes,
+      localIp: localIp,
+      existingPositions: existingPositions,
+    );
+
+    if (_controller == null) {
+      _controller = NodeFlowController<_NodeData, dynamic>(
+        nodes: model.nodes.values.toList(),
+        connections: model.connections.values.toList(),
+        config: NodeFlowConfig(snapToGrid: false, minZoom: 0.3, maxZoom: 2.0),
+      );
+      return;
+    }
+
+    _applyGraphDiff(model);
+  }
+
+  String _safeId(String raw) {
+    return raw.replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_');
+  }
+
+  String _normalizeNodeName(String hostname) {
+    return hostname.startsWith('PublicServer_')
+        ? hostname.substring('PublicServer_'.length)
+        : hostname;
+  }
+
+  String _nodeFallbackKey(KVNodeInfo nodeInfo) {
+    if (nodeInfo.ipv4.isNotEmpty) return 'ip_${nodeInfo.ipv4}';
+    return 'name_${_normalizeNodeName(nodeInfo.hostname)}';
+  }
+
+  String _hopFallbackKey(NodeHopStats hop) {
+    if (hop.targetIp.isNotEmpty) return 'ip_${hop.targetIp}';
+    return 'name_${_normalizeNodeName(hop.nodeName)}';
+  }
+
+  String _nodeIdForPeerId(int peerId, String fallbackKey) {
+    if (peerId > 0) return 'peer_$peerId';
+    return _safeId(fallbackKey);
+  }
+
+  String _connectionId(String sourceId, String targetId) {
+    return 'conn_${sourceId}_to_$targetId';
+  }
+
+  _GraphModel _buildGraphModel(
+    List<KVNodeInfo> nodes, {
+    required String localIp,
+    required Map<String, Offset> existingPositions,
+  }) {
+    final newNodes = <String, Node<_NodeData>>{};
+    final newConnections = <String, Connection>{};
+    final nodeIdsByPeerId = <int, String>{};
+    final nodeRowIndex = <String, int>{};
+
     KVNodeInfo? localNode;
-    int? localNodeIndex;
-    for (var i = 0; i < nodes.length; i++) {
-      if (nodes[i].ipv4 == localIp) {
-        localNode = nodes[i];
-        localNodeIndex = i;
+    for (final node in nodes) {
+      if (node.ipv4 == localIp && localIp.isNotEmpty) {
+        localNode = node;
         break;
       }
     }
 
-    // 标准化节点名称（去掉 PublicServer_ 前缀）
-    String _normalizeNodeName(String hostname) {
-      return hostname.startsWith('PublicServer_')
-          ? hostname.substring('PublicServer_'.length)
-          : hostname;
+    final nonLocalNodes = <KVNodeInfo>[];
+    for (final node in nodes) {
+      if (localNode != null && node.peerId == localNode.peerId) continue;
+      nonLocalNodes.add(node);
     }
+    nonLocalNodes.sort((a, b) => a.peerId.compareTo(b.peerId));
 
-    // 用于跟踪所有节点 - key是标准化后的节点名称，value是节点ID
-    final Map<String, String> nodeIdsByName = {};
-
-    // 如果找到了本机节点，将其添加为中心节点
-    String? localNodeId;
-    if (localNode != null && localIp.isNotEmpty) {
-      localNodeId = 'local';
-      final displayName = _normalizeNodeName(localNode.hostname);
-      nodeIdsByName[displayName] = localNodeId;
-
-      newNodes.add(
-        Node<_NodeData>(
-          id: localNodeId,
-          type: 'local',
-          position: const Offset(100, 250),
-          data: _NodeData(
-            displayName: displayName,
-            ip: localIp,
-            type: _NodeType.local,
-            platform: PlatformVersionParser.getPlatformName(localNode.version),
-            latency: 0,
-          ),
-          inputPorts: [
-            Port(
-              id: 'in',
-              name: '',
-              position: PortPosition.left,
-              offset: Offset(-2, 0),
-            ),
-          ],
-          outputPorts: [
-            Port(
-              id: 'out',
-              name: '',
-              position: PortPosition.right,
-              offset: Offset(2, 0),
-            ),
-          ],
-        ),
+    int rowIndex = 0;
+    for (final nodeInfo in nodes) {
+      final isLocal =
+          localNode != null && nodeInfo.peerId == localNode.peerId;
+      final isServer =
+          nodeInfo.hostname.startsWith('PublicServer_') ||
+          nodeInfo.ipv4 == "0.0.0.0";
+      final nodeId = _nodeIdForPeerId(
+        nodeInfo.peerId,
+        _nodeFallbackKey(nodeInfo),
       );
-    }
+      nodeIdsByPeerId[nodeInfo.peerId] = nodeId;
 
-    // 添加其他节点（排除本机）
-    int playerIndex = 0;
-    int serverIndex = 0;
-
-    for (var i = 0; i < nodes.length; i++) {
-      // 跳过本机节点
-      if (i == localNodeIndex) continue;
-
-      final nodeInfo = nodes[i];
       final displayName = _normalizeNodeName(nodeInfo.hostname);
-
-      // 检查这个节点名称是否已经存在
-      if (nodeIdsByName.containsKey(displayName)) {
-        continue; // 跳过重复的节点
-      }
-
-      final isServer = nodeInfo.ipv4 == "0.0.0.0";
-      final nodeId = isServer ? "server_$serverIndex" : "player_$playerIndex";
-
-      nodeIdsByName[displayName] = nodeId;
-
-      if (isServer) {
-        serverIndex++;
+      Offset position;
+      if (existingPositions.containsKey(nodeId)) {
+        position = existingPositions[nodeId]!;
+      } else if (isLocal) {
+        position = const Offset(100, 250);
       } else {
-        playerIndex++;
+        final index = nonLocalNodes.indexWhere(
+          (n) => n.peerId == nodeInfo.peerId,
+        );
+        final effectiveIndex = index >= 0 ? index : rowIndex;
+        position = Offset(600.0, 50.0 + (effectiveIndex * 130.0));
+        nodeRowIndex[nodeId] = effectiveIndex;
+        rowIndex = math.max(rowIndex, effectiveIndex + 1);
       }
 
-      // 计算节点位置（右侧垂直分布）
-      final x = 600.0;
-      final y = 50.0 + (i * 130.0);
-
-      newNodes.add(
-        Node<_NodeData>(
-          id: nodeId,
-          type: isServer ? 'server' : 'player',
-          position: Offset(x, y),
-          data: _NodeData(
-            displayName: displayName,
-            ip: isServer ? null : nodeInfo.ipv4,
-            type: isServer ? _NodeType.server : _NodeType.player,
-            platform: PlatformVersionParser.getPlatformName(nodeInfo.version),
-            latency: nodeInfo.latencyMs.toInt(),
-          ),
-          inputPorts: [
-            Port(
-              id: 'in',
-              name: '',
-              position: PortPosition.left,
-              offset: Offset(-2, 0),
-            ),
-          ],
-          outputPorts: [
-            Port(
-              id: 'out',
-              name: '',
-              position: PortPosition.right,
-              offset: Offset(2, 0),
-            ),
-          ],
+      newNodes[nodeId] = Node<_NodeData>(
+        id: nodeId,
+        type: isLocal
+            ? 'local'
+            : (isServer ? 'server' : 'player'),
+        position: position,
+        data: _NodeData(
+          displayName: displayName,
+          ip: isServer && !isLocal ? null : nodeInfo.ipv4,
+          type: isLocal
+              ? _NodeType.local
+              : (isServer ? _NodeType.server : _NodeType.player),
+          platform: PlatformVersionParser.getPlatformName(nodeInfo.version),
+          latency: isLocal ? 0 : nodeInfo.latencyMs.toInt(),
         ),
+        inputPorts: [
+          Port(
+            id: 'in',
+            name: '',
+            position: PortPosition.left,
+            offset: const Offset(-2, 0),
+          ),
+        ],
+        outputPorts: [
+          Port(
+            id: 'out',
+            name: '',
+            position: PortPosition.right,
+            offset: const Offset(2, 0),
+          ),
+        ],
       );
+    }
 
-      // 创建连接（包括中转路径）
-      if (localNodeId != null && nodeInfo.hops.isNotEmpty) {
-        // 如果有中转路径，创建完整的中转链
+    final localNodeId =
+        localNode != null ? nodeIdsByPeerId[localNode.peerId] : null;
+
+    if (localNodeId == null) {
+      return _GraphModel(newNodes, newConnections);
+    }
+
+    for (final nodeInfo in nodes) {
+      if (localNode != null && nodeInfo.peerId == localNode.peerId) continue;
+      final targetId = nodeIdsByPeerId[nodeInfo.peerId] ??
+          _nodeIdForPeerId(nodeInfo.peerId, _nodeFallbackKey(nodeInfo));
+
+      if (nodeInfo.hops.isNotEmpty) {
         String previousNodeId = localNodeId;
-        String previousPortId = 'out';
-
         for (var hopIndex = 0; hopIndex < nodeInfo.hops.length; hopIndex++) {
           final hop = nodeInfo.hops[hopIndex];
-          final hopDisplayName = _normalizeNodeName(
-            hop.nodeName.isNotEmpty ? hop.nodeName : "中转_${hop.targetIp}",
-          );
+          final hopId = nodeIdsByPeerId[hop.peerId] ??
+              _nodeIdForPeerId(hop.peerId, _hopFallbackKey(hop));
 
-          // 检查这个中转节点是否是本机或目标节点
-          String hopId;
-          if (hopDisplayName == displayName) {
-            // 如果中转节点就是目标节点，跳过这个hop，直接用目标节点
-            hopId = nodeId;
-          } else if (nodeIdsByName.containsKey(hopDisplayName)) {
-            // 复用已存在的节点
-            hopId = nodeIdsByName[hopDisplayName]!;
-          } else {
-            // 创建新的中转节点
-            hopId =
-                'hop_${hopDisplayName.replaceAll('.', '_').replaceAll(' ', '_')}';
-            nodeIdsByName[hopDisplayName] = hopId;
-
-            final hopX = 100.0 + (200.0 * (hopIndex + 1));
-            final hopY = 50.0 + (i * 130.0);
-
-            newNodes.add(
-              Node<_NodeData>(
-                id: hopId,
-                type: 'relay',
-                position: Offset(hopX, hopY),
-                data: _NodeData(
-                  displayName: hopDisplayName,
-                  ip: hop.targetIp,
-                  type: _NodeType.relay,
-                  platform: "中转节点",
-                  latency: hop.latencyMs.toInt(),
+          if (!newNodes.containsKey(hopId)) {
+            final displayName = _normalizeNodeName(
+              hop.nodeName.isNotEmpty ? hop.nodeName : "中转_${hop.targetIp}",
+            );
+            final row = nodeRowIndex[targetId] ?? 0;
+            final position = existingPositions[hopId] ??
+                Offset(100.0 + (200.0 * (hopIndex + 1)), 50.0 + (row * 130.0));
+            newNodes[hopId] = Node<_NodeData>(
+              id: hopId,
+              type: 'relay',
+              position: position,
+              data: _NodeData(
+                displayName: displayName,
+                ip: hop.targetIp,
+                type: _NodeType.relay,
+                platform: "中转节点",
+                latency: hop.latencyMs.toInt(),
+              ),
+              inputPorts: [
+                Port(
+                  id: 'in',
+                  name: '',
+                  position: PortPosition.left,
+                  offset: const Offset(-2, 0),
                 ),
-                inputPorts: [
-                  Port(
-                    id: 'in',
-                    name: '',
-                    position: PortPosition.left,
-                    offset: Offset(-2, 0),
-                  ),
-                ],
-                outputPorts: [
-                  Port(
-                    id: 'out',
-                    name: '',
-                    position: PortPosition.right,
-                    offset: Offset(2, 0),
-                  ),
-                ],
+              ],
+              outputPorts: [
+                Port(
+                  id: 'out',
+                  name: '',
+                  position: PortPosition.right,
+                  offset: const Offset(2, 0),
+                ),
+              ],
+            );
+          }
+
+          if (previousNodeId != hopId) {
+            final connId = _connectionId(previousNodeId, hopId);
+            newConnections[connId] = Connection(
+              id: connId,
+              sourceNodeId: previousNodeId,
+              sourcePortId: 'out',
+              targetNodeId: hopId,
+              targetPortId: 'in',
+              animationEffect: ConnectionEffects.particles,
+              label: ConnectionLabel(
+                text: '${hop.latencyMs.toStringAsFixed(1)}ms',
               ),
             );
           }
 
-          // 避免创建自己到自己的连接
-          if (previousNodeId != hopId) {
-            // 创建从上一个节点到这个中转节点的连接（避免重复连接）
-            final connId = 'conn_${previousNodeId}_to_$hopId';
-            if (!newConnections.any((c) => c.id == connId)) {
-              newConnections.add(
-                Connection(
-                  id: connId,
-                  sourceNodeId: previousNodeId,
-                  sourcePortId: previousPortId,
-                  targetNodeId: hopId,
-                  targetPortId: 'in',
-                  animationEffect: ConnectionEffects.particles,
-                  label: ConnectionLabel(
-                    text: '${hop.latencyMs.toStringAsFixed(1)}ms',
-                  ),
-                ),
-              );
-            }
-          }
-
           previousNodeId = hopId;
-          previousPortId = 'out';
         }
 
-        // 最后从最后一个中转节点连接到目标节点（避免自己连接自己）
-        if (previousNodeId != nodeId) {
-          newConnections.add(
-            Connection(
-              id: 'conn_${previousNodeId}_to_$nodeId',
-              sourceNodeId: previousNodeId,
-              sourcePortId: previousPortId,
-              targetNodeId: nodeId,
-              targetPortId: 'in',
-              animationEffect: ConnectionEffects.particles,
-              label: ConnectionLabel(
-                text: '${nodeInfo.latencyMs.toStringAsFixed(1)}ms',
-              ),
-            ),
-          );
-        }
-      } else if (localNodeId != null) {
-        // 如果没有中转路径，直接连接
-        newConnections.add(
-          Connection(
-            id: 'conn_$nodeId',
-            sourceNodeId: localNodeId,
+        if (previousNodeId != targetId) {
+          final connId = _connectionId(previousNodeId, targetId);
+          newConnections[connId] = Connection(
+            id: connId,
+            sourceNodeId: previousNodeId,
             sourcePortId: 'out',
-            targetNodeId: nodeId,
+            targetNodeId: targetId,
             targetPortId: 'in',
             animationEffect: ConnectionEffects.particles,
             label: ConnectionLabel(
               text: '${nodeInfo.latencyMs.toStringAsFixed(1)}ms',
             ),
-          ),
-        );
+          );
+        }
+      } else {
+        if (localNodeId != targetId) {
+          final connId = _connectionId(localNodeId, targetId);
+          newConnections[connId] = Connection(
+            id: connId,
+            sourceNodeId: localNodeId,
+            sourcePortId: 'out',
+            targetNodeId: targetId,
+            targetPortId: 'in',
+            animationEffect: ConnectionEffects.particles,
+            label: ConnectionLabel(
+              text: '${nodeInfo.latencyMs.toStringAsFixed(1)}ms',
+            ),
+          );
+        }
       }
     }
 
-    // 更新节点ID列表记录
-    _lastNodeIds = widget.nodes.map((n) => n.ipv4).toList();
+    return _GraphModel(newNodes, newConnections);
+  }
 
-    // 立即释放旧的controller
-    _controller?.dispose();
+  void _applyGraphDiff(_GraphModel model) {
+    final controller = _controller!;
+    final desiredNodeIds = model.nodes.keys.toSet();
+    final currentNodeIds = controller.nodeIds.toSet();
 
-    // 创建新的controller
-    _controller = NodeFlowController<_NodeData, dynamic>(
-      nodes: newNodes,
-      connections: newConnections,
-      config: NodeFlowConfig(snapToGrid: false, minZoom: 0.3, maxZoom: 2.0),
-    );
+    for (final nodeId in currentNodeIds.difference(desiredNodeIds)) {
+      controller.removeNode(nodeId);
+    }
+
+    for (final entry in model.nodes.entries) {
+      final desiredNode = entry.value;
+      final existingNode = controller.getNode(entry.key);
+      if (existingNode == null) {
+        controller.addNode(desiredNode);
+      } else {
+        final data = existingNode.data;
+        data.updateFrom(desiredNode.data);
+        if (existingNode.type != desiredNode.type) {
+          final position = existingNode.position.value;
+          controller.removeNode(entry.key);
+          controller.addNode(
+            Node<_NodeData>(
+              id: desiredNode.id,
+              type: desiredNode.type,
+              position: position,
+              data: desiredNode.data,
+              inputPorts: desiredNode.inputPorts,
+              outputPorts: desiredNode.outputPorts,
+            ),
+          );
+        }
+      }
+    }
+
+    final desiredConnectionIds = model.connections.keys.toSet();
+    final currentConnectionIds = controller.connectionIds.toSet();
+
+    for (final connectionId in currentConnectionIds.difference(desiredConnectionIds)) {
+      controller.removeConnection(connectionId);
+    }
+
+    for (final entry in model.connections.entries) {
+      final desiredConnection = entry.value;
+      final existingConnection = controller.getConnection(entry.key);
+      if (existingConnection == null) {
+        controller.addConnection(desiredConnection);
+      } else {
+        final desiredLabel = desiredConnection.label?.text;
+        final existingLabel = existingConnection.label?.text;
+        if (desiredLabel != existingLabel) {
+          existingConnection.label = desiredConnection.label;
+        }
+        if (existingConnection.animationEffect != desiredConnection.animationEffect) {
+          existingConnection.animationEffect = desiredConnection.animationEffect;
+        }
+      }
+    }
   }
 
   Color _getLatencyColor(double latency) {
@@ -329,9 +363,7 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
 
     // 使用节点数量作为key，更稳定
     return NodeFlowEditor<_NodeData, dynamic>(
-      key: ValueKey(
-        'topology_${_lastNodeIds.length}_${_lastNodeIds.join('_')}',
-      ),
+      key: const ValueKey('topology'),
       controller: _controller!,
       theme: _buildTheme(context),
       nodeBuilder: _buildNode,
@@ -342,132 +374,137 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   Widget _buildNode(BuildContext context, Node<_NodeData> node) {
     final data = node.data;
 
-    // 获取节点图标
-    IconData icon;
-    switch (data.type) {
-      case _NodeType.local:
-        icon = Icons.computer;
-        break;
-      case _NodeType.server:
-        icon = Icons.cloud;
-        break;
-      case _NodeType.player:
-        icon = Icons.person;
-        break;
-      case _NodeType.relay:
-        icon = Icons.router;
-        break;
-    }
+    return AnimatedBuilder(
+      animation: data,
+      builder: (context, _) {
+        // 获取节点图标
+        IconData icon;
+        switch (data.type) {
+          case _NodeType.local:
+            icon = Icons.computer;
+            break;
+          case _NodeType.server:
+            icon = Icons.cloud;
+            break;
+          case _NodeType.player:
+            icon = Icons.person;
+            break;
+          case _NodeType.relay:
+            icon = Icons.router;
+            break;
+        }
 
-    // 使用Card样式带标题头
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 标题头
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(8),
-              topRight: Radius.circular(8),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  data.displayName,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+        // 使用Card样式带标题头
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题头
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
                 ),
               ),
-            ],
-          ),
-        ),
-        // 内容体
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(8),
-              bottomRight: Radius.circular(8),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (data.ip != null)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.language,
-                      size: 13,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(data.ip!, style: const TextStyle(fontSize: 11)),
-                  ],
-                ),
-              if (data.ip != null) const SizedBox(height: 4),
-              Row(
+              child: Row(
                 children: [
                   Icon(
-                    Icons.devices,
-                    size: 13,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    icon,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      data.platform,
-                      style: const TextStyle(fontSize: 11),
+                      data.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              if (data.latency > 0) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.speed,
-                      size: 13,
-                      color: Theme.of(context).colorScheme.onSurface,
+            ),
+            // 内容体
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (data.ip != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          size: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(data.ip!, style: const TextStyle(fontSize: 11)),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${data.latency}ms',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: _getLatencyColor(data.latency.toDouble()),
-                        fontWeight: FontWeight.bold,
+                  if (data.ip != null) const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.devices,
+                        size: 13,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          data.platform,
+                          style: const TextStyle(fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (data.latency > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.speed,
+                          size: 13,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${data.latency}ms',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _getLatencyColor(data.latency.toDouble()),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -496,14 +533,21 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   }
 }
 
+class _GraphModel {
+  final Map<String, Node<_NodeData>> nodes;
+  final Map<String, Connection> connections;
+
+  _GraphModel(this.nodes, this.connections);
+}
+
 enum _NodeType { local, server, player, relay }
 
-class _NodeData {
-  final String displayName;
-  final String? ip;
-  final _NodeType type;
-  final String platform;
-  final int latency;
+class _NodeData extends ChangeNotifier {
+  String displayName;
+  String? ip;
+  _NodeType type;
+  String platform;
+  int latency;
 
   _NodeData({
     required this.displayName,
@@ -512,4 +556,31 @@ class _NodeData {
     required this.platform,
     required this.latency,
   });
+
+  void updateFrom(_NodeData other) {
+    var changed = false;
+    if (displayName != other.displayName) {
+      displayName = other.displayName;
+      changed = true;
+    }
+    if (ip != other.ip) {
+      ip = other.ip;
+      changed = true;
+    }
+    if (type != other.type) {
+      type = other.type;
+      changed = true;
+    }
+    if (platform != other.platform) {
+      platform = other.platform;
+      changed = true;
+    }
+    if (latency != other.latency) {
+      latency = other.latency;
+      changed = true;
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
 }

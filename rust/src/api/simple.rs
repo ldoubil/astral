@@ -240,6 +240,7 @@ pub async fn is_easytier_running() -> bool {
 }
 // 定义节点跳跃统计信息结构体
 pub struct NodeHopStats {
+    pub peer_id: u32,
     pub target_ip: String, // 目标节点IP
     pub latency_ms: f64,   // 延迟(毫秒)
     pub packet_loss: f32,  // 丢包率
@@ -256,6 +257,7 @@ pub struct KVNodeConnectionStats {
 }
 // 定义节点信息结构体
 pub struct KVNodeInfo {
+    pub peer_id: u32,
     pub hostname: String,
     pub ipv4: String,
     pub latency_ms: f64,
@@ -630,6 +632,15 @@ pub async fn get_network_status() -> KVNetworkStatus {
     } else {
         None
     };
+    let local_peer_id = running_info
+        .as_ref()
+        .and_then(|info| {
+            info.peers
+                .iter()
+                .find(|p| p.conns.iter().any(|c| !c.is_client))
+                .map(|p| p.peer_id)
+        })
+        .unwrap_or(0);
     
     let mut nodes = Vec::new();
     for pair in pairs.iter() {
@@ -651,6 +662,7 @@ pub async fn get_network_status() -> KVNetworkStatus {
                 })
                 .unwrap_or_else(|| "0.0.0.0".to_string());
             let mut node_info = KVNodeInfo {
+                peer_id: route.peer_id,
                 hostname: route.hostname.clone(),
 
                 hops: {
@@ -708,6 +720,7 @@ pub async fn get_network_status() -> KVNetworkStatus {
 
                                 // 添加当前节点到路径
                                 path.push(NodeHopStats {
+                                    peer_id: current_peer_id,
                                     target_ip: ip,
                                     latency_ms: latency,
                                     packet_loss: loss as f32,
@@ -735,6 +748,20 @@ pub async fn get_network_status() -> KVNetworkStatus {
                     let mut hops = Vec::new();
                     if let Some(route) = &pair.route {
                         let mut visited = std::collections::HashSet::new();
+                        let target_ip = route
+                            .ipv4_addr
+                            .as_ref()
+                            .and_then(|addr| addr.address.as_ref())
+                            .map(|a| {
+                                format!(
+                                    "{}.{}.{}.{}",
+                                    (a.addr >> 24) & 0xFF,
+                                    (a.addr >> 16) & 0xFF,
+                                    (a.addr >> 8) & 0xFF,
+                                    a.addr & 0xFF
+                                )
+                            })
+                            .unwrap_or_default();
 
                         // 从当前节点开始，收集到目标节点的完整路径
                         // 先添加本地节点信息
@@ -742,6 +769,7 @@ pub async fn get_network_status() -> KVNetworkStatus {
                             if let Some(local_node) = &info.my_node_info {
                                     // 添加本地节点作为起点
                                     hops.push(NodeHopStats {
+                                        peer_id: local_peer_id,
                                         target_ip: local_node
                                             .virtual_ipv4
                                             .as_ref()
@@ -778,28 +806,13 @@ pub async fn get_network_status() -> KVNetworkStatus {
                                         // 检查最后一个节点是否是目标节点
                                         let last_node_is_target =
                                             hops.last().map_or(false, |last| {
-                                                // 比较 hostname
-                                                last.node_name == route.hostname
+                                                // 比较目标IP
+                                                last.target_ip == target_ip
                                             });
 
                                         // 如果最后一个节点不是目标节点，则添加目标节点
                                         if !last_node_is_target && !visited.contains(&route.peer_id)
                                         {
-                                            let ip = route
-                                                .ipv4_addr
-                                                .as_ref()
-                                                .and_then(|addr| addr.address.as_ref())
-                                                .map(|a| {
-                                                    format!(
-                                                        "{}.{}.{}.{}",
-                                                        (a.addr >> 24) & 0xFF,
-                                                        (a.addr >> 16) & 0xFF,
-                                                        (a.addr >> 8) & 0xFF,
-                                                        a.addr & 0xFF
-                                                    )
-                                                })
-                                                .unwrap_or_default();
-
                                             let (latency, loss) =
                                                 pair.peer.as_ref().map_or((0.0, 0.0), |p| {
                                                     let min_latency = p
@@ -824,7 +837,8 @@ pub async fn get_network_status() -> KVNetworkStatus {
                                                 });
 
                                             hops.push(NodeHopStats {
-                                                target_ip: ip,
+                                                peer_id: route.peer_id,
+                                                target_ip: target_ip.clone(),
                                                 latency_ms: latency,
                                                 packet_loss: loss as f32,
                                                 node_name: route.hostname.clone(),
@@ -838,22 +852,7 @@ pub async fn get_network_status() -> KVNetworkStatus {
                         // 检查 hops 是否只包含本地节点
                         if hops.len() <= 1 {
                             // 确保目标节点不在hops中（避免重复添加）
-                            if !hops.iter().any(|h| h.node_name == route.hostname) {
-                                let ip = route
-                                    .ipv4_addr
-                                    .as_ref()
-                                    .and_then(|addr| addr.address.as_ref())
-                                    .map(|a| {
-                                        format!(
-                                            "{}.{}.{}.{}",
-                                            (a.addr >> 24) & 0xFF,
-                                            (a.addr >> 16) & 0xFF,
-                                            (a.addr >> 8) & 0xFF,
-                                            a.addr & 0xFF
-                                        )
-                                    })
-                                    .unwrap_or_default();
-
+                            if !hops.iter().any(|h| h.target_ip == target_ip) {
                                 let (latency, loss) = pair.peer.as_ref().map_or((0.0, 0.0), |p| {
                                     let min_latency = p
                                         .conns
@@ -871,7 +870,8 @@ pub async fn get_network_status() -> KVNetworkStatus {
                                 });
 
                                 hops.push(NodeHopStats {
-                                    target_ip: ip,
+                                    peer_id: route.peer_id,
+                                    target_ip: target_ip,
                                     latency_ms: latency,
                                     packet_loss: loss as f32,
                                     node_name: route.hostname.clone(),

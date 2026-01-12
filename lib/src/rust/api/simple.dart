@@ -281,6 +281,7 @@ class KVNodeConnectionStats {
 }
 
 class KVNodeInfo {
+  final int peerId;
   final String hostname;
   final String ipv4;
   final double latencyMs;
@@ -296,6 +297,7 @@ class KVNodeInfo {
   final int cost;
 
   const KVNodeInfo({
+    required this.peerId,
     required this.hostname,
     required this.ipv4,
     required this.latencyMs,
@@ -313,6 +315,7 @@ class KVNodeInfo {
 
   @override
   int get hashCode =>
+      peerId.hashCode ^
       hostname.hashCode ^
       ipv4.hashCode ^
       latencyMs.hashCode ^
@@ -332,6 +335,7 @@ class KVNodeInfo {
       identical(this, other) ||
       other is KVNodeInfo &&
           runtimeType == other.runtimeType &&
+          peerId == other.peerId &&
           hostname == other.hostname &&
           ipv4 == other.ipv4 &&
           latencyMs == other.latencyMs &&
@@ -348,12 +352,14 @@ class KVNodeInfo {
 }
 
 class NodeHopStats {
+  final int peerId;
   final String targetIp;
   final double latencyMs;
   final double packetLoss;
   final String nodeName;
 
   const NodeHopStats({
+    required this.peerId,
     required this.targetIp,
     required this.latencyMs,
     required this.packetLoss,
@@ -362,6 +368,7 @@ class NodeHopStats {
 
   @override
   int get hashCode =>
+      peerId.hashCode ^
       targetIp.hashCode ^
       latencyMs.hashCode ^
       packetLoss.hashCode ^
@@ -372,6 +379,7 @@ class NodeHopStats {
       identical(this, other) ||
       other is NodeHopStats &&
           runtimeType == other.runtimeType &&
+          peerId == other.peerId &&
           targetIp == other.targetIp &&
           latencyMs == other.latencyMs &&
           packetLoss == other.packetLoss &&

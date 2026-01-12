@@ -2390,6 +2390,7 @@ impl SseDecode for crate::api::simple::KVNodeConnectionStats {
 impl SseDecode for crate::api::simple::KVNodeInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_peerId = <u32>::sse_decode(deserializer);
         let mut var_hostname = <String>::sse_decode(deserializer);
         let mut var_ipv4 = <String>::sse_decode(deserializer);
         let mut var_latencyMs = <f64>::sse_decode(deserializer);
@@ -2405,6 +2406,7 @@ impl SseDecode for crate::api::simple::KVNodeInfo {
         let mut var_version = <String>::sse_decode(deserializer);
         let mut var_cost = <i32>::sse_decode(deserializer);
         return crate::api::simple::KVNodeInfo {
+            peer_id: var_peerId,
             hostname: var_hostname,
             ipv4: var_ipv4,
             latency_ms: var_latencyMs,
@@ -2619,11 +2621,13 @@ impl SseDecode for crate::api::nat_test::NetworkTestResult {
 impl SseDecode for crate::api::simple::NodeHopStats {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_peerId = <u32>::sse_decode(deserializer);
         let mut var_targetIp = <String>::sse_decode(deserializer);
         let mut var_latencyMs = <f64>::sse_decode(deserializer);
         let mut var_packetLoss = <f32>::sse_decode(deserializer);
         let mut var_nodeName = <String>::sse_decode(deserializer);
         return crate::api::simple::NodeHopStats {
+            peer_id: var_peerId,
             target_ip: var_targetIp,
             latency_ms: var_latencyMs,
             packet_loss: var_packetLoss,
@@ -3162,6 +3166,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::KVNodeConnectionStats
 impl flutter_rust_bridge::IntoDart for crate::api::simple::KVNodeInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
+            self.peer_id.into_into_dart().into_dart(),
             self.hostname.into_into_dart().into_dart(),
             self.ipv4.into_into_dart().into_dart(),
             self.latency_ms.into_into_dart().into_dart(),
@@ -3295,6 +3300,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::nat_test::NetworkTestResult>
 impl flutter_rust_bridge::IntoDart for crate::api::simple::NodeHopStats {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
+            self.peer_id.into_into_dart().into_dart(),
             self.target_ip.into_into_dart().into_dart(),
             self.latency_ms.into_into_dart().into_dart(),
             self.packet_loss.into_into_dart().into_dart(),
@@ -3562,6 +3568,7 @@ impl SseEncode for crate::api::simple::KVNodeConnectionStats {
 impl SseEncode for crate::api::simple::KVNodeInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.peer_id, serializer);
         <String>::sse_encode(self.hostname, serializer);
         <String>::sse_encode(self.ipv4, serializer);
         <f64>::sse_encode(self.latency_ms, serializer);
@@ -3731,6 +3738,7 @@ impl SseEncode for crate::api::nat_test::NetworkTestResult {
 impl SseEncode for crate::api::simple::NodeHopStats {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.peer_id, serializer);
         <String>::sse_encode(self.target_ip, serializer);
         <f64>::sse_encode(self.latency_ms, serializer);
         <f32>::sse_encode(self.packet_loss, serializer);

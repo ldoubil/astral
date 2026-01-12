@@ -1,14 +1,15 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
-/// Minecraft服务器信息
+/// Minecraft服务器信�?
 class MinecraftServerInfo {
   final String host;
   final int port;
-  String? serverIcon; // Base64编码的图标
+  String? serverIcon; // Base64编码的图�?
   String motd;
   int maxPlayers;
   int onlinePlayers;
@@ -31,7 +32,7 @@ class MinecraftServerInfo {
   });
 }
 
-/// Minecraft服务器卡片组件
+/// Minecraft服务器卡片组�?
 class MinecraftServerCard extends StatefulWidget {
   final String host;
   final int port;
@@ -70,56 +71,35 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
   }
 
   Future<void> _fetchServerInfo() async {
+    print('Fetching server info ${_serverInfo.host}:${_serverInfo.port}');
+
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-              'https://motd.minebbs.com/api/status?ip=${_serverInfo.host}&port=${_serverInfo.port}&stype=auto&srv=false',
-            ),
-          )
-          .timeout(const Duration(seconds: 10));
+      final status = await _queryServerStatus(
+        host: _serverInfo.host,
+        port: _serverInfo.port,
+      );
 
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body) as Map<String, dynamic>;
-
-        if (jsonData['status'] == 'online') {
-          if (mounted) {
-            setState(() {
-              _serverInfo.isLoading = false;
-              _serverInfo.motd = jsonData['pureMotd'] ?? 'Minecraft Server';
-              _serverInfo.version = jsonData['version'] ?? '';
-              _serverInfo.serverType = jsonData['type'] ?? 'Java';
-              _serverInfo.protocol = jsonData['protocol'] ?? 0;
-
-              // 获取玩家数据
-              if (jsonData['players'] is Map) {
-                final players = jsonData['players'] as Map<String, dynamic>;
-                _serverInfo.onlinePlayers = players['online'] ?? 0;
-                _serverInfo.maxPlayers = players['max'] ?? 0;
-              }
-
-              // 获取服务器图标
-              if (jsonData.containsKey('icon') && jsonData['icon'] != null) {
-                final iconData = jsonData['icon'] as String;
-                if (iconData.startsWith('data:image/png;base64,')) {
-                  _serverInfo.serverIcon = iconData;
-                }
-              }
-            });
-          }
-        } else {
-          throw '服务器离线';
-        }
-      } else {
-        throw 'HTTP ${response.statusCode}';
-      }
+      if (!mounted) return;
+      setState(() {
+        _serverInfo.isLoading = false;
+        _serverInfo.motd = status.motd.isNotEmpty
+            ? status.motd
+            : 'Minecraft Server';
+        _serverInfo.version = status.version;
+        _serverInfo.serverType = status.serverType;
+        _serverInfo.protocol = status.protocol;
+        _serverInfo.onlinePlayers = status.onlinePlayers;
+        _serverInfo.maxPlayers = status.maxPlayers;
+        _serverInfo.serverIcon = status.serverIcon;
+        _serverInfo.errorMessage = null;
+        print('Server info loaded ${_serverInfo.motd}');
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _serverInfo.isLoading = false;
-          _serverInfo.errorMessage = '无法获取服务器信息';
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _serverInfo.isLoading = false;
+        _serverInfo.errorMessage = e.toString();
+      });
     }
   }
 
@@ -215,7 +195,7 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  // 服务器图标（小的）
+                  // 服务器图标（小的�?
                   Container(
                     width: 48,
                     height: 48,
@@ -230,13 +210,13 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
                     child: _buildServerIcon(),
                   ),
                   const SizedBox(width: 12),
-                  // 服务器信息
+                  // 服务器信�?
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 第一行：状态 + 服务器类型
+                        // 第一行：状�?+ 服务器类�?
                         Row(
                           children: [
                             Container(
@@ -316,7 +296,7 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        // 第三行：玩家数
+                        // 第三行：玩家�?
                         Row(
                           children: [
                             Icon(
@@ -349,7 +329,7 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
                   widget.isConnected
                       ? FilledButton.tonalIcon(
                         onPressed: () {
-                          print('尝试断开服务器: ${widget.host}:${widget.port}');
+                          print('尝试断开服务�? ${widget.host}:${widget.port}');
                           widget.onToggleConnection?.call(_serverInfo.motd);
                         },
                         icon: const Icon(Icons.stop, size: 20),
@@ -434,4 +414,235 @@ class _MinecraftServerCardState extends State<MinecraftServerCard> {
       ),
     );
   }
+}
+
+
+class _McStatusResult {
+  final String motd;
+  final int maxPlayers;
+  final int onlinePlayers;
+  final String version;
+  final String serverType;
+  final int protocol;
+  final String? serverIcon;
+
+  const _McStatusResult({
+    required this.motd,
+    required this.maxPlayers,
+    required this.onlinePlayers,
+    required this.version,
+    required this.serverType,
+    required this.protocol,
+    required this.serverIcon,
+  });
+}
+
+class _SocketReader {
+  final Socket _socket;
+  final List<int> _buffer = [];
+  final StreamSubscription<List<int>> _subscription;
+  Completer<void>? _dataWaiter;
+  Object? _error;
+  StackTrace? _stackTrace;
+  bool _isDone = false;
+
+  _SocketReader(this._socket)
+      : _subscription = _socket.listen(
+          null,
+          onError: null,
+          onDone: null,
+          cancelOnError: false,
+        ) {
+    _subscription.onData((data) {
+      _buffer.addAll(data);
+      _dataWaiter?.complete();
+      _dataWaiter = null;
+    });
+    _subscription.onError((error, stackTrace) {
+      _error = error;
+      _stackTrace = stackTrace;
+      _dataWaiter?.complete();
+      _dataWaiter = null;
+    });
+    _subscription.onDone(() {
+      _isDone = true;
+      _dataWaiter?.complete();
+      _dataWaiter = null;
+    });
+  }
+
+  Future<int> readByte() async {
+    await _ensureAvailable(1);
+    return _buffer.removeAt(0);
+  }
+
+  Future<Uint8List> readBytes(int length) async {
+    await _ensureAvailable(length);
+    final data = Uint8List.fromList(_buffer.sublist(0, length));
+    _buffer.removeRange(0, length);
+    return data;
+  }
+
+  Future<void> _ensureAvailable(int length) async {
+    while (_buffer.length < length) {
+      if (_error != null) {
+        throw _error!;
+      }
+      if (_isDone) {
+        break;
+      }
+      _dataWaiter ??= Completer<void>();
+      await _dataWaiter!.future;
+    }
+    if (_buffer.length < length) {
+      throw const SocketException('Connection closed before response completed');
+    }
+  }
+
+  Future<void> close() async {
+    await _subscription.cancel();
+  }
+}
+
+Future<_McStatusResult> _queryServerStatus({
+  required String host,
+  required int port,
+}) async {
+  final socket = await Socket.connect(
+    host,
+    port,
+    timeout: const Duration(seconds: 5),
+  );
+  final reader = _SocketReader(socket);
+
+  try {
+    final handshake = BytesBuilder();
+    handshake.add(_packVarint(0)); // Packet ID
+    handshake.add(_packVarint(0)); // Protocol version (auto)
+    handshake.add(_packString(host));
+    handshake.add(_packPort(port));
+    handshake.add(_packVarint(1)); // Next state: status
+
+    socket.add(_packData(handshake.toBytes()));
+    socket.add(_packData(Uint8List.fromList([0x00]))); // Status request
+
+    final packetLength = await _readVarint(reader);
+    if (packetLength <= 0) {
+      throw const SocketException('Empty response');
+    }
+
+    final packetId = await _readVarint(reader);
+    if (packetId != 0x00) {
+      throw SocketException('Unexpected packet id: $packetId');
+    }
+
+    final stringLength = await _readVarint(reader);
+    final payload = await reader.readBytes(stringLength);
+    final jsonData = jsonDecode(utf8.decode(payload)) as Map<String, dynamic>;
+
+    final players = jsonData['players'] as Map<String, dynamic>?;
+    final version = jsonData['version'] as Map<String, dynamic>?;
+
+    return _McStatusResult(
+      motd: _extractMotd(jsonData['description']),
+      maxPlayers: players?['max'] as int? ?? 0,
+      onlinePlayers: players?['online'] as int? ?? 0,
+      version: version?['name'] as String? ?? '',
+      serverType: 'Java',
+      protocol: version?['protocol'] as int? ?? 0,
+      serverIcon: jsonData['favicon'] as String?,
+    );
+  } finally {
+    await reader.close();
+    socket.destroy();
+  }
+}
+
+Uint8List _packVarint(int value) {
+  final bytes = <int>[];
+  var current = value;
+  while (true) {
+    var temp = current & 0x7F;
+    current >>= 7;
+    if (current != 0) {
+      temp |= 0x80;
+    }
+    bytes.add(temp);
+    if (current == 0) break;
+  }
+  return Uint8List.fromList(bytes);
+}
+
+Uint8List _packData(Uint8List data) {
+  final builder = BytesBuilder();
+  builder.add(_packVarint(data.length));
+  builder.add(data);
+  return builder.toBytes();
+}
+
+Uint8List _packString(String value) {
+  final encoded = utf8.encode(value);
+  final builder = BytesBuilder();
+  builder.add(_packVarint(encoded.length));
+  builder.add(encoded);
+  return builder.toBytes();
+}
+
+Uint8List _packPort(int port) {
+  final data = ByteData(2)..setUint16(0, port, Endian.big);
+  return data.buffer.asUint8List();
+}
+
+Future<int> _readVarint(_SocketReader reader) async {
+  var numRead = 0;
+  var result = 0;
+  int read;
+  do {
+    read = await reader.readByte();
+    final value = read & 0x7F;
+    result |= value << (7 * numRead);
+    numRead++;
+    if (numRead > 5) {
+      throw const FormatException('Varint is too big');
+    }
+  } while ((read & 0x80) != 0);
+  return result;
+}
+
+String _extractMotd(dynamic description) {
+  if (description == null) {
+    return '';
+  }
+  final buffer = StringBuffer();
+
+  void visit(dynamic node) {
+    if (node == null) {
+      return;
+    }
+    if (node is String) {
+      buffer.write(node);
+      return;
+    }
+    if (node is Map<String, dynamic>) {
+      final text = node['text'];
+      if (text is String) {
+        buffer.write(text);
+      }
+      final extra = node['extra'];
+      if (extra is List) {
+        for (final item in extra) {
+          visit(item);
+        }
+      }
+      return;
+    }
+    if (node is List) {
+      for (final item in node) {
+        visit(item);
+      }
+    }
+  }
+
+  visit(description);
+  return buffer.toString();
 }
