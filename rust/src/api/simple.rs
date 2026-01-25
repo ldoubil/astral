@@ -208,6 +208,10 @@ async fn create_and_store_network_instance(cfg: TomlConfigLoader) -> Result<(), 
 
     // 在移动 cfg 之前先获取 ID
     let name = cfg.get_id().to_string();
+    let had_instance = {
+        let mut instance_guard = INSTANCE.write().await;
+        instance_guard.take().is_some()
+    };
     // 创建网络实例
     let mut network = NetworkInstance::new(cfg, ConfigFileControl::STATIC_CONFIG);
     // 启动网络实例，并处理可能的错误
@@ -217,8 +221,8 @@ async fn create_and_store_network_instance(cfg: TomlConfigLoader) -> Result<(), 
     let mut instance_guard = INSTANCE
         .write()
         .await;
-    if instance_guard.is_none() {
-        *instance_guard = Some(network);
+    *instance_guard = Some(network);
+    if !had_instance {
         println!("实例已成功储存");
     } else {
         println!("网络实例已存在");
@@ -443,7 +447,6 @@ pub fn create_server(
         flags.dev_name = "astral".to_string();
         flags.enable_encryption = flag.enable_encryption;
         flags.enable_ipv6 = flag.enable_ipv6;
-        flags.mtu = flag.mtu;
         flags.latency_first = flag.latency_first;
         flags.enable_exit_node = flag.enable_exit_node;
         flags.no_tun = flag.no_tun;

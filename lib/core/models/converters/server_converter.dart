@@ -12,41 +12,7 @@ class ServerCz {
 
     // 如果没有初始服务器数据，添加默认服务器
     if (await _isar.serverMods.count() == 0) {
-      final defaultServers = [
-        ServerMod(
-          name: "[小探赞助][北京]",
-          url: "turn.bj.629957.xyz:11010",
-          enable: true,
-          tcp: true,
-          udp: false,
-          ws: false,
-          wss: false,
-          quic: false,
-          wg: false,
-        ),
-        ServerMod(
-          name: "[小探赞助][江苏]",
-          url: "turn.js.629957.xyz:11012",
-          enable: true,
-          tcp: true,
-          udp: false,
-          ws: false,
-          wss: false,
-          quic: false,
-          wg: false,
-        ),
-        ServerMod(
-          name: "[小探赞助][内蒙古]",
-          url: "turn.nmg.629957.xyz:11010",
-          enable: true,
-          tcp: true,
-          udp: false,
-          ws: false,
-          wss: false,
-          quic: false,
-          wg: false,
-        ),
-      ];
+      final defaultServers = [];
 
       await _isar.writeTxn(() async {
         for (final server in defaultServers) {
