@@ -63,6 +63,23 @@ class ServerConfigBuilder {
     return this;
   }
 
+  List<String> _expandServerUrls(Iterable<ServerMod> servers) {
+    final urls = <String>[];
+    for (final server in servers) {
+      if (server.tcp) urls.add('tcp://${server.url}');
+      if (server.udp) urls.add('udp://${server.url}');
+      if (server.ws) urls.add('ws://${server.url}');
+      if (server.wss) urls.add('wss://${server.url}');
+      if (server.quic) urls.add('quic://${server.url}');
+      if (server.wg) urls.add('wg://${server.url}');
+      if (server.txt) urls.add('txt://${server.url}');
+      if (server.srv) urls.add('srv://${server.url}');
+      if (server.http) urls.add('http://${server.url}');
+      if (server.https) urls.add('https://${server.url}');
+    }
+    return urls;
+  }
+
   /// 设置房间信息
   ServerConfigBuilder withRoom(dynamic room) {
     _roomName = room.roomName;
@@ -94,29 +111,31 @@ class ServerConfigBuilder {
 
   /// 构建服务器URL列表
   ServerConfigBuilder withServers(dynamic room, List<ServerMod> globalServers) {
+    final enabledUrls = _expandServerUrls(
+      globalServers.where((s) => s.enable),
+    );
     // 房间服务器优先 - 直接检查列表，不依赖 hasServers 标志
     if (room.servers != null && room.servers.isNotEmpty) {
-      _serverUrls = List<String>.from(room.servers);
+      final roomUrls = List<String>.from(room.servers);
+      final merged = <String>[];
+      final seen = <String>{};
+      for (final url in roomUrls) {
+        if (seen.add(url)) {
+          merged.add(url);
+        }
+      }
+      for (final url in enabledUrls) {
+        if (seen.add(url)) {
+          merged.add(url);
+        }
+      }
+      _serverUrls = merged;
       _log('📡 使用房间服务器 (${_serverUrls.length} 个): $_serverUrls');
       return this;
     }
 
     // 否则使用全局启用的服务器
-    final urls = <String>[];
-    for (var server in globalServers.where((s) => s.enable)) {
-      if (server.tcp) urls.add('tcp://${server.url}');
-      if (server.udp) urls.add('udp://${server.url}');
-      if (server.ws) urls.add('ws://${server.url}');
-      if (server.wss) urls.add('wss://${server.url}');
-      if (server.quic) urls.add('quic://${server.url}');
-      if (server.wg) urls.add('wg://${server.url}');
-      if (server.txt) urls.add('txt://${server.url}');
-      if (server.srv) urls.add('srv://${server.url}');
-      if (server.http) urls.add('http://${server.url}');
-      if (server.https) urls.add('https://${server.url}');
-    }
-
-    _serverUrls = urls;
+    _serverUrls = enabledUrls;
     _log('📡 使用全局服务器 (${_serverUrls.length} 个)');
     return this;
   }
