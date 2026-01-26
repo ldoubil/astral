@@ -2,6 +2,7 @@
 import 'package:astral/shared/utils/dialogs/add_room_dialog.dart';
 import 'package:astral/shared/utils/dialogs/edit_room_dialog.dart';
 import 'package:astral/shared/utils/data/room_share_helper.dart';
+import 'package:astral/shared/utils/data/duplicate_name_detection.dart';
 import 'package:astral/features/home/pages/user_page.dart';
 import 'package:astral/shared/widgets/cards/room_card.dart';
 import 'package:astral/shared/widgets/common/room_reorder_sheet.dart';
@@ -24,6 +25,88 @@ class _RoomPageState extends State<RoomPage> {
   final _services = ServiceManager();
   bool isHovered = false;
   bool _isReorderMode = false; // 添加重排序模式标志
+  bool _hasCheckedDuplicates = false; // 标记是否已执行过重名检测
+
+  @override
+  void initState() {
+    super.initState();
+    // 页面加载时执行重名检测
+    _checkDuplicateRoomNames();
+  }
+
+  /// 检测并处理重复的房间名称
+  Future<void> _checkDuplicateRoomNames() async {
+    if (_hasCheckedDuplicates) return;
+    
+    try {
+      // 获取所有房间
+      final rooms = await _services.room.getAllRooms();
+      
+      // 如果没有房间或只有一个房间，不需要检测
+      if (rooms.length <= 1) {
+        _hasCheckedDuplicates = true;
+        return;
+      }
+
+      // 创建一个映射来记录每个名称出现的次数
+      final nameCount = <String, List<Room>>{};
+      
+      // 统计每个名称出现的房间
+      for (final room in rooms) {
+        if (!nameCount.containsKey(room.name)) {
+          nameCount[room.name] = [];
+        }
+        nameCount[room.name]!.add(room);
+      }
+
+      // 处理重复名称
+      for (final entry in nameCount.entries) {
+        final name = entry.key;
+        final duplicateRooms = entry.value;
+        
+        // 如果有多个房间使用相同名称
+        if (duplicateRooms.length > 1) {
+          // 排序房间（保持第一个房间名称不变）
+          duplicateRooms.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+          
+          // 第一个房间保持原名称，其他房间需要重命名
+          for (int i = 1; i < duplicateRooms.length; i++) {
+            final room = duplicateRooms[i];
+            
+            // 使用重复名称检测工具类生成唯一名称
+            final uniqueName = DuplicateNameDetection.detectAndHandleDuplicateName(
+              name, 
+              rooms, 
+              excludedRoomId: room.id
+            );
+            
+            // 如果生成了新名称，更新房间
+            if (uniqueName != room.name) {
+              final updatedRoom = Room(
+                id: room.id,
+                name: uniqueName,
+                encrypted: room.encrypted,
+                roomName: room.roomName,
+                messageKey: room.messageKey,
+                password: room.password,
+                tags: room.tags,
+                sortOrder: room.sortOrder,
+                servers: room.servers,
+                customParam: room.customParam,
+                networkConfigJson: room.networkConfigJson,
+              );
+              
+              await _services.room.updateRoom(updatedRoom);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('检测房间重名时发生错误: $e');
+    } finally {
+      _hasCheckedDuplicates = true;
+    }
+  }
 
   // 根据宽度计算列数
   int _getColumnCount(double width) {
