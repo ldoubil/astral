@@ -54,7 +54,7 @@ cfg_if::cfg_if! {
 
         pub fn create_tun(
             interface_name: &str,
-            _src_addr: Option<SocketAddr>,
+            src_addr: Option<SocketAddr>,
             local_addr: SocketAddr,
         ) -> io::Result<Arc<dyn super::stack::Tun>> {
             match windivert::WinDivertTun::new(local_addr) {
@@ -73,7 +73,10 @@ cfg_if::cfg_if! {
                         )));
                     }
 
-                    pnet::PnetTun::new(interface_name, pnet::create_packet_filter(None, local_addr))
+                    pnet::PnetTun::new(
+                        interface_name,
+                        pnet::create_packet_filter(src_addr, local_addr),
+                    )
                         .map(|tun| Arc::new(tun) as Arc<dyn super::stack::Tun>)
                         .map_err(|pnet_err| {
                             io::Error::new(
