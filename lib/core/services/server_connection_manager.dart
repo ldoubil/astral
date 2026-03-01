@@ -22,6 +22,7 @@ class ServerConnectionManager {
   Timer? _statusCheckTimer;
   Timer? _networkMonitorTimer;
   Timer? _timeoutTimer;
+  bool _isMonitoringNetwork = false;
   int _connectionDuration = 0;
 
   static const int connectionTimeoutSeconds = 15;
@@ -67,6 +68,7 @@ class ServerConnectionManager {
     try {
       // 准备VPN（Android）
       if (Platform.isAndroid) {
+        await NotificationService.instance.initialize();
         await VpnManager.instance.prepare();
       }
 
@@ -237,7 +239,6 @@ class ServerConnectionManager {
 
   /// 处理连接成功
   Future<void> _handleSuccessfulConnection() async {
-    // 取消超时定时器
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
     _connectionDuration = 0;
@@ -249,7 +250,6 @@ class ServerConnectionManager {
       _markActiveServers();
     });
 
-    // 启动VPN（Android）
     if (Platform.isAndroid) {
       await VpnManager.instance.start(
         ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
@@ -258,20 +258,15 @@ class ServerConnectionManager {
 
       await NotificationService.instance.showConnectionNotification(
         status: '已连接',
-        ip:
-            ServiceManager().networkConfigState.ipv4.value.isNotEmpty
-                ? ServiceManager().networkConfigState.ipv4.value
-                : '获取中...',
+        ip: _notificationDisplayIp(),
         duration: NotificationService.formatDuration(_connectionDuration),
       );
     }
 
-    // 设置网卡跃点（Windows）
     if (Platform.isWindows) {
       setInterfaceMetric(interfaceName: "astral", metric: 0);
     }
 
-    // 启动网络监控
     _startNetworkMonitoring();
   }
 
@@ -286,34 +281,42 @@ class ServerConnectionManager {
 
   /// 监控网络状态
   Future<void> _monitorNetworkStatus(Timer timer) async {
+    if (_isMonitoringNetwork) return;
+    _isMonitoringNetwork = true;
     _connectionDuration++;
 
     try {
-      final runningInfo = await getRunningInfo();
-      final data = jsonDecode(runningInfo);
+      try {
+        final runningInfo = await getRunningInfo();
+        final data = jsonDecode(runningInfo);
+        final ipv4 = _extractIpv4Address(data);
+        if (_isValidRuntimeIpv4(ipv4)) {
+          ServiceManager().networkConfig.updateIpv4(ipv4);
+        }
+      } catch (_) {
+        // Keep last known IP if runtime info cannot be read.
+      }
 
-      ServiceManager().networkConfig.updateIpv4(_extractIpv4Address(data));
-      final netStatus = await getNetworkStatus();
+      try {
+        final netStatus = await getNetworkStatus();
+        batch(() {
+          ServiceManager().connectionState.netStatus.value = netStatus;
+        });
+      } catch (_) {
+        // Notification updates should continue even if network stats fail.
+      }
 
-      batch(() {
-        ServiceManager().connectionState.netStatus.value = netStatus;
-      });
-
-      // 更新通知（Android）
       if (Platform.isAndroid &&
           ServiceManager().connectionState.connectionState.value ==
               CoState.connected) {
         await NotificationService.instance.showConnectionNotification(
           status: '已连接',
-          ip:
-              ServiceManager().networkConfigState.ipv4.value.isNotEmpty
-                  ? ServiceManager().networkConfigState.ipv4.value
-                  : '获取中...',
+          ip: _notificationDisplayIp(),
           duration: NotificationService.formatDuration(_connectionDuration),
         );
       }
-    } catch (e) {
-      // 忽略监控错误
+    } finally {
+      _isMonitoringNetwork = false;
     }
   }
 
@@ -325,7 +328,17 @@ class ServerConnectionManager {
     return intToIp(addr);
   }
 
-  /// 标记活跃服务器
+  /// Validate runtime IPv4 before applying it to state/notification.
+  bool _isValidRuntimeIpv4(String ip) {
+    return ip.isNotEmpty && ip != "0.0.0.0";
+  }
+
+  String _notificationDisplayIp() {
+    final ipv4 = ServiceManager().networkConfigState.ipv4.value;
+    return _isValidRuntimeIpv4(ipv4) ? ipv4 : '获取中...';
+  }
+
+  /// Mark active servers.
   void _markActiveServers() {
     final room = ServiceManager().roomState.selectedRoom.value;
     if (room == null) return;
