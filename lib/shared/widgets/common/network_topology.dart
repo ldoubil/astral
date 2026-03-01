@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/shared/utils/helpers/platform_version_parser.dart';
@@ -16,6 +16,7 @@ class NetworkTopologyView extends StatefulWidget {
 
 class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   NodeFlowController<_NodeData, dynamic>? _controller;
+  int? _lastGraphSignature;
 
   @override
   void initState() {
@@ -37,6 +38,11 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
 
   void _syncGraph() {
     final localIp = ServiceManager().networkConfigState.ipv4.value;
+    final graphSignature = _calculateGraphSignature(widget.nodes, localIp);
+    if (_controller != null && _lastGraphSignature == graphSignature) {
+      return;
+    }
+
     final existingPositions = <String, Offset>{};
     if (_controller != null) {
       for (final nodeId in _controller!.nodeIds) {
@@ -57,10 +63,37 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         connections: model.connections.values.toList(),
         config: NodeFlowConfig(snapToGrid: false, minZoom: 0.3, maxZoom: 2.0),
       );
+      _lastGraphSignature = graphSignature;
       return;
     }
 
     _applyGraphDiff(model);
+    _lastGraphSignature = graphSignature;
+  }
+
+  int _calculateGraphSignature(List<KVNodeInfo> nodes, String localIp) {
+    var hash = Object.hash(nodes.length, localIp);
+    for (final node in nodes) {
+      var nodeHash = Object.hash(
+        node.peerId,
+        node.hostname,
+        node.ipv4,
+        node.version,
+        node.latencyMs.toStringAsFixed(1),
+        node.hops.length,
+      );
+      for (final hop in node.hops) {
+        nodeHash = Object.hash(
+          nodeHash,
+          hop.peerId,
+          hop.targetIp,
+          hop.nodeName,
+          hop.latencyMs.toStringAsFixed(1),
+        );
+      }
+      hash = Object.hash(hash, nodeHash);
+    }
+    return hash;
   }
 
   String _safeId(String raw) {
@@ -92,6 +125,16 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     return 'conn_${sourceId}_to_$targetId';
   }
 
+  String? _resolveNodeId({
+    required int peerId,
+    required String fallbackKey,
+    required Map<int, String> nodeIdsByPeerId,
+    required Map<String, String> nodeIdsByFallbackKey,
+  }) {
+    if (peerId > 0) return nodeIdsByPeerId[peerId];
+    return nodeIdsByFallbackKey[fallbackKey];
+  }
+
   _GraphModel _buildGraphModel(
     List<KVNodeInfo> nodes, {
     required String localIp,
@@ -100,6 +143,7 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     final newNodes = <String, Node<_NodeData>>{};
     final newConnections = <String, Connection>{};
     final nodeIdsByPeerId = <int, String>{};
+    final nodeIdsByFallbackKey = <String, String>{};
     final nodeRowIndex = <String, int>{};
 
     KVNodeInfo? localNode;
@@ -116,11 +160,19 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
       nonLocalNodes.add(node);
     }
     nonLocalNodes.sort((a, b) => a.peerId.compareTo(b.peerId));
+    final nonLocalIndexByPeerId = <int, int>{};
+    final nonLocalIndexByFallbackKey = <String, int>{};
+    for (var i = 0; i < nonLocalNodes.length; i++) {
+      final nonLocal = nonLocalNodes[i];
+      if (nonLocal.peerId > 0) {
+        nonLocalIndexByPeerId[nonLocal.peerId] = i;
+      }
+      nonLocalIndexByFallbackKey[_nodeFallbackKey(nonLocal)] = i;
+    }
 
     int rowIndex = 0;
     for (final nodeInfo in nodes) {
-      final isLocal =
-          localNode != null && nodeInfo.peerId == localNode.peerId;
+      final isLocal = localNode != null && nodeInfo.peerId == localNode.peerId;
       final isServer =
           nodeInfo.hostname.startsWith('PublicServer_') ||
           nodeInfo.ipv4 == "0.0.0.0";
@@ -128,7 +180,10 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         nodeInfo.peerId,
         _nodeFallbackKey(nodeInfo),
       );
-      nodeIdsByPeerId[nodeInfo.peerId] = nodeId;
+      if (nodeInfo.peerId > 0) {
+        nodeIdsByPeerId[nodeInfo.peerId] = nodeId;
+      }
+      nodeIdsByFallbackKey[_nodeFallbackKey(nodeInfo)] = nodeId;
 
       final displayName = _normalizeNodeName(nodeInfo.hostname);
       Offset position;
@@ -137,9 +192,10 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
       } else if (isLocal) {
         position = const Offset(100, 250);
       } else {
-        final index = nonLocalNodes.indexWhere(
-          (n) => n.peerId == nodeInfo.peerId,
-        );
+        final index =
+            nonLocalIndexByPeerId[nodeInfo.peerId] ??
+            nonLocalIndexByFallbackKey[_nodeFallbackKey(nodeInfo)] ??
+            -1;
         final effectiveIndex = index >= 0 ? index : rowIndex;
         position = Offset(600.0, 50.0 + (effectiveIndex * 130.0));
         nodeRowIndex[nodeId] = effectiveIndex;
@@ -148,16 +204,15 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
 
       newNodes[nodeId] = Node<_NodeData>(
         id: nodeId,
-        type: isLocal
-            ? 'local'
-            : (isServer ? 'server' : 'player'),
+        type: isLocal ? 'local' : (isServer ? 'server' : 'player'),
         position: position,
         data: _NodeData(
           displayName: displayName,
           ip: isServer && !isLocal ? null : nodeInfo.ipv4,
-          type: isLocal
-              ? _NodeType.local
-              : (isServer ? _NodeType.server : _NodeType.player),
+          type:
+              isLocal
+                  ? _NodeType.local
+                  : (isServer ? _NodeType.server : _NodeType.player),
           platform: PlatformVersionParser.getPlatformName(nodeInfo.version),
           latency: isLocal ? 0 : nodeInfo.latencyMs.toInt(),
         ),
@@ -181,7 +236,14 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     }
 
     final localNodeId =
-        localNode != null ? nodeIdsByPeerId[localNode.peerId] : null;
+        localNode == null
+            ? null
+            : _resolveNodeId(
+              peerId: localNode.peerId,
+              fallbackKey: _nodeFallbackKey(localNode),
+              nodeIdsByPeerId: nodeIdsByPeerId,
+              nodeIdsByFallbackKey: nodeIdsByFallbackKey,
+            );
 
     if (localNodeId == null) {
       return _GraphModel(newNodes, newConnections);
@@ -189,14 +251,26 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
 
     for (final nodeInfo in nodes) {
       if (localNode != null && nodeInfo.peerId == localNode.peerId) continue;
-      final targetId = nodeIdsByPeerId[nodeInfo.peerId] ??
+      final targetId =
+          _resolveNodeId(
+            peerId: nodeInfo.peerId,
+            fallbackKey: _nodeFallbackKey(nodeInfo),
+            nodeIdsByPeerId: nodeIdsByPeerId,
+            nodeIdsByFallbackKey: nodeIdsByFallbackKey,
+          ) ??
           _nodeIdForPeerId(nodeInfo.peerId, _nodeFallbackKey(nodeInfo));
 
       if (nodeInfo.hops.isNotEmpty) {
         String previousNodeId = localNodeId;
         for (var hopIndex = 0; hopIndex < nodeInfo.hops.length; hopIndex++) {
           final hop = nodeInfo.hops[hopIndex];
-          final hopId = nodeIdsByPeerId[hop.peerId] ??
+          final hopId =
+              _resolveNodeId(
+                peerId: hop.peerId,
+                fallbackKey: _hopFallbackKey(hop),
+                nodeIdsByPeerId: nodeIdsByPeerId,
+                nodeIdsByFallbackKey: nodeIdsByFallbackKey,
+              ) ??
               _nodeIdForPeerId(hop.peerId, _hopFallbackKey(hop));
 
           if (!newNodes.containsKey(hopId)) {
@@ -204,7 +278,8 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
               hop.nodeName.isNotEmpty ? hop.nodeName : "中转_${hop.targetIp}",
             );
             final row = nodeRowIndex[targetId] ?? 0;
-            final position = existingPositions[hopId] ??
+            final position =
+                existingPositions[hopId] ??
                 Offset(100.0 + (200.0 * (hopIndex + 1)), 50.0 + (row * 130.0));
             newNodes[hopId] = Node<_NodeData>(
               id: hopId,
@@ -326,7 +401,9 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     final desiredConnectionIds = model.connections.keys.toSet();
     final currentConnectionIds = controller.connectionIds.toSet();
 
-    for (final connectionId in currentConnectionIds.difference(desiredConnectionIds)) {
+    for (final connectionId in currentConnectionIds.difference(
+      desiredConnectionIds,
+    )) {
       controller.removeConnection(connectionId);
     }
 
@@ -341,8 +418,10 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         if (desiredLabel != existingLabel) {
           existingConnection.label = desiredConnection.label;
         }
-        if (existingConnection.animationEffect != desiredConnection.animationEffect) {
-          existingConnection.animationEffect = desiredConnection.animationEffect;
+        if (existingConnection.animationEffect !=
+            desiredConnection.animationEffect) {
+          existingConnection.animationEffect =
+              desiredConnection.animationEffect;
         }
       }
     }
@@ -395,114 +474,119 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         }
 
         // 使用Card样式带标题头
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 标题头
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
+        final colorScheme = Theme.of(context).colorScheme;
+        return RepaintBoundary(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题头
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      data.displayName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 18, color: colorScheme.onPrimaryContainer),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        data.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            // 内容体
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border.all(color: Theme.of(context).colorScheme.outline),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(8),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (data.ip != null)
+              // 内容体
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  border: Border.all(color: colorScheme.outline),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (data.ip != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.language,
+                            size: 13,
+                            color: colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(data.ip!, style: const TextStyle(fontSize: 11)),
+                        ],
+                      ),
+                    if (data.ip != null) const SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(
-                          Icons.language,
+                          Icons.devices,
                           size: 13,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: colorScheme.onSurface,
                         ),
                         const SizedBox(width: 4),
-                        Text(data.ip!, style: const TextStyle(fontSize: 11)),
-                      ],
-                    ),
-                  if (data.ip != null) const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.devices,
-                        size: 13,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          data.platform,
-                          style: const TextStyle(fontSize: 11),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (data.latency > 0) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.speed,
-                          size: 13,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${data.latency}ms',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _getLatencyColor(data.latency.toDouble()),
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            data.platform,
+                            style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
+                    if (data.latency > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.speed,
+                            size: 13,
+                            color: colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${data.latency}ms',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _getLatencyColor(data.latency.toDouble()),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

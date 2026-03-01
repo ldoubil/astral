@@ -1,4 +1,4 @@
-﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/shared/widgets/common/home/about_home.dart';
 import 'package:astral/shared/widgets/common/home/banner_carousel.dart';
 import 'package:astral/shared/widgets/common/home/servers_home.dart';
@@ -40,6 +40,9 @@ class _HomePageState extends State<HomePage> {
           .appSettingsState
           .enableBannerCarousel
           .watch(context);
+      final hasEnabledServers = ServiceManager().serverState.servers
+          .watch(context)
+          .any((server) => server.enable);
 
       return Scaffold(
         body: Stack(
@@ -63,7 +66,7 @@ class _HomePageState extends State<HomePage> {
                           UserIpBox(),
                           QuickNetworkConfig(),
                           // TrafficStats(),
-                          ServersHome(),
+                          if (hasEnabledServers) ServersHome(),
                           // UdpLog(),
                           AboutHome(),
                           HitokotoCard(),

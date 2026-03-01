@@ -1,4 +1,4 @@
-﻿// 导入所需的包
+// 导入所需的包
 import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
@@ -49,6 +49,7 @@ class _MainScreenState extends State<MainScreen>
               updateChecker.checkForUpdates(
                 context,
                 showNoUpdateMessage: false,
+                showFailureMessage: false,
               );
             }
           });

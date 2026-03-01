@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/core/services/service_manager.dart';
@@ -56,6 +56,18 @@ class UpdateSettingsPage extends BaseSettingsPage {
                     ServiceManager().appSettings.setAutoCheckUpdate(value);
                   },
                 ),
+              buildDivider(),
+              ListTile(
+                leading: const Icon(Icons.bolt),
+                title: const Text('下载加速前缀'),
+                subtitle: Text(
+                  ServiceManager().updateState.downloadAccelerate.value.isEmpty
+                      ? '未启用（直连 GitHub）'
+                      : ServiceManager().updateState.downloadAccelerate.value,
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _editDownloadAccelerate(context),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -191,5 +203,56 @@ class UpdateSettingsPage extends BaseSettingsPage {
             ],
           ),
     );
+  }
+
+  void _editDownloadAccelerate(BuildContext context) {
+    final current = ServiceManager().updateState.downloadAccelerate.value;
+    final controller = TextEditingController(text: current);
+
+    showDialog(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('设置下载加速前缀'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: '例如: https://gh.xmly.dev/',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await ServiceManager().appSettings.setDownloadAccelerate('');
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                child: const Text('关闭加速'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(LocaleKeys.cancel.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final value = controller.text.trim();
+                  final normalized =
+                      value.isEmpty
+                          ? ''
+                          : (value.endsWith('/') ? value : '$value/');
+                  await ServiceManager().appSettings.setDownloadAccelerate(
+                    normalized,
+                  );
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                child: Text(LocaleKeys.save.tr()),
+              ),
+            ],
+          ),
+    ).then((_) => controller.dispose());
   }
 }

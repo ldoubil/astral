@@ -1,4 +1,4 @@
-﻿import 'package:astral/shared/utils/helpers/update_helper.dart';
+import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/shared/utils/data/version_util.dart';
 import 'package:astral/shared/utils/helpers/platform_version_parser.dart';
 import 'package:astral/core/services/service_manager.dart';
@@ -7,6 +7,7 @@ import 'package:astral/shared/widgets/common/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class AboutHome extends StatefulWidget {
   const AboutHome({super.key});
@@ -63,39 +64,37 @@ class _AboutHomeState extends State<AboutHome> {
                 '${LocaleKeys.software_version.tr()}: ',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              Builder(
-                builder: (context) {
-                  final currentVersion = AppInfoUtil.getVersion();
-                  final latestVersion =
-                      ServiceManager().updateState.latestVersion.value;
-                  final versionText = VersionUtil.getVersionDisplayText(
-                    currentVersion,
-                    latestVersion,
-                  );
-                  final hasNewVersion = VersionUtil.hasNewVersion(
-                    currentVersion,
-                    latestVersion,
-                  );
+              Watch((context) {
+                final currentVersion = AppInfoUtil.getVersion();
+                final latestVersion = ServiceManager().updateState.latestVersion
+                    .watch(context);
+                final versionText = VersionUtil.getVersionDisplayText(
+                  currentVersion,
+                  latestVersion,
+                );
+                final hasNewVersion = VersionUtil.hasNewVersion(
+                  currentVersion,
+                  latestVersion,
+                );
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        versionText,
-                        style: TextStyle(color: colorScheme.secondary),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      versionText,
+                      style: TextStyle(color: colorScheme.secondary),
+                    ),
+                    if (hasNewVersion) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_upward,
+                        size: 16,
+                        color: colorScheme.primary,
                       ),
-                      if (hasNewVersion) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_upward,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                      ],
                     ],
-                  );
-                },
-              ),
+                  ],
+                );
+              }),
             ],
           ),
           const SizedBox(height: 4),

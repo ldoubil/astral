@@ -2,19 +2,18 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 /// 更新相关状态
 class UpdateState {
-  // 参与测试版
+  /// 是否加入测试版频道
   final beta = signal(false);
 
-  // 自动检查更新
+  /// 是否自动检查更新
   final autoCheckUpdate = signal(true);
 
-  // 下载加速地址
+  /// 下载加速前缀
   final downloadAccelerate = signal('https://gh.xmly.dev/');
 
-  // 最新版本号
+  /// 最近一次检查到的最新版本号
   final latestVersion = signal<String?>(null);
 
-  // 状态更新方法
   void setBeta(bool value) {
     beta.value = value;
   }
@@ -39,9 +38,9 @@ class UpdateState {
     autoCheckUpdate.value = !autoCheckUpdate.value;
   }
 
-  // Computed Signal
+  /// 仅表示已经拿到可用版本号，不代表一定高于当前版本
   late final hasNewVersion = computed(() {
-    // TODO: 需要比较当前版本和最新版本
-    return latestVersion.value != null;
+    final version = latestVersion.value;
+    return version != null && version.trim().isNotEmpty;
   });
 }

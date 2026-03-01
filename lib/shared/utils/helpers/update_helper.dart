@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -9,9 +9,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
-import 'package:astral/features/settings/pages/general/history_versions_page.dart';
 
 class UpdateChecker {
+  static const _requestTimeout = Duration(seconds: 15);
+
   /// GitHub 仓库所有者
   final String owner;
 
@@ -32,6 +33,7 @@ class UpdateChecker {
     BuildContext context, {
     bool showNoUpdateMessage = true,
     bool forceShowDownload = false,
+    bool showFailureMessage = true,
   }) async {
     try {
       final releaseInfo = await _fetchLatestRelease(
@@ -39,36 +41,59 @@ class UpdateChecker {
       );
       if (releaseInfo == null) {
         if (!context.mounted) return;
+        if (!showFailureMessage) return;
         _showUpdateDialog(
           context,
           '检查更新失败',
           '无法获取最新版本信息',
           'https://github.com/$owner/$repo/releases',
+          isLatestVersion: true,
         );
         return;
       }
 
       // 获取当前应用版本
       final currentVersion = await _getCurrentVersion();
+      final latestVersion = _extractString(releaseInfo, 'tag_name');
+      if (latestVersion.isEmpty) {
+        if (!context.mounted) return;
+        if (!showFailureMessage) return;
+        _showUpdateDialog(
+          context,
+          '检查更新失败',
+          '无法解析版本号',
+          'https://github.com/$owner/$repo/releases',
+          isLatestVersion: true,
+        );
+        return;
+      }
+
       debugPrint('当前版本: $currentVersion');
-      debugPrint('服务器版本: ${releaseInfo['tag_name']}');
+      debugPrint('服务器版本: $latestVersion');
 
       // 保存最新版本号到数据库
-      await ServiceManager().appSettings.updateLatestVersion(
-        releaseInfo['tag_name'],
-      );
+      await ServiceManager().appSettings.updateLatestVersion(latestVersion);
 
       if (!context.mounted) return;
 
       // 比较版本号，如果有新版本则显示更新弹窗
-      // 在 checkForUpdates 方法中修改 _showUpdateDialog 调用
-      if (_shouldUpdate(currentVersion, releaseInfo['tag_name']) ||
-          forceShowDownload) {
+      final releaseNotes = _extractString(
+        releaseInfo,
+        'body',
+        fallback: '新版本已发布',
+      );
+      final releasePage = _extractString(
+        releaseInfo,
+        'html_url',
+        fallback: 'https://github.com/$owner/$repo/releases',
+      );
+
+      if (_shouldUpdate(currentVersion, latestVersion) || forceShowDownload) {
         _showUpdateDialog(
           context,
-          releaseInfo['tag_name'],
-          releaseInfo['body'] ?? '新版本已发布',
-          releaseInfo['html_url'],
+          latestVersion,
+          releaseNotes,
+          releasePage,
           releaseInfo: releaseInfo, // 传递完整的 release 信息
         );
       } else if (showNoUpdateMessage) {
@@ -77,15 +102,18 @@ class UpdateChecker {
           '当前已是最新版本',
           '当前版本为: $currentVersion',
           'https://github.com/$owner/$repo/releases',
+          isLatestVersion: true,
         );
       }
     } catch (e) {
       if (!context.mounted) return;
+      if (!showFailureMessage) return;
       _showUpdateDialog(
         context,
         '更新检查失败',
         '检查更新时发生错误: $e',
         'https://github.com/$owner/$repo/releases',
+        isLatestVersion: true,
       );
     }
   }
@@ -95,38 +123,41 @@ class UpdateChecker {
     bool includePrereleases = false,
   }) async {
     try {
-      // 根据 includePrereleases 参数选择不同的 API 端点
       final apiUrl =
-          includePrereleases
-              ? 'https://api.github.com/repos/$owner/$repo/releases' // 获取所有版本
-              : 'https://api.github.com/repos/$owner/$repo/releases/latest'; // 只获取最新稳定版
+          'https://api.github.com/repos/$owner/$repo/releases?per_page=20';
 
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'astral',
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse(apiUrl),
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'astral',
+            },
+          )
+          .timeout(_requestTimeout);
 
-      if (response.statusCode == 200) {
-        if (includePrereleases) {
-          // 获取所有版本，返回第一个（最新的，可能是预发布版）
-          final List<dynamic> releases = json.decode(response.body);
-          if (releases.isEmpty) return null;
-          return releases[0];
-        } else {
-          // 获取最新稳定版
-          return json.decode(response.body);
-        }
-      } else {
-        return {
-          // 返回错误信息
-          'tag_name': '错误 ${response.statusCode}',
-          'body': '请求GitHub API失败',
-          'html_url': 'https://github.com/$owner/$repo/releases',
-        };
+      if (response.statusCode != 200) {
+        return null;
       }
+
+      final decoded = json.decode(response.body);
+      if (decoded is! List) {
+        return null;
+      }
+
+      for (final item in decoded) {
+        if (item is! Map) {
+          continue;
+        }
+        final release = Map<String, dynamic>.from(item);
+        final isDraft = release['draft'] == true;
+        final isPrerelease = release['prerelease'] == true;
+        if (isDraft) continue;
+        if (!includePrereleases && isPrerelease) continue;
+        return release;
+      }
+
+      return null;
     } catch (e) {
       return null;
     }
@@ -202,10 +233,9 @@ class UpdateChecker {
     String version,
     String releaseNotes,
     String downloadUrl, {
+    bool isLatestVersion = false,
     Map<String, dynamic>? releaseInfo,
   }) {
-    final isLatestVersion = version.contains("当前已是最新版本");
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -226,6 +256,25 @@ class UpdateChecker {
     );
   }
 
+  String _extractString(
+    Map<String, dynamic> source,
+    String key, {
+    String fallback = '',
+  }) {
+    final value = source[key];
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    return fallback;
+  }
+
+  String _buildAcceleratedUrl(String rawUrl) {
+    final prefix = ServiceManager().updateState.downloadAccelerate.value.trim();
+    if (prefix.isEmpty) return rawUrl;
+    final normalizedPrefix = prefix.endsWith('/') ? prefix : '$prefix/';
+    return '$normalizedPrefix$rawUrl';
+  }
+
   /// 处理下载逻辑
   Future<void> _handleDownload(
     BuildContext context,
@@ -237,13 +286,23 @@ class UpdateChecker {
     } else {
       // 其他平台直接下载
       final downloadUrl = _getDownloadUrl(releaseInfo);
-      if (downloadUrl == null) return;
+      if (downloadUrl == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('未找到当前平台的安装包')));
+        return;
+      }
 
-      // 添加GitHub下载加速前缀
-      final acceleratedUrl = 'https://gh.jasonzeng.dev/$downloadUrl';
+      final acceleratedUrl = _buildAcceleratedUrl(downloadUrl);
       debugPrint('下载链接: $acceleratedUrl');
 
       final fileName = _getPlatformFileName();
+      if (fileName.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('当前平台暂不支持内置下载安装')));
+        return;
+      }
 
       // 显示下载进度对话框
       showDialog(
@@ -327,8 +386,7 @@ class UpdateChecker {
       return;
     }
 
-    // 添加GitHub下载加速前缀
-    final acceleratedUrl = 'https://gh.jasonzeng.dev/$downloadUrl';
+    final acceleratedUrl = _buildAcceleratedUrl(downloadUrl);
     debugPrint('下载链接: $acceleratedUrl');
 
     // 显示下载进度对话框
@@ -396,7 +454,7 @@ class UpdateChecker {
     IOSink? sink;
     try {
       final request = http.Request('GET', Uri.parse(url));
-      final response = await request.send();
+      final response = await request.send().timeout(_requestTimeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -473,6 +531,7 @@ class UpdateChecker {
           '获取更新信息失败',
           '无法获取版本信息',
           'https://github.com/$owner/$repo/releases',
+          isLatestVersion: true,
         );
         return;
       }
@@ -492,6 +551,7 @@ class UpdateChecker {
         '获取更新信息失败',
         '发生错误: $e',
         'https://github.com/$owner/$repo/releases',
+        isLatestVersion: true,
       );
     }
   }
@@ -500,116 +560,6 @@ class UpdateChecker {
   Future<void> openNetDiskDownload(BuildContext context) async {
     // 直接跳转到官方网站的下载与安装页面，避免解析远程 JSON
     await _launchUrl('https://astral.fan/quick-start/download-install/');
-  }
-
-  Future<void> _showNetDiskDownloadDialog(BuildContext context) async {
-    // 显示加载对话框，并捕获对话框内部 context 用于后续保证能正确关闭
-    late BuildContext dialogContext;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        dialogContext = ctx;
-        return const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('正在获取下载链接...'),
-            ],
-          ),
-        );
-      },
-    );
-
-    try {
-      // 获取最新版本的网盘链接
-      final response = await http
-          .get(Uri.parse('https://astral.fan/downloads.json'))
-          .timeout(const Duration(seconds: 15));
-
-      if (!context.mounted) {
-        // 如果上层 context 已经 unmounted，使用对话框自身的 context 关闭加载对话框
-        try {
-          Navigator.of(dialogContext).pop();
-        } catch (_) {}
-        return;
-      }
-
-      // 关闭加载对话框
-      try {
-        Navigator.of(dialogContext).pop();
-      } catch (_) {}
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
-        if (jsonList.isNotEmpty) {
-          final latestVersion = jsonList[0];
-          final url = latestVersion['url'] as String;
-          final version = latestVersion['version'] as String;
-
-          // 显示即将跳转提示
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('网盘下载'),
-                  content: const Text('即将跳转到下载页面'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('取消'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _launchUrl(
-                          'https://astral.fan/quick-start/download-install/',
-                        );
-                      },
-                      child: const Text('确定'),
-                    ),
-                  ],
-                ),
-          );
-        } else {
-          _showErrorDialog(context, '未找到可用的下载链接');
-        }
-      } else {
-        _showErrorDialog(context, '获取下载链接失败: HTTP ${response.statusCode}');
-      }
-    } on TimeoutException {
-      // 使用 dialogContext 关闭加载对话框并展示错误
-      try {
-        Navigator.of(dialogContext).pop();
-      } catch (_) {}
-      if (!context.mounted) return;
-      _showErrorDialog(context, '获取下载链接超时，请稍后重试');
-    } catch (e) {
-      // 使用 dialogContext 关闭加载对话框并展示错误
-      try {
-        Navigator.of(dialogContext).pop();
-      } catch (_) {}
-      if (!context.mounted) return;
-      _showErrorDialog(context, '获取下载链接失败: $e');
-    }
-  }
-
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('错误'),
-            content: Text(message),
-            actions: [
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('确定'),
-              ),
-            ],
-          ),
-    );
   }
 
   Future<void> _launchUrl(String url) async {

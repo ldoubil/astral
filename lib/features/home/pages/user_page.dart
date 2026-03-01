@@ -1,10 +1,9 @@
-﻿import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/shared/widgets/cards/all_user_card.dart';
 import 'package:astral/shared/widgets/cards/mini_user_card.dart';
 import 'package:astral/shared/widgets/common/network_topology.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:astral/shared/widgets/common/room_settings_sheet.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -120,8 +119,13 @@ class _UserPageState extends State<UserPage> {
           final displayMode = ServiceManager().displayState.displayMode.watch(
             context,
           );
+          final userListSimple = ServiceManager().displayState.userListSimple
+              .watch(context);
+          final localIPv4 = ServiceManager().networkConfigState.ipv4.watch(
+            context,
+          );
           // 获取原始节点列表
-          var nodes = netStatus.nodes;
+          final nodes = List<KVNodeInfo>.from(netStatus.nodes);
 
           // 根据排序选项对节点进行排序
           if (sortOption == 1) {
@@ -180,12 +184,6 @@ class _UserPageState extends State<UserPage> {
                     (context, index) {
                       // 获取当前索引对应的玩家数据
                       final player = filteredNodes[index];
-                      final userListSimple = ServiceManager()
-                          .displayState
-                          .userListSimple
-                          .watch(context);
-                      final localIPv4 = ServiceManager().networkConfigState.ipv4
-                          .watch(context);
                       // 根据简单列表模式选项返回不同的卡片组件
                       return userListSimple
                           ? MiniUserCard(

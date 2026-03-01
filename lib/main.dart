@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -83,8 +83,12 @@ Future<void> _initializeApp() async {
     await services.init();
     FileLogger().info('ServiceManager initialized');
 
-    AppInfoUtil.init();
-    FileLogger().info('AppInfoUtil initialized');
+    try {
+      await AppInfoUtil.init().timeout(const Duration(seconds: 3));
+      FileLogger().info('AppInfoUtil initialized');
+    } catch (e) {
+      FileLogger().warning('AppInfoUtil init timeout/failure, continue: $e');
+    }
 
     await LogCapture().startCapture();
     FileLogger().info('LogCapture started');
