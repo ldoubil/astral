@@ -53,22 +53,39 @@ cfg_if::cfg_if! {
         pub mod windivert;
 
         pub fn create_tun(
-            _interface_name: &str,
-            _src_addr: Option<SocketAddr>,
+            interface_name: &str,
+            src_addr: Option<SocketAddr>,
             local_addr: SocketAddr,
         ) -> io::Result<Arc<dyn super::stack::Tun>> {
             match windivert::WinDivertTun::new(local_addr) {
                 Ok(tun) => Ok(Arc::new(tun)),
-                Err(e) => {
+                Err(windivert_err) => {
                     tracing::warn!(
-                        ?e,
+                        ?windivert_err,
+                        interface_name,
                         ?local_addr,
                         "WinDivertTun init failed, falling back to PnetTun"
                     );
-                    Ok(Arc::new(pnet::PnetTun::new(
-                        local_addr.to_string().as_str(),
-                        pnet::create_packet_filter(None, local_addr),
-                    )?))
+
+                    if interface_name.is_empty() {
+                        return Err(io::Error::other(format!(
+                            "WinDivert init failed ({windivert_err}); fallback requires a valid network interface name"
+                        )));
+                    }
+
+                    pnet::PnetTun::new(
+                        interface_name,
+                        pnet::create_packet_filter(src_addr, local_addr),
+                    )
+                        .map(|tun| Arc::new(tun) as Arc<dyn super::stack::Tun>)
+                        .map_err(|pnet_err| {
+                            io::Error::new(
+                                pnet_err.kind(),
+                                format!(
+                                    "WinDivert init failed ({windivert_err}); fallback PnetTun failed on interface '{interface_name}' ({pnet_err})"
+                                ),
+                            )
+                        })
                 }
             }
         }
