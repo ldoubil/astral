@@ -51,3 +51,5 @@ app.*.map.json
 **/example/
 dist/
 .sentry-native/
+result
+.direnv/
