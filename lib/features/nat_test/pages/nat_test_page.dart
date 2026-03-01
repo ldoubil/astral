@@ -1,7 +1,7 @@
 import 'package:astral/src/rust/api/nat_test.dart';
 import 'package:flutter/material.dart';
 
-/// NAT 类型检测页面（RFC 5780）
+/// NAT 类型检测页面（多 STUN 标准探测）
 class NatTestPage extends StatefulWidget {
   const NatTestPage({super.key});
 
@@ -38,7 +38,7 @@ class _NatTestPageState extends State<NatTestPage> {
     });
 
     try {
-      // 调用 Rust 的 NAT 检测函数（RFC 5780）
+      // 调用 Rust NAT 检测函数（多 STUN 探测）
       final result = await testNetworkConnectivity(stunServer: _stunServer);
 
       if (mounted) {
@@ -48,7 +48,7 @@ class _NatTestPageState extends State<NatTestPage> {
         });
       }
     } catch (e) {
-      print('❌ NAT 检测失败: $e');
+      debugPrint('NAT 检测失败: $e');
       if (mounted) {
         setState(() {
           _isTestingNat = false;
@@ -116,7 +116,7 @@ class _NatTestPageState extends State<NatTestPage> {
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
                             Text(
-                              '使用 RFC 5780 STUN 协议',
+                              '使用多 STUN 标准探测',
                               style: Theme.of(
                                 context,
                               ).textTheme.bodySmall?.copyWith(
@@ -187,7 +187,7 @@ class _NatTestPageState extends State<NatTestPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _stunServer,
+                    initialValue: _stunServer,
                     decoration: InputDecoration(
                       labelText: 'STUN 服务器',
                       border: OutlineInputBorder(

@@ -334,27 +334,7 @@ class _ExplorePageState extends State<ExplorePage> {
             padding: const EdgeInsets.all(16.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildSectionTitle(context, '服务器推荐'),
-                const SizedBox(height: 12),
-                // 动态生成服务器卡片
-                ..._servers.map((server) {
-                  final serverKey = '${server.host}:${server.port}';
-                  final isConnected = _connections.containsKey(serverKey);
-                  final localPort = _connections[serverKey]?.localPort;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: MinecraftServerCard(
-                      host: server.host,
-                      port: server.port,
-                      isConnected: isConnected,
-                      localPort: localPort,
-                      onToggleConnection: (_) {
-                        _toggleConnection(server);
-                      },
-                    ),
-                  );
-                }),
+                ..._buildServerRecommendationSection(context),
                 const SizedBox(height: 32),
 
                 _buildSectionTitle(context, '联机工具'),
@@ -466,6 +446,37 @@ class _ExplorePageState extends State<ExplorePage> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildServerRecommendationSection(BuildContext context) {
+    if (_isLoadingServers || _servers.isEmpty) {
+      return [];
+    }
+
+    final serverCards = _servers.map((server) {
+      final serverKey = '${server.host}:${server.port}';
+      final isConnected = _connections.containsKey(serverKey);
+      final localPort = _connections[serverKey]?.localPort;
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: MinecraftServerCard(
+          host: server.host,
+          port: server.port,
+          isConnected: isConnected,
+          localPort: localPort,
+          onToggleConnection: (_) {
+            _toggleConnection(server);
+          },
+        ),
+      );
+    }).toList();
+
+    return [
+      _buildSectionTitle(context, '服务器推荐'),
+      const SizedBox(height: 12),
+      ...serverCards,
+    ];
   }
 
   // 导出数据库
