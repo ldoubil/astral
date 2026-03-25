@@ -1,5 +1,10 @@
 
 
+最新版可以在群里查看 很多issues都在计划内 😘
+涉及到太多内容修改以及各种需求  因为更新频率太高了 所以还没发
+
+
+
 <div align="center">
   <img width="300" src="https://astral.fan/_astro/%E6%9A%97%E8%89%B2.C9IdEQgX.svg" alt="Astral Logo">
   <h1 id="astral"></h1>
