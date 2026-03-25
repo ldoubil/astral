@@ -211,5 +211,28 @@ abstract class  LocaleKeys {
   static const android_settings_desc = 'android_settings_desc';
   static const permission_description = 'permission_description';
   static const permission_description_desc = 'permission_description_desc';
+  static const enable_connection_notification = 'enable_connection_notification';
+  static const enable_connection_notification_desc = 'enable_connection_notification_desc';
+  static const get_notification_permission = 'get_notification_permission';
+  static const notification_permission_granted = 'notification_permission_granted';
+  static const notification_permission_not_granted = 'notification_permission_not_granted';
+  static const permission_notification_success = 'permission_notification_success';
+  static const permission_notification_failed = 'permission_notification_failed';
+  static const permission_notification_request_failed = 'permission_notification_request_failed';
+  static const permission_notification_denied_message = 'permission_notification_denied_message';
+  static const data_management = 'data_management';
+  static const export_database = 'export_database';
+  static const export_database_desc = 'export_database_desc';
+  static const import_database = 'import_database';
+  static const import_database_desc = 'import_database_desc';
+  static const export_success = 'export_success';
+  static const export_failed = 'export_failed';
+  static const import_success = 'import_success';
+  static const import_failed = 'import_failed';
+  static const import_confirm_title = 'import_confirm_title';
+  static const import_confirm_message = 'import_confirm_message';
+  static const confirm = 'confirm';
+  static const select_export_path = 'select_export_path';
+  static const select_import_file = 'select_import_file';
 
 }
