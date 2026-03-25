@@ -61,7 +61,7 @@
         android:paddingVertical="0dp"
         android:text="连接"
         android:textSize="13sp"
-        android:textStyle="medium"
+        android:textStyle="normal"
         android:textColor="#FFFFFF"
         android:minWidth="0dp"
         android:minHeight="0dp" />

@@ -21,7 +21,7 @@
         android:layout_marginTop="8dp"
         android:text="未连接"
         android:textSize="13sp"
-        android:textStyle="medium"
+        android:textStyle="normal"
         android:textColor="#34495E" />
 
     <Button
@@ -34,7 +34,7 @@
         android:paddingVertical="0dp"
         android:text="连接"
         android:textSize="12sp"
-        android:textStyle="medium"
+        android:textStyle="normal"
         android:textColor="#FFFFFF"
         android:minWidth="0dp"
         android:minHeight="0dp" />

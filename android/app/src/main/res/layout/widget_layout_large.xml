@@ -125,7 +125,7 @@
         android:background="@drawable/widget_btn_background"
         android:text="连接"
         android:textSize="15sp"
-        android:textStyle="medium"
+        android:textStyle="normal"
         android:textColor="#FFFFFF"
         android:minWidth="0dp"
         android:minHeight="0dp" />
