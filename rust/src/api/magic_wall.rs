@@ -774,6 +774,7 @@ pub fn stop_magic_wall() -> std::result::Result<(), String> {
 
     *firewall_guard = None;
     FILTER_TRACKER.lock().map_err(|e| e.to_string())?.clear();
+    RULE_STORE.lock().map_err(|e| e.to_string())?.clear();
 
     println!("\n🛑 ============ 魔法墙引擎停止 ============");
     println!("✓ 引擎状态: 已停止");

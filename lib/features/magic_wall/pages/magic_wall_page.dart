@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:astral/core/models/magic_wall_model.dart';
 import 'package:astral/core/database/app_data.dart';
@@ -497,8 +497,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
 
     if (!_isRunning.value) {
       try {
-        await rust_api.startMagicWall();
-        _isRunning.value = true;
+        await _startEngineAndSyncRules();
         await _recordEvent(
           targetType: 'engine',
           targetId: 'engine',
@@ -730,6 +729,63 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
   }
 
+  Future<void> _startEngineAndSyncRules() async {
+    // 先同步所有启用的规则到 Rust 层
+    final repo = AppDatabase().MagicWallSetting;
+    for (final bundle in _groups.value.where((b) => b.group.enabled)) {
+      final groupExecutable = await _resolveGroupAppPath(bundle.group);
+
+      // 更新规则的 appPath 为完整路径
+      if (groupExecutable != null && groupExecutable.isNotEmpty) {
+        for (final rule in bundle.rules) {
+          final needsUpdate =
+              rule.appPath == null ||
+              rule.appPath!.isEmpty ||
+              (!rule.appPath!.contains('\\') && !rule.appPath!.contains('/'));
+          if (needsUpdate) {
+            final updated =
+                MagicWallRuleModel()
+                  ..id = rule.id
+                  ..ruleId = rule.ruleId
+                  ..groupId = rule.groupId
+                  ..name = rule.name
+                  ..enabled = rule.enabled
+                  ..action = rule.action
+                  ..protocol = rule.protocol
+                  ..direction = rule.direction
+                  ..appPath = groupExecutable
+                  ..remoteIp = rule.remoteIp
+                  ..localIp = rule.localIp
+                  ..remotePort = rule.remotePort
+                  ..localPort = rule.localPort
+                  ..description = rule.description
+                  ..createdAt = rule.createdAt
+                  ..updatedAt = DateTime.now().millisecondsSinceEpoch;
+            await repo.updateMagicWallRule(updated);
+          }
+        }
+      }
+
+      // 重新加载更新后的规则
+      final updatedRules = await repo.getMagicWallRulesByGroup(
+        bundle.group.groupId,
+      );
+      for (final rule in updatedRules.where((r) => r.enabled)) {
+        try {
+          await rust_api.addMagicWallRule(
+            rule: _convertToRustRule(rule, fallbackAppPath: groupExecutable),
+          );
+        } catch (e) {
+          debugPrint('⚠️  应用规则失败: ${rule.name}, 错误: $e');
+        }
+      }
+    }
+    
+    // 启动魔法墙引擎，Rust 层会自动应用 RULE_STORE 中的所有规则
+    await rust_api.startMagicWall();
+    _isRunning.value = true;
+  }
+
   Future<void> _toggleEngine() async {
     try {
       if (_isRunning.value) {
@@ -743,54 +799,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
         );
         _showSuccess('魔法墙已停止');
       } else {
-        await rust_api.startMagicWall();
-        // 应用所有启用的规则
-        final repo = AppDatabase().MagicWallSetting;
-        for (final bundle in _groups.value.where((b) => b.group.enabled)) {
-          final groupExecutable = await _resolveGroupAppPath(bundle.group);
-
-          // 更新规则的 appPath 为完整路径
-          if (groupExecutable != null && groupExecutable.isNotEmpty) {
-            for (final rule in bundle.rules) {
-              final needsUpdate =
-                  rule.appPath == null ||
-                  rule.appPath!.isEmpty ||
-                  !rule.appPath!.contains('\\') && !rule.appPath!.contains('/');
-              if (needsUpdate) {
-                final updated =
-                    MagicWallRuleModel()
-                      ..id = rule.id
-                      ..ruleId = rule.ruleId
-                      ..groupId = rule.groupId
-                      ..name = rule.name
-                      ..enabled = rule.enabled
-                      ..action = rule.action
-                      ..protocol = rule.protocol
-                      ..direction = rule.direction
-                      ..appPath = groupExecutable
-                      ..remoteIp = rule.remoteIp
-                      ..localIp = rule.localIp
-                      ..remotePort = rule.remotePort
-                      ..localPort = rule.localPort
-                      ..description = rule.description
-                      ..createdAt = rule.createdAt
-                      ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-                await repo.updateMagicWallRule(updated);
-              }
-            }
-          }
-
-          // 重新加载更新后的规则
-          final updatedRules = await repo.getMagicWallRulesByGroup(
-            bundle.group.groupId,
-          );
-          for (final rule in updatedRules.where((r) => r.enabled)) {
-            await rust_api.addMagicWallRule(
-              rule: _convertToRustRule(rule, fallbackAppPath: groupExecutable),
-            );
-          }
-        }
-        _isRunning.value = true;
+        await _startEngineAndSyncRules();
         await _recordEvent(
           targetType: 'engine',
           targetId: 'engine',
@@ -801,6 +810,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
       }
     } catch (e) {
       _showError('操作失败: $e');
+      _checkStatus(); // 发生错误时刷新状态，避免 UI 状态不同步
     }
   }
 
@@ -1383,7 +1393,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
                   ),
                   Switch(
                     value: _isRunning.value,
-                    onChanged: (value) => _toggleEngine(),
+                    onChanged: Platform.isWindows ? (value) => _toggleEngine() : null,
                   ),
                 ],
               ),
