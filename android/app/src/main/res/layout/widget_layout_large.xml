@@ -7,37 +7,22 @@
     android:background="@drawable/widget_background"
     android:padding="14dp">
 
-    <LinearLayout
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:text="Astral"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#1A1A1A" />
 
-        <ImageView
-            android:id="@+id/widget_icon"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:src="@mipmap/ic_launcher"
-            android:contentDescription="App Icon" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Astral"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:layout_marginStart="10dp" />
-
-        <TextView
-            android:id="@+id/widget_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="未连接"
-            android:textSize="13sp"
-            android:textColor="#999999" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="未连接"
+        android:textSize="13sp"
+        android:textColor="#999999"
+        android:layout_marginTop="2dp" />
 
     <View
         android:layout_width="match_parent"
