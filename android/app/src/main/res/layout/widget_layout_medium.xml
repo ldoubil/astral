@@ -19,25 +19,27 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp">
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp">
 
         <TextView
             android:id="@+id/widget_room"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="未选择房间"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:textColor="#333333" />
+            android:textColor="#2C3E50"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/widget_ip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="IP: --"
-            android:textSize="14sp"
-            android:textColor="#666666"
+            android:textSize="13sp"
+            android:textColor="#7F8C8D"
             android:layout_marginTop="4dp" />
 
         <TextView
@@ -46,16 +48,22 @@
             android:layout_height="wrap_content"
             android:text="未连接"
             android:textSize="12sp"
-            android:textColor="#999999"
+            android:textColor="#95A5A6"
             android:layout_marginTop="2dp" />
     </LinearLayout>
 
     <Button
         android:id="@+id/widget_btn_toggle"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#007AFF"
+        android:layout_height="36dp"
+        android:background="@drawable/widget_btn_background"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="0dp"
+        android:text="连接"
+        android:textSize="13sp"
+        android:textStyle="medium"
         android:textColor="#FFFFFF"
-        android:text="连接" />
+        android:minWidth="0dp"
+        android:minHeight="0dp" />
 
 </LinearLayout>
