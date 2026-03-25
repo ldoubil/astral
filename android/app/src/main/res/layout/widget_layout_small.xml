@@ -5,12 +5,12 @@
     android:orientation="vertical"
     android:gravity="center"
     android:background="@drawable/widget_background"
-    android:padding="12dp">
+    android:padding="8dp">
 
     <ImageView
         android:id="@+id/widget_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:src="@mipmap/ic_launcher"
         android:contentDescription="App Icon" />
 
@@ -18,23 +18,9 @@
         android:id="@+id/widget_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="未连接"
-        android:textSize="13sp"
-        android:textColor="#34495E" />
-
-    <TextView
-        android:id="@+id/widget_btn_toggle"
-        android:layout_width="wrap_content"
-        android:layout_height="32dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/widget_btn_background"
-        android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:text="连接"
         android:textSize="12sp"
-        android:textColor="#FFFFFF"
-        android:clickable="true"
-        android:focusable="true" />
+        android:textColor="#333333" />
 
 </LinearLayout>

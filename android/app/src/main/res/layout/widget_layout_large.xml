@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:gravity="top|center_horizontal"
     android:background="@drawable/widget_background"
-    android:padding="18dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,8 +27,8 @@
             android:text="Astral"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#2C3E50"
-            android:layout_marginStart="12dp" />
+            android:textColor="#1A1A1A"
+            android:layout_marginStart="10dp" />
 
         <TextView
             android:id="@+id/widget_status"
@@ -36,15 +36,15 @@
             android:layout_height="wrap_content"
             android:text="未连接"
             android:textSize="13sp"
-            android:textColor="#95A5A6" />
+            android:textColor="#999999" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E8ECEF"
-        android:layout_marginTop="14dp"
-        android:layout_marginBottom="14dp" />
+        android:background="#E5E5E5"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -53,9 +53,9 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="房间名称"
+            android:text="房间"
             android:textSize="13sp"
-            android:textColor="#7F8C8D" />
+            android:textColor="#666666" />
         <TextView
             android:id="@+id/widget_room"
             android:layout_width="match_parent"
@@ -63,7 +63,7 @@
             android:text="未选择"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#2C3E50"
+            android:textColor="#1A1A1A"
             android:gravity="end"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -73,13 +73,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="8dp">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="虚拟 IP"
+            android:text="IP"
             android:textSize="13sp"
-            android:textColor="#7F8C8D" />
+            android:textColor="#666666" />
         <TextView
             android:id="@+id/widget_ip"
             android:layout_width="match_parent"
@@ -87,7 +87,7 @@
             android:text="--"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#2C3E50"
+            android:textColor="#1A1A1A"
             android:gravity="end" />
     </LinearLayout>
 
@@ -95,13 +95,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="8dp">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="连接时长"
+            android:text="时长"
             android:textSize="13sp"
-            android:textColor="#7F8C8D" />
+            android:textColor="#666666" />
         <TextView
             android:id="@+id/widget_duration"
             android:layout_width="match_parent"
@@ -109,25 +109,8 @@
             android:text="00:00:00"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#2C3E50"
+            android:textColor="#1A1A1A"
             android:gravity="end" />
     </LinearLayout>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <TextView
-        android:id="@+id/widget_btn_toggle"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:background="@drawable/widget_btn_background"
-        android:gravity="center"
-        android:text="连接"
-        android:textSize="15sp"
-        android:textColor="#FFFFFF"
-        android:clickable="true"
-        android:focusable="true" />
 
 </LinearLayout>

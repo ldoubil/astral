@@ -39,16 +39,6 @@ open class AstralWidgetProvider : HomeWidgetProvider() {
                 val ip = widgetData.getString("ip_text", "--") ?: "--"
                 views.setTextViewText(R.id.widget_ip, ip)
             }
-            
-            val pendingIntent = es.antonborri.home_widget.HomeWidgetBackgroundIntent.getBroadcast(
-                context,
-                android.net.Uri.parse("astral://toggle_connection")
-            )
-            
-            views.setOnClickPendingIntent(R.id.widget_btn_toggle, pendingIntent)
-
-            val isConnected = status == "已连接" || status == "连接中..."
-            views.setTextViewText(R.id.widget_btn_toggle, if (isConnected) "断开" else "连接")
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
