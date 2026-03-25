@@ -21,22 +21,20 @@
         android:layout_marginTop="8dp"
         android:text="未连接"
         android:textSize="13sp"
-        android:textStyle="normal"
         android:textColor="#34495E" />
 
-    <Button
+    <TextView
         android:id="@+id/widget_btn_toggle"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
         android:layout_marginTop="8dp"
         android:background="@drawable/widget_btn_background"
+        android:gravity="center"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="0dp"
         android:text="连接"
         android:textSize="12sp"
-        android:textStyle="normal"
         android:textColor="#FFFFFF"
-        android:minWidth="0dp"
-        android:minHeight="0dp" />
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>

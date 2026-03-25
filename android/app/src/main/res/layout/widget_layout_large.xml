@@ -118,16 +118,16 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <Button
+    <TextView
         android:id="@+id/widget_btn_toggle"
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:background="@drawable/widget_btn_background"
+        android:gravity="center"
         android:text="连接"
         android:textSize="15sp"
-        android:textStyle="normal"
         android:textColor="#FFFFFF"
-        android:minWidth="0dp"
-        android:minHeight="0dp" />
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>

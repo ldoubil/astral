@@ -52,18 +52,17 @@
             android:layout_marginTop="2dp" />
     </LinearLayout>
 
-    <Button
+    <TextView
         android:id="@+id/widget_btn_toggle"
         android:layout_width="wrap_content"
         android:layout_height="36dp"
         android:background="@drawable/widget_btn_background"
+        android:gravity="center"
         android:paddingHorizontal="18dp"
-        android:paddingVertical="0dp"
         android:text="连接"
         android:textSize="13sp"
-        android:textStyle="normal"
         android:textColor="#FFFFFF"
-        android:minWidth="0dp"
-        android:minHeight="0dp" />
+        android:clickable="true"
+        android:focusable="true" />
 
 </LinearLayout>
