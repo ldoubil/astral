@@ -1,4 +1,6 @@
-﻿import 'package:astral/core/states/player_state.dart';
+import 'dart:io';
+
+import 'package:astral/core/states/player_state.dart';
 import 'package:astral/core/states/display_state.dart';
 import 'package:astral/core/states/startup_state.dart';
 import 'package:astral/core/states/update_state.dart';
@@ -8,6 +10,7 @@ import 'package:astral/core/states/vpn_state.dart';
 import 'package:astral/core/states/firewall_state.dart';
 import 'package:astral/core/states/app_settings_state.dart';
 import 'package:astral/core/repositories/app_settings_repository.dart';
+import 'package:astral/core/services/notification_service.dart';
 import 'package:astral/src/rust/api/hops.dart';
 
 /// 应用设置服务：协调多个State和AppSettingsRepository
@@ -62,6 +65,7 @@ class AppSettingsService {
     updateState.setLatestVersion(settings.latestVersion);
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
+    appSettingsState.updateEnableConnectionNotification(settings.enableConnectionNotification);
     notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
 
     windowState.setCloseMinimize(settings.closeMinimize);
@@ -165,6 +169,16 @@ class AppSettingsService {
   Future<void> updateEnableBannerCarousel(bool enable) async {
     appSettingsState.updateEnableBannerCarousel(enable);
     await _repository.setEnableBannerCarousel(enable);
+  }
+
+  Future<void> updateEnableConnectionNotification(bool enable) async {
+    appSettingsState.updateEnableConnectionNotification(enable);
+    await _repository.setEnableConnectionNotification(enable);
+    
+    // 如果关闭了通知，立即取消可能存在的连接通知
+    if (!enable && Platform.isAndroid) {
+      await NotificationService.instance.cancelConnectionNotification();
+    }
   }
 
   Future<void> updateHasShownBannerTip(bool hasShown) async {

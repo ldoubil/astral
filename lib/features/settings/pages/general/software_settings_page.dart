@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -18,6 +18,7 @@ class SoftwareSettingsPage extends BaseStatefulSettingsPage {
 class _SoftwareSettingsPageState
     extends BaseStatefulSettingsPageState<SoftwareSettingsPage> {
   bool _hasInstallPermission = false;
+  bool _hasNotificationPermission = false;
 
   @override
   String get title => LocaleKeys.software_settings.tr();
@@ -27,7 +28,80 @@ class _SoftwareSettingsPageState
     super.initState();
     if (Platform.isAndroid) {
       _checkInstallPermission();
+      _checkNotificationPermission();
     }
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    try {
+      final status = await Permission.notification.status;
+      if (mounted) {
+        setState(() {
+          _hasNotificationPermission = status.isGranted;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasNotificationPermission = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    try {
+      final status = await Permission.notification.request();
+      if (!context.mounted) return;
+
+      await _checkNotificationPermission();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            status.isGranted
+                ? LocaleKeys.permission_notification_success.tr()
+                : LocaleKeys.permission_notification_failed.tr(),
+          ),
+        ),
+      );
+
+      if (status.isPermanentlyDenied) {
+        _showNotificationPermissionDialog();
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(LocaleKeys.permission_notification_request_failed.tr()),
+        ),
+      );
+    }
+  }
+
+  void _showNotificationPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(LocaleKeys.permission_denied.tr()),
+          content: Text(LocaleKeys.permission_notification_denied_message.tr()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(LocaleKeys.cancel.tr()),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                openAppSettings();
+              },
+              child: Text(LocaleKeys.go_settings.tr()),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _checkInstallPermission() async {
@@ -172,6 +246,37 @@ class _SoftwareSettingsPageState
                   title: Text(LocaleKeys.android_settings.tr()),
                   subtitle: Text(LocaleKeys.android_settings_desc.tr()),
                   leading: const Icon(Icons.android),
+                ),
+                buildDivider(),
+                ListTile(
+                  leading: const Icon(Icons.notifications),
+                  title: Text(LocaleKeys.get_notification_permission.tr()),
+                  subtitle: Text(
+                    _hasNotificationPermission
+                        ? LocaleKeys.notification_permission_granted.tr()
+                        : LocaleKeys.notification_permission_not_granted.tr(),
+                  ),
+                  trailing:
+                      _hasNotificationPermission
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : const Icon(Icons.warning, color: Colors.orange),
+                  onTap:
+                      _hasNotificationPermission
+                          ? null
+                          : _requestNotificationPermission,
+                ),
+                SwitchListTile(
+                  title: Text(LocaleKeys.enable_connection_notification.tr()),
+                  subtitle: Text(LocaleKeys.enable_connection_notification_desc.tr()),
+                  value: ServiceManager().appSettingsState.enableConnectionNotification.watch(context),
+                  onChanged: (value) async {
+                    if (value && !_hasNotificationPermission) {
+                      await _requestNotificationPermission();
+                      // 如果请求后仍没有权限，则不允许开启
+                      if (!_hasNotificationPermission) return;
+                    }
+                    await ServiceManager().appSettings.updateEnableConnectionNotification(value);
+                  },
                 ),
                 buildDivider(),
                 ListTile(

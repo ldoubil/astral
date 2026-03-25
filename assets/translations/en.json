@@ -209,5 +209,14 @@
   "android_settings": "Android Settings",
   "android_settings_desc": "Android specific settings",
   "permission_description": "Permission Description",
-  "permission_description_desc": "Install permission is used for automatic app updates"
+  "permission_description_desc": "Install permission is used for automatic app updates",
+  "enable_connection_notification": "Enable Connection Notification",
+  "enable_connection_notification_desc": "Show persistent background connection status in notification bar",
+  "get_notification_permission": "Get Notification Permission",
+  "notification_permission_granted": "Notification permission granted",
+  "notification_permission_not_granted": "Notification permission not granted, tap to request",
+  "permission_notification_success": "Notification permission granted successfully",
+  "permission_notification_failed": "Failed to get notification permission",
+  "permission_notification_request_failed": "Request for notification permission failed",
+  "permission_notification_denied_message": "Notification permission is permanently denied. Please enable it manually in system settings."
 }

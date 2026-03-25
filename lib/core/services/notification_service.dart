@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:astral/core/services/service_manager.dart';
 
 /// 连接状态通知服务（仅Android）
 class NotificationService {
@@ -41,6 +42,10 @@ class NotificationService {
     required String duration,
   }) async {
     if (_plugin == null) return;
+    if (!ServiceManager().appSettingsState.enableConnectionNotification.value) {
+      await cancelConnectionNotification();
+      return;
+    }
 
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(

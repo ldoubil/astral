@@ -2,7 +2,7 @@
 
 // ignore_for_file: constant_identifier_names
 
-abstract class LocaleKeys {
+abstract class  LocaleKeys {
   static const firewall = 'firewall';
   static const virtual_ip = 'virtual_ip';
   static const status_disconnected = 'status_disconnected';
@@ -54,8 +54,7 @@ abstract class LocaleKeys {
   static const nav_settings = 'nav_settings';
   static const permission_install_success = 'permission_install_success';
   static const permission_install_failed = 'permission_install_failed';
-  static const permission_install_request_failed =
-      'permission_install_request_failed';
+  static const permission_install_request_failed = 'permission_install_request_failed';
   static const permission_denied = 'permission_denied';
   static const permission_denied_message = 'permission_denied_message';
   static const cancel = 'cancel';
@@ -121,8 +120,7 @@ abstract class LocaleKeys {
   static const relay_peer_rpc = 'relay_peer_rpc';
   static const relay_peer_rpc_desc = 'relay_peer_rpc_desc';
   static const disable_udp_hole_punching = 'disable_udp_hole_punching';
-  static const disable_udp_hole_punching_desc =
-      'disable_udp_hole_punching_desc';
+  static const disable_udp_hole_punching_desc = 'disable_udp_hole_punching_desc';
   static const enable_multi_thread = 'enable_multi_thread';
   static const enable_multi_thread_desc = 'enable_multi_thread_desc';
   static const compression_algorithm = 'compression_algorithm';
@@ -146,8 +144,7 @@ abstract class LocaleKeys {
   static const software_settings = 'software_settings';
   static const get_install_permission = 'get_install_permission';
   static const install_permission_granted = 'install_permission_granted';
-  static const install_permission_not_granted =
-      'install_permission_not_granted';
+  static const install_permission_not_granted = 'install_permission_not_granted';
   static const minimize = 'minimize';
   static const minimize_desc = 'minimize_desc';
   static const player_list_card = 'player_list_card';
@@ -193,16 +190,13 @@ abstract class LocaleKeys {
   static const auto_update_title = 'auto_update_title';
   static const auto_update_info_desc = 'auto_update_info_desc';
   static const download_acceleration_title = 'download_acceleration_title';
-  static const download_acceleration_info_desc =
-      'download_acceleration_info_desc';
+  static const download_acceleration_info_desc = 'download_acceleration_info_desc';
   static const current_version = 'current_version';
   static const update_channel = 'update_channel';
   static const advanced_network_settings = 'advanced_network_settings';
-  static const advanced_network_settings_desc =
-      'advanced_network_settings_desc';
+  static const advanced_network_settings_desc = 'advanced_network_settings_desc';
   static const disable_sym_hole_punching = 'disable_sym_hole_punching';
-  static const disable_sym_hole_punching_desc =
-      'disable_sym_hole_punching_desc';
+  static const disable_sym_hole_punching_desc = 'disable_sym_hole_punching_desc';
   static const startup_behavior_desc = 'startup_behavior_desc';
   static const startup_description = 'startup_description';
   static const startup_description_desc = 'startup_description_desc';
@@ -217,4 +211,5 @@ abstract class LocaleKeys {
   static const android_settings_desc = 'android_settings_desc';
   static const permission_description = 'permission_description';
   static const permission_description_desc = 'permission_description_desc';
+
 }

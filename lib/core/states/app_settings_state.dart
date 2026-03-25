@@ -11,6 +11,9 @@ class AppSettingsState {
   // 启用轮播图
   final enableBannerCarousel = signal(true);
 
+  // 启用连接状态栏通知
+  final enableConnectionNotification = signal(true);
+
   // 日志列表
   final logs = signal<List<String>>([]);
 
@@ -27,6 +30,11 @@ class AppSettingsState {
   // 更新轮播图开关
   void updateEnableBannerCarousel(bool value) {
     enableBannerCarousel.value = value;
+  }
+
+  // 更新连接状态栏通知开关
+  void updateEnableConnectionNotification(bool value) {
+    enableConnectionNotification.value = value;
   }
 
   // 添加日志

@@ -10,6 +10,7 @@ import 'package:astral/core/app_s/global_error_handler.dart';
 import 'package:astral/core/database/app_data.dart';
 import 'package:astral/core/constants/window_manager.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/widget_service.dart';
 import 'package:astral/services/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -82,6 +83,10 @@ Future<void> _initializeApp() async {
     final services = ServiceManager();
     await services.init();
     FileLogger().info('ServiceManager initialized');
+
+    // 初始化贴片服务
+    WidgetService.instance.initialize();
+    FileLogger().info('WidgetService initialized');
 
     try {
       await AppInfoUtil.init().timeout(const Duration(seconds: 3));

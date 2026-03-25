@@ -5,6 +5,7 @@ import 'package:astral/core/builders/server_config_builder.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/services/notification_service.dart';
+import 'package:astral/core/services/widget_service.dart';
 import 'package:astral/core/services/vpn_manager.dart';
 import 'package:astral/shared/utils/network/ip_utils.dart';
 import 'package:astral/src/rust/api/simple.dart';
@@ -171,7 +172,7 @@ class ServerConnectionManager {
     });
 
     // 显示通知（Android）
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid && ServiceManager().appSettingsState.enableConnectionNotification.value) {
       await NotificationService.instance.showConnectionNotification(
         status: '连接中',
         ip: '正在获取...',
@@ -256,11 +257,13 @@ class ServerConnectionManager {
         mtu: ServiceManager().networkConfigState.mtu.value,
       );
 
-      await NotificationService.instance.showConnectionNotification(
-        status: '已连接',
-        ip: _notificationDisplayIp(),
-        duration: NotificationService.formatDuration(_connectionDuration),
-      );
+      if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
+        await NotificationService.instance.showConnectionNotification(
+          status: '已连接',
+          ip: _notificationDisplayIp(),
+          duration: NotificationService.formatDuration(_connectionDuration),
+        );
+      }
     }
 
     if (Platform.isWindows) {
@@ -309,11 +312,18 @@ class ServerConnectionManager {
       if (Platform.isAndroid &&
           ServiceManager().connectionState.connectionState.value ==
               CoState.connected) {
-        await NotificationService.instance.showConnectionNotification(
-          status: '已连接',
-          ip: _notificationDisplayIp(),
-          duration: NotificationService.formatDuration(_connectionDuration),
-        );
+        final formattedDuration = NotificationService.formatDuration(_connectionDuration);
+        
+        // 更新贴片时间
+        await WidgetService.instance.updateDuration(formattedDuration);
+
+        if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
+          await NotificationService.instance.showConnectionNotification(
+            status: '已连接',
+            ip: _notificationDisplayIp(),
+            duration: formattedDuration,
+          );
+        }
       }
     } finally {
       _isMonitoringNetwork = false;

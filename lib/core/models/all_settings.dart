@@ -66,6 +66,9 @@ class AllSettings {
   /// 启用轮播图
   bool enableBannerCarousel = true;
 
+  /// 启用连接状态栏通知
+  bool enableConnectionNotification = true;
+
   /// 是否已显示轮播图首次提示
   bool hasShownBannerTip = false;
 }
