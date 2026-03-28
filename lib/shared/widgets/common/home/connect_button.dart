@@ -391,10 +391,12 @@ class _ConnectButtonState extends State<ConnectButton>
                       ) {
                         return FadeTransition(
                           opacity: animation,
-                          child: ScaleTransition(
-                            scale: animation,
-                            child: child,
-                          ),
+                          child: child,
+                          // 这两个组件组合在一起会导致Impeller崩溃
+                          // child: ScaleTransition(
+                          //   scale: animation,
+                          //   child: child,
+                          // ),
                         );
                       },
                       child: _getButtonIcon(connectionState),
