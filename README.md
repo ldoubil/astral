@@ -19,7 +19,7 @@
   ![Repobeats](https://repobeats.axiom.co/api/embed/c8f00565120b9bd12bd4e50050e44b3515acb1cb.svg "Repobeats analytics image")
 </div>
 
-Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的 P2P 网络连接和 VPN 服务。通过 Flutter 构建的现代化界面，让用户能够轻松创建和管理虚拟网络。
+Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的 P2P 网络连接。通过 Flutter 构建的现代化界面，让用户能够轻松创建和管理虚拟网络。
 
 ## ✨ 主要特性
 
