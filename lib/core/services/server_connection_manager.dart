@@ -42,8 +42,25 @@ class ServerConnectionManager {
   /// 获取连接时长
   int get connectionDuration => _connectionDuration;
 
-  /// 开始连接流程
-  Future<bool> connect() async {
+  /// 获取当前重试次数
+  int get currentRetryCount => _currentRetryCount;
+
+  /// 取消当前连接（包括重试）
+  Future<void> cancelConnection() async {
+    debugPrint('🚫 用户取消连接');
+    
+    // 完成 Completer（如果存在且未完成）
+    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+      _connectionCompleter!.complete(false);
+    }
+    
+    // 立即断开连接
+    await disconnect();
+  }
+
+  /// 开始连接流程（手动连接）
+  /// 返回值：true=成功, false=失败, null=用户取消
+  Future<bool?> connect({bool isManual = true}) async {
     final services = ServiceManager();
 
     // 检查状态
@@ -54,23 +71,43 @@ class ServerConnectionManager {
     final room = services.roomState.selectedRoom.value;
     if (room == null) return false;
 
+    // 如果是手动连接，清空重试次数
+    if (isManual) {
+      _currentRetryCount = 0;
+      _isManualConnect = true;
+      debugPrint('👤 手动连接，清空重试次数');
+    } else {
+      _isManualConnect = false;
+    }
+
+    // 创建 Completer 用于取消
+    _connectionCompleter = Completer<bool>();
+
     // 获取重试设置
     final autoRetry = services.appSettingsState.autoRetryOnFailure.value;
     final maxRetries = services.appSettingsState.maxRetryCount.value;
 
-    int attemptCount = 0;
     bool success = false;
 
     do {
-      attemptCount++;
+      _currentRetryCount++;
       
-      if (attemptCount > 1) {
-        debugPrint('🔄 第 $attemptCount 次尝试连接...');
+      if (_currentRetryCount > 1) {
+        debugPrint('🔄 第 $_currentRetryCount 次尝试连接...');
         // 等待一段时间再重试
         await Future.delayed(Duration(seconds: 2));
       }
 
       try {
+        // 检查是否被取消
+        if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
+          debugPrint('⚠️ 连接已被取消');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return null;  // 用户取消
+        }
+
         // 清理旧连接
         await closeServer();
 
@@ -83,6 +120,9 @@ class ServerConnectionManager {
 
         if (enabledServers.isEmpty && !hasRoomServers) {
           debugPrint('⚠️ 没有可用的服务器');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
           return false;
         }
 
@@ -101,16 +141,35 @@ class ServerConnectionManager {
         // 等待连接结果
         success = await _waitForConnectionResult();
         
+        // 检查是否被取消
+        if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
+          debugPrint('⚠️ 连接已被取消');
+          await disconnect();
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return null;  // 用户取消
+        }
+        
         if (success) {
+          _currentRetryCount = 0; // 连接成功，重置计数器
+          if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+            _connectionCompleter!.complete(true);
+          }
+          _connectionCompleter = null;
           return true;
         }
         
         // 如果连接失败且不需要重试，则退出
-        if (!autoRetry || attemptCount >= maxRetries) {
-          debugPrint('❌ 连接失败，已达到最大重试次数');
+        if (!autoRetry || _currentRetryCount >= maxRetries) {
+          debugPrint('❌ 连接失败，已达到最大重试次数 ($_currentRetryCount/$maxRetries)');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
+          if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+            _connectionCompleter!.complete(false);
+          }
+          _connectionCompleter = null;
           return false;
         }
         
@@ -119,28 +178,75 @@ class ServerConnectionManager {
         // 断开当前失败的连接
         await disconnect();
         
-      } catch (e) {
-        debugPrint('❌ 连接异常: $e');
-        
-        // 如果连接失败且不需要重试，则退出
-        if (!autoRetry || attemptCount >= maxRetries) {
+        // 检查是否在断开后被取消（Completer 已被清空）
+        if (_connectionCompleter == null) {
+          debugPrint('⚠️ 连接已被取消，停止重试');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
+          return null;  // 用户取消
+        }
+        
+      } catch (e) {
+        debugPrint('❌ 连接异常: $e');
+        
+        // 检查是否被取消
+        if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
+          debugPrint('⚠️ 连接已被取消');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return null;  // 用户取消
+        }
+        
+        // 如果连接失败且不需要重试，则退出
+        if (!autoRetry || _currentRetryCount >= maxRetries) {
+          debugPrint('❌ 连接异常，已达到最大重试次数 ($_currentRetryCount/$maxRetries)');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+            _connectionCompleter!.complete(false);
+          }
+          _connectionCompleter = null;
           return false;
         }
         
         // 断开当前失败的连接
         await disconnect();
+        
+        // 检查是否在断开后被取消（Completer 已被清空）
+        if (_connectionCompleter == null) {
+          debugPrint('⚠️ 连接已被取消，停止重试');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return null;  // 用户取消
+        }
       }
-    } while (autoRetry && attemptCount < maxRetries);
+    } while (autoRetry && _currentRetryCount < maxRetries);
 
+    // 完成 Completer（如果存在且未完成）
+    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+      _connectionCompleter!.complete(false);
+    }
+    _connectionCompleter = null;
     return false;
   }
 
   /// 断开连接
   Future<void> disconnect() async {
     final services = ServiceManager();
+
+    // 取消正在进行的连接（如果存在且未完成）
+    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+      _connectionCompleter!.complete(false);
+    }
+    _connectionCompleter = null;
+    
+    // 清空重试计数
+    _currentRetryCount = 0;
+    _isManualConnect = false;
 
     batch(() {
       services.connectionState.isConnecting.value = false;
@@ -440,5 +546,13 @@ class ServerConnectionManager {
     _statusCheckTimer?.cancel();
     _networkMonitorTimer?.cancel();
     _timeoutTimer?.cancel();
+    
+    // 取消正在进行的连接（如果存在且未完成）
+    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+      _connectionCompleter!.complete(false);
+    }
+    _connectionCompleter = null;
+    _currentRetryCount = 0;
+    _isManualConnect = false;
   }
 }

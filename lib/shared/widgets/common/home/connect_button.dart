@@ -105,9 +105,11 @@ class _ConnectButtonState extends State<ConnectButton>
       }
     }
 
-    // 调用连接管理器
-    final success = await ServerConnectionManager.instance.connect();
-    if (!success && mounted) {
+    // 调用连接管理器（手动连接）
+    final success = await ServerConnectionManager.instance.connect(isManual: true);
+    
+    // 只有当返回 false（失败）时才显示提示，null（取消）不显示
+    if (success == false && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('连接失败'),
@@ -220,12 +222,15 @@ class _ConnectButtonState extends State<ConnectButton>
   }
 
   /// 切换连接状态
-  void _toggleConnection() {
+  Future<void> _toggleConnection() async {
     final state = ServiceManager().connectionState.connectionState.value;
     if (state == CoState.idle) {
-      _handleConnect();
+      await _handleConnect();
+    } else if (state == CoState.connecting) {
+      // 连接中时，点击可以取消
+      await ServerConnectionManager.instance.cancelConnection();
     } else if (state == CoState.connected) {
-      _handleDisconnect();
+      await _handleDisconnect();
     }
   }
 
@@ -243,7 +248,7 @@ class _ConnectButtonState extends State<ConnectButton>
             return Transform.rotate(
               angle: _animationController.value * 2 * pi,
               child: const Icon(
-                Icons.sync_rounded,
+                Icons.close_rounded, // 取消图标
                 key: ValueKey('connecting_icon'),
               ),
             );
@@ -260,7 +265,7 @@ class _ConnectButtonState extends State<ConnectButton>
       case CoState.idle:
         text = '连接';
       case CoState.connecting:
-        text = '连接中...';
+        text = '点击取消'; // 提示用户可以取消
       case CoState.connected:
         text = '已连接';
     }
@@ -277,7 +282,7 @@ class _ConnectButtonState extends State<ConnectButton>
       case CoState.idle:
         return colorScheme.primary;
       case CoState.connecting:
-        return colorScheme.surfaceVariant;
+        return colorScheme.error; // 使用错误色表示可以取消
       case CoState.connected:
         return colorScheme.tertiary;
     }
@@ -288,7 +293,7 @@ class _ConnectButtonState extends State<ConnectButton>
       case CoState.idle:
         return colorScheme.onPrimary;
       case CoState.connecting:
-        return colorScheme.onSurfaceVariant;
+        return colorScheme.onError; // 白色文字
       case CoState.connected:
         return colorScheme.onTertiary;
     }
@@ -371,10 +376,7 @@ class _ConnectButtonState extends State<ConnectButton>
                   width: connectionState != CoState.idle ? 180 : 100,
                   height: 60,
                   child: FloatingActionButton.extended(
-                    onPressed:
-                        connectionState == CoState.connecting
-                            ? null
-                            : _toggleConnection,
+                    onPressed: _toggleConnection, // 所有状态都可以点击
                     heroTag: "connect_button",
                     extendedPadding: const EdgeInsets.symmetric(horizontal: 2),
                     splashColor:

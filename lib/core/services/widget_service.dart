@@ -15,7 +15,7 @@ Future<void> backgroundCallback(Uri? uri) async {
     
     final state = ServiceManager().connectionState.connectionState.value;
     if (state == CoState.idle) {
-      await ServerConnectionManager.instance.connect();
+      await ServerConnectionManager.instance.connect(isManual: false); // 自动连接
     } else if (state == CoState.connected) {
       await ServerConnectionManager.instance.disconnect();
     }
@@ -49,7 +49,7 @@ class WidgetService {
       if (uri != null && uri.scheme == 'astral' && uri.host == 'toggle_connection') {
         final state = ServiceManager().connectionState.connectionState.value;
         if (state == CoState.idle) {
-          ServerConnectionManager.instance.connect();
+          ServerConnectionManager.instance.connect(isManual: false); // 自动连接
         } else if (state == CoState.connected) {
           ServerConnectionManager.instance.disconnect();
         }
