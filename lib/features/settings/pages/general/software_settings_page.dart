@@ -178,10 +178,9 @@ class _SoftwareSettingsPageState
 
   @override
   Widget buildContent(BuildContext context) {
-    return Watch((context) {
-      return ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
           buildSettingsCard(
             context: context,
             children: [
@@ -211,7 +210,7 @@ class _SoftwareSettingsPageState
                 SwitchListTile(
                   title: Text(LocaleKeys.minimize.tr()),
                   subtitle: Text(LocaleKeys.minimize_desc.tr()),
-                  value: ServiceManager().windowState.closeMinimize.value,
+                  value: ServiceManager().windowState.closeMinimize.watch(context),
                   onChanged: (value) {
                     ServiceManager().appSettings.updateCloseMinimize(value);
                   },
@@ -219,7 +218,7 @@ class _SoftwareSettingsPageState
               SwitchListTile(
                 title: Text(LocaleKeys.player_list_card.tr()),
                 subtitle: Text(LocaleKeys.player_list_card_desc.tr()),
-                value: ServiceManager().displayState.userListSimple.value,
+                value: ServiceManager().displayState.userListSimple.watch(context),
                 onChanged: (value) {
                   ServiceManager().appSettings.setUserListSimple(value);
                 },
@@ -238,6 +237,54 @@ class _SoftwareSettingsPageState
             ],
           ),
           const SizedBox(height: 16),
+          buildSettingsCard(
+            context: context,
+            children: [
+              ListTile(
+                title: const Text('连接设置'),
+                subtitle: const Text('配置连接重试行为'),
+                leading: const Icon(Icons.sync),
+              ),
+              buildDivider(),
+              SwitchListTile(
+                title: const Text('连接失败自动重试'),
+                subtitle: const Text('连接失败时自动重新尝试连接'),
+                value: ServiceManager().appSettingsState.autoRetryOnFailure.value,
+                onChanged: (value) async {
+                  await ServiceManager().appSettings.updateAutoRetryOnFailure(
+                    value,
+                  );
+                },
+              ),
+              if (ServiceManager().appSettingsState.autoRetryOnFailure.value)
+                ListTile(
+                  title: const Text('最大重试次数'),
+                  subtitle: Text(
+                    '当前设置为 ${ServiceManager().appSettingsState.maxRetryCount.value} 次',
+                  ),
+                  trailing: SizedBox(
+                    width: 100,
+                    child: DropdownButton<int>(
+                      value: ServiceManager().appSettingsState.maxRetryCount.value,
+                      isExpanded: true,
+                      items: [1, 2, 3, 5, 10].map((int count) {
+                        return DropdownMenuItem<int>(
+                          value: count,
+                          child: Text('$count 次'),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) async {
+                        if (newValue != null) {
+                          await ServiceManager().appSettings.updateMaxRetryCount(
+                            newValue,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
           if (Platform.isAndroid)
             buildSettingsCard(
               context: context,
@@ -288,6 +335,5 @@ class _SoftwareSettingsPageState
             ),
         ],
       );
-    });
   }
 }

@@ -25,6 +25,9 @@ class ServerConnectionManager {
   Timer? _timeoutTimer;
   bool _isMonitoringNetwork = false;
   int _connectionDuration = 0;
+  int _currentRetryCount = 0; // 当前重试次数
+  bool _isManualConnect = false; // 是否为手动连接
+  Completer<bool>? _connectionCompleter; // 用于取消连接的 Completer
 
   static const int connectionTimeoutSeconds = 15;
 
@@ -51,42 +54,88 @@ class ServerConnectionManager {
     final room = services.roomState.selectedRoom.value;
     if (room == null) return false;
 
-    // 清理旧连接
-    await closeServer();
+    // 获取重试设置
+    final autoRetry = services.appSettingsState.autoRetryOnFailure.value;
+    final maxRetries = services.appSettingsState.maxRetryCount.value;
 
-    // 检查服务器配置
-    final enabledServers =
-        services.serverState.servers.value
-            .where((server) => server.enable)
-            .toList();
-    final hasRoomServers = room.servers.isNotEmpty;
+    int attemptCount = 0;
+    bool success = false;
 
-    if (enabledServers.isEmpty && !hasRoomServers) {
-      debugPrint('⚠️ 没有可用的服务器');
-      return false;
-    }
-
-    try {
-      // 准备VPN（Android）
-      if (Platform.isAndroid) {
-        await NotificationService.instance.initialize();
-        await VpnManager.instance.prepare();
+    do {
+      attemptCount++;
+      
+      if (attemptCount > 1) {
+        debugPrint('🔄 第 $attemptCount 次尝试连接...');
+        // 等待一段时间再重试
+        await Future.delayed(Duration(seconds: 2));
       }
 
-      // 初始化服务器
-      await _initializeServer(room);
+      try {
+        // 清理旧连接
+        await closeServer();
 
-      // 开始连接流程
-      await _beginConnectionProcess();
+        // 检查服务器配置
+        final enabledServers =
+            services.serverState.servers.value
+                .where((server) => server.enable)
+                .toList();
+        final hasRoomServers = room.servers.isNotEmpty;
 
-      return true;
-    } catch (e) {
-      debugPrint('❌ 连接失败: $e');
-      batch(() {
-        services.connectionState.connectionState.value = CoState.idle;
-      });
-      return false;
-    }
+        if (enabledServers.isEmpty && !hasRoomServers) {
+          debugPrint('⚠️ 没有可用的服务器');
+          return false;
+        }
+
+        // 准备VPN（Android）
+        if (Platform.isAndroid) {
+          await NotificationService.instance.initialize();
+          await VpnManager.instance.prepare();
+        }
+
+        // 初始化服务器
+        await _initializeServer(room);
+
+        // 开始连接流程
+        await _beginConnectionProcess();
+
+        // 等待连接结果
+        success = await _waitForConnectionResult();
+        
+        if (success) {
+          return true;
+        }
+        
+        // 如果连接失败且不需要重试，则退出
+        if (!autoRetry || attemptCount >= maxRetries) {
+          debugPrint('❌ 连接失败，已达到最大重试次数');
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return false;
+        }
+        
+        debugPrint('⚠️ 连接失败，准备重试...');
+        
+        // 断开当前失败的连接
+        await disconnect();
+        
+      } catch (e) {
+        debugPrint('❌ 连接异常: $e');
+        
+        // 如果连接失败且不需要重试，则退出
+        if (!autoRetry || attemptCount >= maxRetries) {
+          batch(() {
+            services.connectionState.connectionState.value = CoState.idle;
+          });
+          return false;
+        }
+        
+        // 断开当前失败的连接
+        await disconnect();
+      }
+    } while (autoRetry && attemptCount < maxRetries);
+
+    return false;
   }
 
   /// 断开连接
@@ -185,6 +234,26 @@ class ServerConnectionManager {
 
     // 启动状态检查
     _startConnectionStatusCheck();
+  }
+
+  /// 等待连接结果
+  Future<bool> _waitForConnectionResult() async {
+    final services = ServiceManager();
+    
+    // 等待最多30秒来确认连接状态
+    for (int i = 0; i < 30; i++) {
+      await Future.delayed(Duration(seconds: 1));
+      
+      final currentState = services.connectionState.connectionState.value;
+      if (currentState == CoState.connected) {
+        return true;
+      } else if (currentState == CoState.idle) {
+        return false;
+      }
+    }
+    
+    // 超时仍未确定状态，视为失败
+    return false;
   }
 
   /// 设置连接超时

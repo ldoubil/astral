@@ -66,6 +66,9 @@ class AppSettingsService {
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
     appSettingsState.updateEnableConnectionNotification(settings.enableConnectionNotification);
+    // TODO: 临时注释以调试 SignalEffectException
+    // appSettingsState.updateAutoRetryOnFailure(settings.autoRetryOnFailure);
+    // appSettingsState.updateMaxRetryCount(settings.maxRetryCount);
     notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
 
     windowState.setCloseMinimize(settings.closeMinimize);
@@ -179,6 +182,16 @@ class AppSettingsService {
     if (!enable && Platform.isAndroid) {
       await NotificationService.instance.cancelConnectionNotification();
     }
+  }
+
+  Future<void> updateAutoRetryOnFailure(bool enable) async {
+    appSettingsState.updateAutoRetryOnFailure(enable);
+    await _repository.setAutoRetryOnFailure(enable);
+  }
+
+  Future<void> updateMaxRetryCount(int count) async {
+    appSettingsState.updateMaxRetryCount(count);
+    await _repository.setMaxRetryCount(count);
   }
 
   Future<void> updateHasShownBannerTip(bool hasShown) async {

@@ -22,92 +22,102 @@ const AllSettingsSchema = CollectionSchema(
       name: r'autoCheckUpdate',
       type: IsarType.bool,
     ),
-    r'autoSetMTU': PropertySchema(
+    r'autoRetryOnFailure': PropertySchema(
       id: 1,
+      name: r'autoRetryOnFailure',
+      type: IsarType.bool,
+    ),
+    r'autoSetMTU': PropertySchema(
+      id: 2,
       name: r'autoSetMTU',
       type: IsarType.bool,
     ),
-    r'beta': PropertySchema(id: 2, name: r'beta', type: IsarType.bool),
+    r'beta': PropertySchema(id: 3, name: r'beta', type: IsarType.bool),
     r'closeMinimize': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'closeMinimize',
       type: IsarType.bool,
     ),
     r'customVpn': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'customVpn',
       type: IsarType.stringList,
     ),
     r'displayMode': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'displayMode',
       type: IsarType.long,
     ),
     r'downloadAccelerate': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'downloadAccelerate',
       type: IsarType.string,
     ),
     r'enableBannerCarousel': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'enableBannerCarousel',
       type: IsarType.bool,
     ),
     r'enableConnectionNotification': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'enableConnectionNotification',
       type: IsarType.bool,
     ),
     r'hasShownBannerTip': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'hasShownBannerTip',
       type: IsarType.bool,
     ),
     r'latestVersion': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'latestVersion',
       type: IsarType.string,
     ),
     r'listenList': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'listenList',
       type: IsarType.stringList,
     ),
+    r'maxRetryCount': PropertySchema(
+      id: 13,
+      name: r'maxRetryCount',
+      type: IsarType.long,
+    ),
     r'playerName': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'playerName',
       type: IsarType.string,
     ),
-    r'room': PropertySchema(id: 13, name: r'room', type: IsarType.long),
+    r'room': PropertySchema(id: 15, name: r'room', type: IsarType.long),
     r'serverSortField': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'serverSortField',
       type: IsarType.string,
     ),
     r'sortOption': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'sortOption',
       type: IsarType.long,
     ),
     r'sortOrder': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'startup': PropertySchema(id: 17, name: r'startup', type: IsarType.bool),
+    r'startup': PropertySchema(id: 19, name: r'startup', type: IsarType.bool),
     r'startupAutoConnect': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'startupAutoConnect',
       type: IsarType.bool,
     ),
     r'startupMinimize': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'startupMinimize',
       type: IsarType.bool,
     ),
-    r'userId': PropertySchema(id: 20, name: r'userId', type: IsarType.string),
+    r'userId': PropertySchema(id: 22, name: r'userId', type: IsarType.string),
     r'userListSimple': PropertySchema(
-      id: 21,
+      id: 23,
       name: r'userListSimple',
       type: IsarType.bool,
     ),
@@ -183,27 +193,29 @@ void _allSettingsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeBool(offsets[0], object.autoCheckUpdate);
-  writer.writeBool(offsets[1], object.autoSetMTU);
-  writer.writeBool(offsets[2], object.beta);
-  writer.writeBool(offsets[3], object.closeMinimize);
-  writer.writeStringList(offsets[4], object.customVpn);
-  writer.writeLong(offsets[5], object.displayMode);
-  writer.writeString(offsets[6], object.downloadAccelerate);
-  writer.writeBool(offsets[7], object.enableBannerCarousel);
-  writer.writeBool(offsets[8], object.enableConnectionNotification);
-  writer.writeBool(offsets[9], object.hasShownBannerTip);
-  writer.writeString(offsets[10], object.latestVersion);
-  writer.writeStringList(offsets[11], object.listenList);
-  writer.writeString(offsets[12], object.playerName);
-  writer.writeLong(offsets[13], object.room);
-  writer.writeString(offsets[14], object.serverSortField);
-  writer.writeLong(offsets[15], object.sortOption);
-  writer.writeLong(offsets[16], object.sortOrder);
-  writer.writeBool(offsets[17], object.startup);
-  writer.writeBool(offsets[18], object.startupAutoConnect);
-  writer.writeBool(offsets[19], object.startupMinimize);
-  writer.writeString(offsets[20], object.userId);
-  writer.writeBool(offsets[21], object.userListSimple);
+  writer.writeBool(offsets[1], object.autoRetryOnFailure);
+  writer.writeBool(offsets[2], object.autoSetMTU);
+  writer.writeBool(offsets[3], object.beta);
+  writer.writeBool(offsets[4], object.closeMinimize);
+  writer.writeStringList(offsets[5], object.customVpn);
+  writer.writeLong(offsets[6], object.displayMode);
+  writer.writeString(offsets[7], object.downloadAccelerate);
+  writer.writeBool(offsets[8], object.enableBannerCarousel);
+  writer.writeBool(offsets[9], object.enableConnectionNotification);
+  writer.writeBool(offsets[10], object.hasShownBannerTip);
+  writer.writeString(offsets[11], object.latestVersion);
+  writer.writeStringList(offsets[12], object.listenList);
+  writer.writeLong(offsets[13], object.maxRetryCount);
+  writer.writeString(offsets[14], object.playerName);
+  writer.writeLong(offsets[15], object.room);
+  writer.writeString(offsets[16], object.serverSortField);
+  writer.writeLong(offsets[17], object.sortOption);
+  writer.writeLong(offsets[18], object.sortOrder);
+  writer.writeBool(offsets[19], object.startup);
+  writer.writeBool(offsets[20], object.startupAutoConnect);
+  writer.writeBool(offsets[21], object.startupMinimize);
+  writer.writeString(offsets[22], object.userId);
+  writer.writeBool(offsets[23], object.userListSimple);
 }
 
 AllSettings _allSettingsDeserialize(
@@ -214,28 +226,30 @@ AllSettings _allSettingsDeserialize(
 ) {
   final object = AllSettings();
   object.autoCheckUpdate = reader.readBool(offsets[0]);
-  object.autoSetMTU = reader.readBool(offsets[1]);
-  object.beta = reader.readBool(offsets[2]);
-  object.closeMinimize = reader.readBool(offsets[3]);
-  object.customVpn = reader.readStringList(offsets[4]) ?? [];
-  object.displayMode = reader.readLong(offsets[5]);
-  object.downloadAccelerate = reader.readString(offsets[6]);
-  object.enableBannerCarousel = reader.readBool(offsets[7]);
-  object.enableConnectionNotification = reader.readBool(offsets[8]);
-  object.hasShownBannerTip = reader.readBool(offsets[9]);
+  object.autoRetryOnFailure = reader.readBool(offsets[1]);
+  object.autoSetMTU = reader.readBool(offsets[2]);
+  object.beta = reader.readBool(offsets[3]);
+  object.closeMinimize = reader.readBool(offsets[4]);
+  object.customVpn = reader.readStringList(offsets[5]) ?? [];
+  object.displayMode = reader.readLong(offsets[6]);
+  object.downloadAccelerate = reader.readString(offsets[7]);
+  object.enableBannerCarousel = reader.readBool(offsets[8]);
+  object.enableConnectionNotification = reader.readBool(offsets[9]);
+  object.hasShownBannerTip = reader.readBool(offsets[10]);
   object.id = id;
-  object.latestVersion = reader.readStringOrNull(offsets[10]);
-  object.listenList = reader.readStringList(offsets[11]);
-  object.playerName = reader.readStringOrNull(offsets[12]);
-  object.room = reader.readLongOrNull(offsets[13]);
-  object.serverSortField = reader.readString(offsets[14]);
-  object.sortOption = reader.readLong(offsets[15]);
-  object.sortOrder = reader.readLong(offsets[16]);
-  object.startup = reader.readBool(offsets[17]);
-  object.startupAutoConnect = reader.readBool(offsets[18]);
-  object.startupMinimize = reader.readBool(offsets[19]);
-  object.userId = reader.readStringOrNull(offsets[20]);
-  object.userListSimple = reader.readBool(offsets[21]);
+  object.latestVersion = reader.readStringOrNull(offsets[11]);
+  object.listenList = reader.readStringList(offsets[12]);
+  object.maxRetryCount = reader.readLong(offsets[13]);
+  object.playerName = reader.readStringOrNull(offsets[14]);
+  object.room = reader.readLongOrNull(offsets[15]);
+  object.serverSortField = reader.readString(offsets[16]);
+  object.sortOption = reader.readLong(offsets[17]);
+  object.sortOrder = reader.readLong(offsets[18]);
+  object.startup = reader.readBool(offsets[19]);
+  object.startupAutoConnect = reader.readBool(offsets[20]);
+  object.startupMinimize = reader.readBool(offsets[21]);
+  object.userId = reader.readStringOrNull(offsets[22]);
+  object.userListSimple = reader.readBool(offsets[23]);
   return object;
 }
 
@@ -255,40 +269,44 @@ P _allSettingsDeserializeProp<P>(
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 5:
-      return (reader.readLong(offset)) as P;
-    case 6:
-      return (reader.readString(offset)) as P;
-    case 7:
       return (reader.readBool(offset)) as P;
+    case 5:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 6:
+      return (reader.readLong(offset)) as P;
+    case 7:
+      return (reader.readString(offset)) as P;
     case 8:
       return (reader.readBool(offset)) as P;
     case 9:
       return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readStringList(offset)) as P;
-    case 12:
       return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readStringList(offset)) as P;
     case 13:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 14:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 16:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 17:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 18:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 19:
       return (reader.readBool(offset)) as P;
     case 20:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 21:
+      return (reader.readBool(offset)) as P;
+    case 22:
+      return (reader.readStringOrNull(offset)) as P;
+    case 23:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -400,6 +418,15 @@ extension AllSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'autoCheckUpdate', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  autoRetryOnFailureEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'autoRetryOnFailure', value: value),
       );
     });
   }
@@ -1286,6 +1313,61 @@ extension AllSettingsQueryFilter
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  maxRetryCountEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'maxRetryCount', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  maxRetryCountGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'maxRetryCount',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  maxRetryCountLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'maxRetryCount',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  maxRetryCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'maxRetryCount',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
   playerNameIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -1994,6 +2076,20 @@ extension AllSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  sortByAutoRetryOnFailure() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRetryOnFailure', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  sortByAutoRetryOnFailureDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRetryOnFailure', Sort.desc);
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByAutoSetMTU() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'autoSetMTU', Sort.asc);
@@ -2109,6 +2205,19 @@ extension AllSettingsQuerySortBy
   sortByLatestVersionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'latestVersion', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByMaxRetryCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'maxRetryCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  sortByMaxRetryCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'maxRetryCount', Sort.desc);
     });
   }
 
@@ -2253,6 +2362,20 @@ extension AllSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  thenByAutoRetryOnFailure() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRetryOnFailure', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  thenByAutoRetryOnFailureDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoRetryOnFailure', Sort.desc);
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByAutoSetMTU() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'autoSetMTU', Sort.asc);
@@ -2380,6 +2503,19 @@ extension AllSettingsQuerySortThenBy
   thenByLatestVersionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'latestVersion', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByMaxRetryCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'maxRetryCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  thenByMaxRetryCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'maxRetryCount', Sort.desc);
     });
   }
 
@@ -2518,6 +2654,13 @@ extension AllSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QDistinct>
+  distinctByAutoRetryOnFailure() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'autoRetryOnFailure');
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByAutoSetMTU() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'autoSetMTU');
@@ -2593,6 +2736,12 @@ extension AllSettingsQueryWhereDistinct
   QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByListenList() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'listenList');
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByMaxRetryCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'maxRetryCount');
     });
   }
 
@@ -2682,6 +2831,13 @@ extension AllSettingsQueryProperty
     });
   }
 
+  QueryBuilder<AllSettings, bool, QQueryOperations>
+  autoRetryOnFailureProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'autoRetryOnFailure');
+    });
+  }
+
   QueryBuilder<AllSettings, bool, QQueryOperations> autoSetMTUProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'autoSetMTU');
@@ -2751,6 +2907,12 @@ extension AllSettingsQueryProperty
   listenListProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'listenList');
+    });
+  }
+
+  QueryBuilder<AllSettings, int, QQueryOperations> maxRetryCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'maxRetryCount');
     });
   }
 

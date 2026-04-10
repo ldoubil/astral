@@ -14,6 +14,12 @@ class AppSettingsState {
   // 启用连接状态栏通知
   final enableConnectionNotification = signal(true);
 
+  // 连接失败自动重试
+  final autoRetryOnFailure = signal(true);
+
+  // 最大重试次数
+  final maxRetryCount = signal(3);
+
   // 日志列表
   final logs = signal<List<String>>([]);
 
@@ -35,6 +41,16 @@ class AppSettingsState {
   // 更新连接状态栏通知开关
   void updateEnableConnectionNotification(bool value) {
     enableConnectionNotification.value = value;
+  }
+
+  // 更新连接失败自动重试开关
+  void updateAutoRetryOnFailure(bool value) {
+    autoRetryOnFailure.value = value;
+  }
+
+  // 更新最大重试次数
+  void updateMaxRetryCount(int value) {
+    maxRetryCount.value = value;
   }
 
   // 添加日志

@@ -94,6 +94,15 @@ class AppSettingsRepository {
   Future<void> setAutoSetMTU(bool value) =>
       _db.AllSettings.setAutoSetMTU(value);
 
+  // ========== 连接重试设置 ==========
+
+  Future<bool> getAutoRetryOnFailure() => _db.AllSettings.getAutoRetryOnFailure();
+  Future<void> setAutoRetryOnFailure(bool value) =>
+      _db.AllSettings.setAutoRetryOnFailure(value);
+  Future<int> getMaxRetryCount() => _db.AllSettings.getMaxRetryCount();
+  Future<void> setMaxRetryCount(int value) =>
+      _db.AllSettings.setMaxRetryCount(value);
+
   // ========== 批量操作 ==========
 
   Future<AppSettings> loadAll() async {
@@ -117,6 +126,8 @@ class AppSettingsRepository {
       closeMinimize: await getCloseMinimize(),
       customVpn: await getCustomVpn(),
       autoSetMTU: await getAutoSetMTU(),
+      autoRetryOnFailure: await getAutoRetryOnFailure(),
+      maxRetryCount: await getMaxRetryCount(),
     );
   }
 }
@@ -142,6 +153,8 @@ class AppSettings {
   final bool closeMinimize;
   final List<String> customVpn;
   final bool autoSetMTU;
+  final bool autoRetryOnFailure;
+  final int maxRetryCount;
 
   AppSettings({
     required this.playerName,
@@ -163,5 +176,7 @@ class AppSettings {
     required this.closeMinimize,
     required this.customVpn,
     required this.autoSetMTU,
+    required this.autoRetryOnFailure,
+    required this.maxRetryCount,
   });
 }

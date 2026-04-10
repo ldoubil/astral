@@ -71,4 +71,10 @@ class AllSettings {
 
   /// 是否已显示轮播图首次提示
   bool hasShownBannerTip = false;
+
+  /// 连接失败自动重试
+  bool autoRetryOnFailure = true;
+
+  /// 最大重试次数
+  int maxRetryCount = 3;
 }
