@@ -93,13 +93,10 @@ class _ExplorePageState extends State<ExplorePage> {
           .get(Uri.parse('https://astral.fan/servers.json'))
           .timeout(const Duration(seconds: 10));
 
-      print('📡 服务器列表API响应: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
 
         if (!jsonData.containsKey('mcservers')) {
-          print('⚠️ 响应中缺少 mcservers 字段');
           throw '服务器配置格式错误';
         }
 
@@ -117,19 +114,15 @@ class _ExplorePageState extends State<ExplorePage> {
             _isLoadingServers = false;
           });
         }
-        print('✅ 已加载 ${_servers.length} 个服务器配置');
       } else {
-        print('❌ HTTP错误: ${response.statusCode}');
         throw '服务器返回错误: ${response.statusCode}';
       }
     } on TimeoutException {
-      print('⏱️ 加载服务器列表超时');
       if (mounted) {
         setState(() {
           _isLoadingServers = false;
         });
       }
-      _showErrorSnackBar('加载服务器列表超时，请检查网络连接');
     } catch (e) {
       print('❌ 加载服务器配置失败: $e');
       if (mounted) {
@@ -137,7 +130,6 @@ class _ExplorePageState extends State<ExplorePage> {
           _isLoadingServers = false;
         });
       }
-      _showErrorSnackBar('加载服务器列表失败: ${e.toString()}');
     }
   }
 
@@ -453,24 +445,25 @@ class _ExplorePageState extends State<ExplorePage> {
       return [];
     }
 
-    final serverCards = _servers.map((server) {
-      final serverKey = '${server.host}:${server.port}';
-      final isConnected = _connections.containsKey(serverKey);
-      final localPort = _connections[serverKey]?.localPort;
+    final serverCards =
+        _servers.map((server) {
+          final serverKey = '${server.host}:${server.port}';
+          final isConnected = _connections.containsKey(serverKey);
+          final localPort = _connections[serverKey]?.localPort;
 
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: MinecraftServerCard(
-          host: server.host,
-          port: server.port,
-          isConnected: isConnected,
-          localPort: localPort,
-          onToggleConnection: (_) {
-            _toggleConnection(server);
-          },
-        ),
-      );
-    }).toList();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: MinecraftServerCard(
+              host: server.host,
+              port: server.port,
+              isConnected: isConnected,
+              localPort: localPort,
+              onToggleConnection: (_) {
+                _toggleConnection(server);
+              },
+            ),
+          );
+        }).toList();
 
     return [
       _buildSectionTitle(context, '服务器推荐'),
