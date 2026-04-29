@@ -82,7 +82,6 @@ class ServerConnectionManager {
         final hasRoomServers = room.servers.isNotEmpty;
 
         if (enabledServers.isEmpty && !hasRoomServers) {
-          debugPrint('⚠️ 没有可用的服务器');
           return false;
         }
 
@@ -107,20 +106,17 @@ class ServerConnectionManager {
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || attemptCount >= maxRetries) {
-          debugPrint('❌ 连接失败，已达到最大重试次数');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
           return false;
         }
         
-        debugPrint('⚠️ 连接失败，准备重试...');
         
         // 断开当前失败的连接
         await disconnect();
         
       } catch (e) {
-        debugPrint('❌ 连接异常: $e');
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || attemptCount >= maxRetries) {
