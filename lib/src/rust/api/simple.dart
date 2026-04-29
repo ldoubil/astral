@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'p2p.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `create_and_store_network_instance`, `peer_conn_info_to_string`
@@ -64,17 +65,8 @@ Future<KVNetworkStatus> getNetworkStatus() =>
 
 Future<void> initApp() => RustLib.instance.api.crateApiSimpleInitApp();
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<EventBusSubscriber>>
-abstract class EventBusSubscriber implements RustOpaqueInterface {}
-
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< JoinHandle < () >>>
-abstract class JoinHandle implements RustOpaqueInterface {}
-
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<JoinHandle < Result < () , String > >>>
 abstract class JoinHandleResultString implements RustOpaqueInterface {}
-
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<PeerRoutePair>>
-abstract class PeerRoutePair implements RustOpaqueInterface {}
 
 class FlagsC {
   final String defaultProtocol;

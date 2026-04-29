@@ -6,18 +6,17 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `create_binding_request_with_change`, `create_binding_request`, `detect_nat_type_rfc5780`, `generate_transaction_id`, `parse_address_attribute`, `parse_stun_response`, `test_udp_ipv4`, `test_udp_ipv6_nat`
+// These functions are ignored because they are not marked as `pub`: `build_udp_stun_server_list`, `create_binding_request`, `detect_nat_type_ipv4`, `is_success_stun_response`, `map_easy_nat_type`, `normalize_stun_server`, `test_udp_ipv4`, `test_udp_ipv6`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `eq`, `fmt`, `fmt`
 
-/// 综合网络测试 - Flutter 友好的 API
-/// NAT 类型检测（RFC 5780）
+/// NAT test entry for Flutter.
 Future<NetworkTestResult> testNetworkConnectivity({
   required String stunServer,
 }) => RustLib.instance.api.crateApiNatTestTestNetworkConnectivity(
   stunServer: stunServer,
 );
 
-/// 检测 IPv4 NAT 类型（向后兼容）
+/// Backward-compatible API: detect IPv4 NAT type.
 Future<String> detectNatType({required String stunServer}) =>
     RustLib.instance.api.crateApiNatTestDetectNatType(stunServer: stunServer);
 
@@ -35,7 +34,6 @@ enum NatType {
       RustLib.instance.api.crateApiNatTestNatTypeGetDescription(that: this);
 }
 
-/// NAT 检测结果（RFC 5780）
 class NetworkTestResult {
   final String natTypeV4;
   final String natTypeV6;
