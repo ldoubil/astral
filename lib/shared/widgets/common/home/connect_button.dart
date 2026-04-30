@@ -34,7 +34,7 @@ class _ConnectButtonState extends State<ConnectButton>
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    );
 
     // 初始化服务
     if (Platform.isAndroid) {
@@ -308,6 +308,18 @@ class _ConnectButtonState extends State<ConnectButton>
       child: Watch((context) {
         final connectionState = ServiceManager().connectionState.connectionState
             .watch(context);
+
+        // 仅在连接中时播放动画，其他状态停止
+        if (connectionState == CoState.connecting) {
+          if (!_animationController.isAnimating) {
+            _animationController.repeat(reverse: true);
+          }
+        } else {
+          if (_animationController.isAnimating) {
+            _animationController.stop();
+            _animationController.reset();
+          }
+        }
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
