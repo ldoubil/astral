@@ -210,43 +210,7 @@ pub async fn is_easytier_running(instance_id: String) -> bool {
     MANAGER.list_network_instance_ids().contains(&id)
 }
 
-pub struct NodeHopStats {
-    pub peer_id: u32,
-    pub target_ip: String,
-    pub latency_ms: f64,
-    pub packet_loss: f32,
-    pub node_name: String,
-}
-
-pub struct KVNodeConnectionStats {
-    pub conn_type: String,
-    pub rx_bytes: u64,
-    pub tx_bytes: u64,
-    pub rx_packets: u64,
-    pub tx_packets: u64,
-}
-
-pub struct KVNodeInfo {
-    pub peer_id: u32,
-    pub hostname: String,
-    pub ipv4: String,
-    pub latency_ms: f64,
-    pub nat: String,
-    pub hops: Vec<NodeHopStats>,
-    pub loss_rate: f32,
-    pub connections: Vec<KVNodeConnectionStats>,
-    pub tunnel_proto: String,
-    pub conn_type: String,
-    pub rx_bytes: u64,
-    pub tx_bytes: u64,
-    pub version: String,
-    pub cost: i32,
-}
-
-pub struct KVNetworkStatus {
-    pub total_nodes: usize,
-    pub nodes: Vec<KVNodeInfo>,
-}
+pub use super::simple::{NodeHopStats, KVNodeConnectionStats, KVNodeInfo, KVNetworkStatus};
 
 pub async fn get_ips(instance_id: String) -> Vec<String> {
     let info = match get_instance_info(&instance_id).await {
@@ -303,42 +267,7 @@ pub async fn get_running_info(instance_id: String) -> String {
     .unwrap_or_else(|_| "null".to_string())
 }
 
-pub struct FlagsC {
-    pub default_protocol: String,
-    pub dev_name: String,
-    pub enable_encryption: bool,
-    pub enable_ipv6: bool,
-    pub mtu: u32,
-    pub latency_first: bool,
-    pub enable_exit_node: bool,
-    pub no_tun: bool,
-    pub use_smoltcp: bool,
-    pub relay_network_whitelist: String,
-    pub disable_p2p: bool,
-    pub relay_all_peer_rpc: bool,
-    pub disable_udp_hole_punching: bool,
-    pub disable_tcp_hole_punching: bool,
-    pub multi_thread: bool,
-    pub data_compress_algo: i32,
-    pub bind_device: bool,
-    pub enable_kcp_proxy: bool,
-    pub disable_kcp_input: bool,
-    pub disable_relay_kcp: bool,
-    pub proxy_forward_by_system: bool,
-    pub accept_dns: bool,
-    pub private_mode: bool,
-    pub enable_quic_proxy: bool,
-    pub disable_quic_input: bool,
-    pub disable_sym_hole_punching: bool,
-    pub tcp_whitelist: String,
-    pub udp_whitelist: String,
-}
-
-pub struct Forward {
-    pub bind_addr: String,
-    pub dst_addr: String,
-    pub proto: String,
-}
+pub use super::simple::{FlagsC, Forward};
 pub fn create_server(config_toml: String, watch_event: bool) -> JoinHandle<Result<String, String>> {
     RT.spawn(async move {
         let cfg = TomlConfigLoader::new_from_str(&config_toml)
