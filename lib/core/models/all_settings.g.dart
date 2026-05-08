@@ -88,36 +88,41 @@ const AllSettingsSchema = CollectionSchema(
       name: r'playerName',
       type: IsarType.string,
     ),
-    r'room': PropertySchema(id: 15, name: r'room', type: IsarType.long),
+    r'reduceAnimationUpdates': PropertySchema(
+      id: 15,
+      name: r'reduceAnimationUpdates',
+      type: IsarType.bool,
+    ),
+    r'room': PropertySchema(id: 16, name: r'room', type: IsarType.long),
     r'serverSortField': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'serverSortField',
       type: IsarType.string,
     ),
     r'sortOption': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'sortOption',
       type: IsarType.long,
     ),
     r'sortOrder': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'startup': PropertySchema(id: 19, name: r'startup', type: IsarType.bool),
+    r'startup': PropertySchema(id: 20, name: r'startup', type: IsarType.bool),
     r'startupAutoConnect': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'startupAutoConnect',
       type: IsarType.bool,
     ),
     r'startupMinimize': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'startupMinimize',
       type: IsarType.bool,
     ),
-    r'userId': PropertySchema(id: 22, name: r'userId', type: IsarType.string),
+    r'userId': PropertySchema(id: 23, name: r'userId', type: IsarType.string),
     r'userListSimple': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'userListSimple',
       type: IsarType.bool,
     ),
@@ -207,15 +212,16 @@ void _allSettingsSerialize(
   writer.writeStringList(offsets[12], object.listenList);
   writer.writeLong(offsets[13], object.maxRetryCount);
   writer.writeString(offsets[14], object.playerName);
-  writer.writeLong(offsets[15], object.room);
-  writer.writeString(offsets[16], object.serverSortField);
-  writer.writeLong(offsets[17], object.sortOption);
-  writer.writeLong(offsets[18], object.sortOrder);
-  writer.writeBool(offsets[19], object.startup);
-  writer.writeBool(offsets[20], object.startupAutoConnect);
-  writer.writeBool(offsets[21], object.startupMinimize);
-  writer.writeString(offsets[22], object.userId);
-  writer.writeBool(offsets[23], object.userListSimple);
+  writer.writeBool(offsets[15], object.reduceAnimationUpdates);
+  writer.writeLong(offsets[16], object.room);
+  writer.writeString(offsets[17], object.serverSortField);
+  writer.writeLong(offsets[18], object.sortOption);
+  writer.writeLong(offsets[19], object.sortOrder);
+  writer.writeBool(offsets[20], object.startup);
+  writer.writeBool(offsets[21], object.startupAutoConnect);
+  writer.writeBool(offsets[22], object.startupMinimize);
+  writer.writeString(offsets[23], object.userId);
+  writer.writeBool(offsets[24], object.userListSimple);
 }
 
 AllSettings _allSettingsDeserialize(
@@ -241,15 +247,16 @@ AllSettings _allSettingsDeserialize(
   object.listenList = reader.readStringList(offsets[12]);
   object.maxRetryCount = reader.readLong(offsets[13]);
   object.playerName = reader.readStringOrNull(offsets[14]);
-  object.room = reader.readLongOrNull(offsets[15]);
-  object.serverSortField = reader.readString(offsets[16]);
-  object.sortOption = reader.readLong(offsets[17]);
-  object.sortOrder = reader.readLong(offsets[18]);
-  object.startup = reader.readBool(offsets[19]);
-  object.startupAutoConnect = reader.readBool(offsets[20]);
-  object.startupMinimize = reader.readBool(offsets[21]);
-  object.userId = reader.readStringOrNull(offsets[22]);
-  object.userListSimple = reader.readBool(offsets[23]);
+  object.reduceAnimationUpdates = reader.readBool(offsets[15]);
+  object.room = reader.readLongOrNull(offsets[16]);
+  object.serverSortField = reader.readString(offsets[17]);
+  object.sortOption = reader.readLong(offsets[18]);
+  object.sortOrder = reader.readLong(offsets[19]);
+  object.startup = reader.readBool(offsets[20]);
+  object.startupAutoConnect = reader.readBool(offsets[21]);
+  object.startupMinimize = reader.readBool(offsets[22]);
+  object.userId = reader.readStringOrNull(offsets[23]);
+  object.userListSimple = reader.readBool(offsets[24]);
   return object;
 }
 
@@ -291,22 +298,24 @@ P _allSettingsDeserializeProp<P>(
     case 14:
       return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 16:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 17:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 18:
       return (reader.readLong(offset)) as P;
     case 19:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 20:
       return (reader.readBool(offset)) as P;
     case 21:
       return (reader.readBool(offset)) as P;
     case 22:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 23:
+      return (reader.readStringOrNull(offset)) as P;
+    case 24:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1526,6 +1535,18 @@ extension AllSettingsQueryFilter
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
+  reduceAnimationUpdatesEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'reduceAnimationUpdates',
+          value: value,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition> roomIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -2233,6 +2254,20 @@ extension AllSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  sortByReduceAnimationUpdates() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reduceAnimationUpdates', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  sortByReduceAnimationUpdatesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reduceAnimationUpdates', Sort.desc);
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> sortByRoom() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'room', Sort.asc);
@@ -2531,6 +2566,20 @@ extension AllSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  thenByReduceAnimationUpdates() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reduceAnimationUpdates', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
+  thenByReduceAnimationUpdatesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reduceAnimationUpdates', Sort.desc);
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy> thenByRoom() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'room', Sort.asc);
@@ -2753,6 +2802,13 @@ extension AllSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AllSettings, AllSettings, QDistinct>
+  distinctByReduceAnimationUpdates() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'reduceAnimationUpdates');
+    });
+  }
+
   QueryBuilder<AllSettings, AllSettings, QDistinct> distinctByRoom() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'room');
@@ -2919,6 +2975,13 @@ extension AllSettingsQueryProperty
   QueryBuilder<AllSettings, String?, QQueryOperations> playerNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'playerName');
+    });
+  }
+
+  QueryBuilder<AllSettings, bool, QQueryOperations>
+  reduceAnimationUpdatesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'reduceAnimationUpdates');
     });
   }
 

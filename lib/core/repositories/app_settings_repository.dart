@@ -70,6 +70,10 @@ class AppSettingsRepository {
       _db.AllSettings.getEnableConnectionNotification();
   Future<void> setEnableConnectionNotification(bool value) =>
       _db.AllSettings.setEnableConnectionNotification(value);
+  Future<bool> getReduceAnimationUpdates() =>
+      _db.AllSettings.getReduceAnimationUpdates();
+  Future<void> setReduceAnimationUpdates(bool value) =>
+      _db.AllSettings.setReduceAnimationUpdates(value);
   Future<bool> getHasShownBannerTip() => _db.AllSettings.getHasShownBannerTip();
   Future<void> setHasShownBannerTip(bool value) =>
       _db.AllSettings.setHasShownBannerTip(value);
@@ -122,6 +126,7 @@ class AppSettingsRepository {
       latestVersion: await getLatestVersion(),
       enableBannerCarousel: await getEnableBannerCarousel(),
       enableConnectionNotification: await getEnableConnectionNotification(),
+      reduceAnimationUpdates: await getReduceAnimationUpdates(),
       hasShownBannerTip: await getHasShownBannerTip(),
       closeMinimize: await getCloseMinimize(),
       customVpn: await getCustomVpn(),
@@ -149,6 +154,7 @@ class AppSettings {
   final String? latestVersion;
   final bool enableBannerCarousel;
   final bool enableConnectionNotification;
+  final bool reduceAnimationUpdates;
   final bool hasShownBannerTip;
   final bool closeMinimize;
   final List<String> customVpn;
@@ -172,6 +178,7 @@ class AppSettings {
     required this.latestVersion,
     required this.enableBannerCarousel,
     required this.enableConnectionNotification,
+    required this.reduceAnimationUpdates,
     required this.hasShownBannerTip,
     required this.closeMinimize,
     required this.customVpn,

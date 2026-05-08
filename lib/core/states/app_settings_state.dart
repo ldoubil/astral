@@ -20,6 +20,9 @@ class AppSettingsState {
   // 最大重试次数
   final maxRetryCount = signal(3);
 
+  // 减少动画/拓扑更新频率（降低后台与低性能设备负载）
+  final reduceAnimationUpdates = signal(false);
+
   // 日志列表
   final logs = signal<List<String>>([]);
 
@@ -51,6 +54,11 @@ class AppSettingsState {
   // 更新最大重试次数
   void updateMaxRetryCount(int value) {
     maxRetryCount.value = value;
+  }
+
+  // 更新减少动画更新开关
+  void updateReduceAnimationUpdates(bool value) {
+    reduceAnimationUpdates.value = value;
   }
 
   // 添加日志

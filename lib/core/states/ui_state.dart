@@ -9,6 +9,7 @@ class UIState {
   // 导航与交互
   final selectedIndex = signal(0);
   final hoveredIndex = signal<int?>(null);
+  final isInBackground = signal(false);
 
   // 应用名称
   final appName = signal('Astral');
@@ -34,5 +35,9 @@ class UIState {
 
   void resetHover() {
     hoveredIndex.value = null;
+  }
+
+  void setBackground(bool value) {
+    isInBackground.value = value;
   }
 }

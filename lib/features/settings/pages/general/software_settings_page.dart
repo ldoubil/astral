@@ -234,6 +234,16 @@ class _SoftwareSettingsPageState
                   );
                 },
               ),
+              SwitchListTile(
+                title: const Text('减少动画更新'),
+                subtitle: const Text('降低拓扑图与连线动画刷新频率，减少 GPU 占用'),
+                value: ServiceManager().appSettingsState.reduceAnimationUpdates
+                    .watch(context),
+                onChanged: (value) async {
+                  await ServiceManager().appSettings
+                      .updateReduceAnimationUpdates(value);
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),

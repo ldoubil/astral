@@ -1,4 +1,6 @@
 // 导入所需的包
+import 'dart:io';
+
 import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
@@ -14,6 +16,7 @@ import 'package:astral/core/navigation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 
 // 主屏幕Widget，使用StatefulWidget以管理状态
 class MainScreen extends StatefulWidget {
@@ -25,13 +28,16 @@ class MainScreen extends StatefulWidget {
 
 // MainScreen的状态管理类
 class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver, WindowListener {
   @override
   void initState() {
     super.initState();
     // create_overlay_window
 
     WidgetsBinding.instance.addObserver(this); // 监听屏幕等状态变化
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.addListener(this);
+    }
     // 在第一帧渲染完成后获取屏幕宽度并更新分割宽度
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final screenWidth = MediaQuery.of(context).size.width;
@@ -61,8 +67,34 @@ class _MainScreenState extends State<MainScreen>
   // 组件销毁时移除观察者
   @override
   void dispose() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.removeListener(this);
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _setAppBackground(bool isInBackground) {
+    if (ServiceManager().uiState.isInBackground.value != isInBackground) {
+      ServiceManager().uiState.setBackground(isInBackground);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _setAppBackground(false);
+        break;
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _setAppBackground(true);
+        break;
+      case AppLifecycleState.inactive:
+        // 桌面端 inactive 可能只是失焦，不视为后台。
+        break;
+    }
   }
 
   // 屏幕尺寸变化时的回调
@@ -90,6 +122,26 @@ class _MainScreenState extends State<MainScreen>
     if (mounted) {
       setState(() {});
     }
+  }
+
+  @override
+  void onWindowMinimize() {
+    _setAppBackground(true);
+  }
+
+  @override
+  void onWindowBlur() {
+    _setAppBackground(true);
+  }
+
+  @override
+  void onWindowRestore() {
+    _setAppBackground(false);
+  }
+
+  @override
+  void onWindowFocus() {
+    _setAppBackground(false);
   }
 
   // 定义导航项列表
