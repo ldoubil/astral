@@ -35,8 +35,10 @@ class WindowManagerUtils {
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
         // 如果 startupMinimize 为 true，则最小化窗口
         if (ServiceManager().startupState.startupMinimize.value) {
+          ServiceManager().uiState.setBackground(true);
           await windowManager.hide();
         } else {
+          ServiceManager().uiState.setBackground(false);
           await windowManager.show();
           await windowManager.focus();
         }

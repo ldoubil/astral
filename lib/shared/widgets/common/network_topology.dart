@@ -8,8 +8,15 @@ import 'package:vyuh_node_flow/vyuh_node_flow.dart';
 
 class NetworkTopologyView extends StatefulWidget {
   final List<KVNodeInfo> nodes;
+  final bool reduceUpdates;
+  final bool isInBackground;
 
-  const NetworkTopologyView({super.key, required this.nodes});
+  const NetworkTopologyView({
+    super.key,
+    required this.nodes,
+    this.reduceUpdates = false,
+    this.isInBackground = false,
+  });
 
   @override
   State<NetworkTopologyView> createState() => _NetworkTopologyViewState();
@@ -18,11 +25,14 @@ class NetworkTopologyView extends StatefulWidget {
 class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   NodeFlowController<_NodeData, dynamic>? _controller;
   int? _lastGraphSignature;
+  bool? _lastShouldAnimateConnections;
+  DateTime? _lastGraphSyncAt;
 
   static const double _localX = 120;
   static const double _targetX = 760;
   static const double _baseY = 80;
   static const double _rowGap = 130;
+  static const Duration _reducedSyncInterval = Duration(seconds: 4);
 
   @override
   void initState() {
@@ -33,7 +43,8 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   @override
   void didUpdateWidget(NetworkTopologyView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncGraph();
+    final resumedFromBackground = oldWidget.isInBackground && !widget.isInBackground;
+    _syncGraph(force: resumedFromBackground);
   }
 
   @override
@@ -42,10 +53,28 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
     super.dispose();
   }
 
-  void _syncGraph() {
+  bool get _shouldAnimateConnections {
+    return !widget.reduceUpdates && !widget.isInBackground;
+  }
+
+  void _syncGraph({bool force = false}) {
+    if (!force && widget.isInBackground) {
+      return;
+    }
+
+    if (!force &&
+        widget.reduceUpdates &&
+        _lastGraphSyncAt != null &&
+        DateTime.now().difference(_lastGraphSyncAt!) < _reducedSyncInterval) {
+      return;
+    }
+
     final localIp = ServiceManager().networkConfigState.ipv4.value;
     final graphSignature = _calculateGraphSignature(widget.nodes, localIp);
-    if (_controller != null && _lastGraphSignature == graphSignature) {
+    final shouldAnimate = _shouldAnimateConnections;
+    if (_controller != null &&
+        _lastGraphSignature == graphSignature &&
+        _lastShouldAnimateConnections == shouldAnimate) {
       return;
     }
 
@@ -72,11 +101,15 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         config: NodeFlowConfig(snapToGrid: false, minZoom: 0.3, maxZoom: 2.0),
       );
       _lastGraphSignature = graphSignature;
+      _lastShouldAnimateConnections = shouldAnimate;
+      _lastGraphSyncAt = DateTime.now();
       return;
     }
 
     _applyGraphDiff(model);
     _lastGraphSignature = graphSignature;
+    _lastShouldAnimateConnections = shouldAnimate;
+    _lastGraphSyncAt = DateTime.now();
   }
 
   int _calculateGraphSignature(List<KVNodeInfo> nodes, String localIp) {
@@ -385,7 +418,8 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
               sourcePortId: 'out',
               targetNodeId: hopId,
               targetPortId: 'in',
-              animationEffect: ConnectionEffects.particles,
+              animationEffect:
+                  _shouldAnimateConnections ? ConnectionEffects.particles : null,
               label: ConnectionLabel(text: _formatLatencyLabel(hop.latencyMs)),
             );
           }
@@ -401,7 +435,8 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
             sourcePortId: 'out',
             targetNodeId: targetId,
             targetPortId: 'in',
-            animationEffect: ConnectionEffects.particles,
+            animationEffect:
+                _shouldAnimateConnections ? ConnectionEffects.particles : null,
             label: ConnectionLabel(
               text: _formatLatencyLabel(nodeInfo.latencyMs),
             ),
@@ -416,7 +451,8 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
             sourcePortId: 'out',
             targetNodeId: targetId,
             targetPortId: 'in',
-            animationEffect: ConnectionEffects.particles,
+            animationEffect:
+                _shouldAnimateConnections ? ConnectionEffects.particles : null,
             label: ConnectionLabel(
               text: _formatLatencyLabel(nodeInfo.latencyMs),
             ),
@@ -849,6 +885,7 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   NodeFlowTheme _buildTheme(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shouldAnimate = _shouldAnimateConnections;
 
     return (isDark ? NodeFlowTheme.dark : NodeFlowTheme.light).copyWith(
       backgroundColor: colorScheme.surface,
@@ -856,9 +893,10 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
         style: ConnectionStyles.bezier,
         color: colorScheme.primary.withValues(alpha: 0.6),
         strokeWidth: 2.5,
-        animationEffect: ConnectionEffects.particles,
+        animationEffect: shouldAnimate ? ConnectionEffects.particles : null,
       ),
-      connectionAnimationDuration: const Duration(seconds: 3),
+      connectionAnimationDuration:
+          shouldAnimate ? const Duration(seconds: 3) : Duration.zero,
       gridTheme: GridTheme.light.copyWith(
         style: GridStyles.dots,
         size: 20,

@@ -51,6 +51,13 @@ class _UserPageState extends State<UserPage> {
         );
         final isConnecting = ServiceManager().connectionState.isConnecting
             .watch(context);
+        final reduceAnimationUpdates = ServiceManager()
+            .appSettingsState
+            .reduceAnimationUpdates
+            .watch(context);
+        final isInBackground = ServiceManager().uiState.isInBackground.watch(
+          context,
+        );
         if (!isConnecting) {
           return Center(
             child: Column(
@@ -104,7 +111,11 @@ class _UserPageState extends State<UserPage> {
         } else {
           // 如果显示拓扑图，直接返回拓扑图视图
           if (_showTopology) {
-            return NetworkTopologyView(nodes: netStatus.nodes);
+            return NetworkTopologyView(
+              nodes: netStatus.nodes,
+              reduceUpdates: reduceAnimationUpdates,
+              isInBackground: isInBackground,
+            );
           }
 
           // 获取排序选项

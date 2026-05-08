@@ -80,6 +80,23 @@ class AllSettingsCz {
     return settings?.enableConnectionNotification ?? true;
   }
 
+  /// 设置减少动画更新开关
+  Future<void> setReduceAnimationUpdates(bool enable) async {
+    AllSettings? settings = await _isar.allSettings.get(1);
+    if (settings != null) {
+      settings.reduceAnimationUpdates = enable;
+      await _isar.writeTxn(() async {
+        await _isar.allSettings.put(settings);
+      });
+    }
+  }
+
+  /// 获取减少动画更新开关
+  Future<bool> getReduceAnimationUpdates() async {
+    AllSettings? settings = await _isar.allSettings.get(1);
+    return settings?.reduceAnimationUpdates ?? false;
+  }
+
   /// 设置是否已显示轮播图提示
   Future<void> setHasShownBannerTip(bool hasShown) async {
     AllSettings? settings = await _isar.allSettings.get(1);

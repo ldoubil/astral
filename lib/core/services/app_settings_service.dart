@@ -66,6 +66,7 @@ class AppSettingsService {
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
     appSettingsState.updateEnableConnectionNotification(settings.enableConnectionNotification);
+    appSettingsState.updateReduceAnimationUpdates(settings.reduceAnimationUpdates);
     // TODO: 临时注释以调试 SignalEffectException
     // appSettingsState.updateAutoRetryOnFailure(settings.autoRetryOnFailure);
     // appSettingsState.updateMaxRetryCount(settings.maxRetryCount);
@@ -182,6 +183,11 @@ class AppSettingsService {
     if (!enable && Platform.isAndroid) {
       await NotificationService.instance.cancelConnectionNotification();
     }
+  }
+
+  Future<void> updateReduceAnimationUpdates(bool enable) async {
+    appSettingsState.updateReduceAnimationUpdates(enable);
+    await _repository.setReduceAnimationUpdates(enable);
   }
 
   Future<void> updateAutoRetryOnFailure(bool enable) async {
