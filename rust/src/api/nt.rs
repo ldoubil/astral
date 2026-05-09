@@ -3,11 +3,9 @@ use std::ffi::OsStr;
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
-use std::ptr::null_mut;
-#[cfg(target_os = "windows")]
 use windows::Win32::Storage::FileSystem::QueryDosDeviceW;
 #[cfg(target_os = "windows")]
-use windows::core::{PCWSTR, PWSTR};
+use windows::core::PCWSTR;
 
 #[cfg(not(target_os = "windows"))]
 pub fn get_nt_path(_dos_path: &str) -> Option<String> {

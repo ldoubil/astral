@@ -62,9 +62,10 @@ jobs:
         run: |
           $sdkVer = "1.16"
           $zip = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
-          $dst = Join-Path $env:RUNNER_TEMP "npcap-sdk"
+          $dst = Join-Path $env:GITHUB_WORKSPACE "third_party/npcap-sdk"
           Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-sdk-$sdkVer.zip" -OutFile $zip
           if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
+          New-Item -ItemType Directory -Force -Path (Split-Path $dst) | Out-Null
           Expand-Archive -Path $zip -DestinationPath $dst -Force
 
           $libDir = Join-Path $dst "Lib\\x64"
@@ -72,8 +73,13 @@ jobs:
           if (!(Test-Path (Join-Path $libDir "Packet.lib"))) { throw "Packet.lib not found in: $libDir" }
           if (!(Test-Path (Join-Path $libDir "wpcap.lib"))) { throw "wpcap.lib not found in: $libDir" }
 
-          "LIB=$libDir;$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "NPCAP_SDK_LIB=$libDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+          $append = {
+            param([string]$Line)
+            [System.IO.File]::AppendAllText($env:GITHUB_ENV, "$Line`n", $utf8NoBom)
+          }
+          & $append "LIB=$libDir;$env:LIB"
+          & $append "NPCAP_SDK_LIB=$libDir"
           Write-Host "Npcap SDK lib configured at $libDir"
         shell: pwsh
 

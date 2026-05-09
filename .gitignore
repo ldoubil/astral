@@ -53,3 +53,6 @@ dist/
 .sentry-native/
 result
 .direnv/
+
+# Npcap SDK (downloaded in CI or placed locally for Windows link; do not commit)
+third_party/npcap-sdk/
