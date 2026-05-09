@@ -1,0 +1,18 @@
+# 统一的版本配置文件
+# 所有工作流都应该引用这些变量
+env:
+  # Flutter 版本配置
+  FLUTTER_VERSION: main
+  FLUTTER_CHANNEL: main
+  
+  # Rust 版本配置
+  RUST_VERSION: 1.89.0
+  
+  # Android 配置
+  JDK_VERSION: 17
+  NDK_VERSION: 28.2.13676358
+  CMAKE_VERSION: 3.18.1
+  
+  # 其他工具版本
+  PROTOBUF_VERSION: latest
+  NINJA_VERSION: latest

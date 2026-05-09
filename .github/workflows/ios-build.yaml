@@ -1,0 +1,89 @@
+name: 🍎 构建 iOS 应用
+
+on:
+  workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'v*'   # 当推送版本标签时触发
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    env:
+      FLUTTER_VERSION: main
+      FLUTTER_CHANNEL: main
+      RUST_VERSION: 1.89.0
+    
+    steps:
+      - name: 🛠️ 检出代码仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: 🦀 设置 Rust 工具链 ${{ env.RUST_VERSION }}
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
+          $GITHUB_WORKSPACE/scripts/install_rust.sh
+          rustup target add aarch64-apple-ios
+          rustup component add rust-src  # Add this line to ensure rust-src is available
+
+      - name: 📦 安装系统依赖
+        run: |
+          brew update
+          brew install cmake ninja
+          brew install protobuf
+          brew install ruby
+          brew install cocoapods
+          export LDFLAGS="-L/opt/homebrew/opt/ruby/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/ruby/include"
+
+      - name: 🐦 安装 Flutter
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_flutter.sh
+          $GITHUB_WORKSPACE/scripts/install_flutter.sh
+
+      - name: 🎯 启用 iOS 支持
+        run: |
+          flutter config --enable-ios
+          flutter create --platforms=ios .
+
+      - name: 📚 安装 Flutter 依赖
+        run: |
+          flutter precache --ios
+          flutter pub get
+          cd ios && pod install && cd ..
+
+      - name: 🛠️ 构建 iOS 应用
+        run: |
+          flutter build ios --release --no-codesign --verbose
+
+      - name: 🔐 自签名和打包 IPA
+        run: |
+          cd ios
+          # 创建临时目录
+          mkdir -p Payload
+          # 复制应用到 Payload 目录
+          cp -r build/Release-iphoneos/Runner.app Payload/
+          # 创建证书和配置文件
+          security create-keychain -p github_action build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p github_action build.keychain
+          # 签名应用
+          /usr/bin/codesign --force --sign "Apple Development" --entitlements Runner/Runner.entitlements Payload/Runner.app
+          # 打包 IPA
+          zip -r ../release/Astral.ipa Payload
+          # 清理
+          rm -rf Payload
+          security delete-keychain build.keychain
+
+      - name: 📤 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: release/Astral.ipa
+          retention-days: 7

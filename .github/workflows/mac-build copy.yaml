@@ -1,0 +1,76 @@
+name: 🍎 构建 macOS 应用
+
+on:
+  workflow_dispatch:
+  # push:
+  #   tags:
+  #     - 'v*'   # 当推送版本标签时触发
+
+jobs:
+  build:
+    runs-on: self-hosted  # 更改为支持 M1 的运行器
+    permissions:
+      contents: write
+      packages: write
+    
+    env:
+      FLUTTER_VERSION: main
+      FLUTTER_CHANNEL: main
+      RUST_VERSION: 1.89.0
+    
+    steps:
+      - name: 🛠️ 检出代码仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: 🦀 设置 Rust 工具链 ${{ env.RUST_VERSION }}
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
+          $GITHUB_WORKSPACE/scripts/install_rust.sh
+          rustup target add aarch64-apple-darwin  # 添加 ARM 架构支持
+
+      - name: 📦 安装系统依赖
+        run: |
+          brew update
+          brew install cmake ninja
+          brew install protobuf
+          brew install ruby
+          brew install cocoapods
+          export LDFLAGS="-L/opt/homebrew/opt/ruby/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/ruby/include"
+
+      - name: 🐦 安装 Flutter
+        run: |
+          chmod +x $GITHUB_WORKSPACE/scripts/install_flutter.sh
+          $GITHUB_WORKSPACE/scripts/install_flutter.sh
+
+      - name: 🎯 启用 macOS 桌面支持
+        run: |
+          flutter config --enable-macos-desktop
+          flutter create --platforms=macos .
+
+      - name: 📚 安装 Flutter 依赖
+        run: |
+          flutter pub get
+
+      - name: 🛠️ 构建 macOS 应用
+        run: |
+          flutter build macos --release --dart-define=FLUTTER_APP_ARCH=arm64  # 指定 ARM64 平台
+
+      - name: 📦 打包应用
+        run: |
+          mkdir -p release
+          cd build/macos/Build/Products/Release
+          # 创建 DMG 文件
+          hdiutil create -volname "Astral" -srcfolder astral.app -ov -format UDZO $GITHUB_WORKSPACE/release/astral-macos-arm64.dmg
+          echo "打包完成，检查文件大小："
+          ls -lh $GITHUB_WORKSPACE/release/
+
+      - name: 📤 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-release
+          path: release/astral-macos-arm64.dmg
+          retention-days: 7
