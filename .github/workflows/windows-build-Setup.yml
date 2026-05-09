@@ -50,6 +50,12 @@ jobs:
           echo "Flutter 依赖安装完成！"
         shell: pwsh
 
+      - name: 📦 安装 Protobuf 编译器 (protoc)
+        run: |
+          choco install protoc -y
+          protoc --version
+        shell: pwsh
+
       # 编译 Flutter Windows 应用
       - name: 🛠️ 编译 Flutter Windows 应用
         run: |
