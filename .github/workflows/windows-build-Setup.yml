@@ -58,6 +58,25 @@ jobs:
           protoc --version
         shell: pwsh
 
+      - name: 📦 安装 Npcap SDK（提供 Packet.lib / wpcap.lib）
+        run: |
+          $sdkVer = "1.16"
+          $zip = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
+          $dst = Join-Path $env:RUNNER_TEMP "npcap-sdk"
+          Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-sdk-$sdkVer.zip" -OutFile $zip
+          if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
+          Expand-Archive -Path $zip -DestinationPath $dst -Force
+
+          $libDir = Join-Path $dst "Lib\\x64"
+          if (!(Test-Path $libDir)) { throw "Npcap SDK lib dir not found: $libDir" }
+          if (!(Test-Path (Join-Path $libDir "Packet.lib"))) { throw "Packet.lib not found in: $libDir" }
+          if (!(Test-Path (Join-Path $libDir "wpcap.lib"))) { throw "wpcap.lib not found in: $libDir" }
+
+          "LIB=$libDir;$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "NPCAP_SDK_LIB=$libDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Npcap SDK lib configured at $libDir"
+        shell: pwsh
+
       # 编译 Flutter Windows 应用
       - name: 🛠️ 编译 Flutter Windows 应用
         run: |
