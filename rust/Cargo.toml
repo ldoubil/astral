@@ -24,9 +24,8 @@ rand = "0.8"
 surge-ping = "0.8"
 uuid = { version = "1.0", features = ["v4"] }
 
-easytier = { path = "./easytier" }
+easytier = { git = "https://github.com/EasyTier/EasyTier.git", features = ["wireguard", "websocket", "quic", "tun", "smoltcp", "socks5", "kcp", "faketcp", "magic-dns", "zstd"] }
 elevated-command = "1.1.2"
-# easytier = { git = "https://github.com/ldoubil/EasyTier", branch = "main" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.52.0", features = [
@@ -67,8 +66,6 @@ winapi = { version = "0.3.9", features = [
 ] }
 
 rand = "0.9.1"
-
-[target.'cfg(not(target_os = "android"))'.dependencies]
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

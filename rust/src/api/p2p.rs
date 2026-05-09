@@ -1,4 +1,3 @@
-
 use easytier::common::config::{ConfigFileControl, PortForwardConfig};
 pub use easytier::common::config::{ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader};
 pub use easytier::common::global_ctx::{EventBusSubscriber, GlobalCtxEvent};
@@ -89,8 +88,7 @@ pub fn handle_event(mut events: EventBusSubscriber) -> tokio::task::JoinHandle<(
                         let _ = send_udp_to_localhost(&msg);
                     }
                     GlobalCtxEvent::ListenerAcceptFailed(p, msg) => {
-                        let msg =
-                            format!("listener accept failed. listener: {}, msg: {}", p, msg);
+                        let msg = format!("listener accept failed. listener: {}, msg: {}", p, msg);
                         println!("{}", msg);
                         let _ = send_udp_to_localhost(&msg);
                     }
@@ -177,6 +175,7 @@ pub fn handle_event(mut events: EventBusSubscriber) -> tokio::task::JoinHandle<(
                     }
                     GlobalCtxEvent::ConfigPatched(_) => {}
                     GlobalCtxEvent::ProxyCidrsUpdated(_, _) => {}
+                    _ => {}
                 },
                 Err(err) => {
                     eprintln!("event receive error: {:?}", err);
@@ -210,7 +209,7 @@ pub async fn is_easytier_running(instance_id: String) -> bool {
     MANAGER.list_network_instance_ids().contains(&id)
 }
 
-pub use super::simple::{NodeHopStats, KVNodeConnectionStats, KVNodeInfo, KVNetworkStatus};
+pub use super::simple::{KVNetworkStatus, KVNodeConnectionStats, KVNodeInfo, NodeHopStats};
 
 pub async fn get_ips(instance_id: String) -> Vec<String> {
     let info = match get_instance_info(&instance_id).await {
@@ -309,7 +308,7 @@ pub fn create_server_with_flags(
         cfg.set_hostname(Some(username));
         cfg.set_dhcp(enable_dhcp);
         for c in cidrs {
-            cfg.add_proxy_cidr(c.parse().unwrap(), None);
+            let _ = cfg.add_proxy_cidr(c.parse().unwrap(), None);
         }
         let mut old = cfg.get_port_forwards();
 
@@ -374,7 +373,10 @@ pub fn create_server_with_flags(
         let mut peer_configs = Vec::new();
         for url in severurl {
             match url.parse() {
-                Ok(uri) => peer_configs.push(PeerConfig { uri }),
+                Ok(uri) => peer_configs.push(PeerConfig {
+                    uri,
+                    peer_public_key: None,
+                }),
                 Err(e) => return Err(format!("invalid server url: {}, error: {}", url, e)),
             }
         }
@@ -385,7 +387,10 @@ pub fn create_server_with_flags(
             match ip_str.parse() {
                 Ok(ip) => cfg.set_ipv4(Some(ip)),
                 Err(e) => {
-                    return Err(format!("invalid ip address: {}, error: {}", specified_ip, e))
+                    return Err(format!(
+                        "invalid ip address: {}, error: {}",
+                        specified_ip, e
+                    ))
                 }
             }
         }
@@ -437,6 +442,8 @@ pub async fn get_peer_route_pairs(instance_id: String) -> Result<Vec<PeerRoutePa
             next_hop_peer_id_latency_first: None,
             cost_latency_first: None,
             path_latency_latency_first: None,
+            public_ipv6_addr: None,
+            ipv6_public_addr_prefix: None,
         };
 
         let my_peer_info = info.peers.iter().find(|p| p.peer_id == my_peer_id).cloned();
@@ -453,7 +460,9 @@ pub async fn get_peer_route_pairs(instance_id: String) -> Result<Vec<PeerRoutePa
 }
 
 pub async fn get_network_status(instance_id: String) -> KVNetworkStatus {
-    let pairs = get_peer_route_pairs(instance_id.clone()).await.unwrap_or_default();
+    let pairs = get_peer_route_pairs(instance_id.clone())
+        .await
+        .unwrap_or_default();
 
     let running_info = get_instance_info(&instance_id).await.ok();
     let local_peer_id = running_info
@@ -527,7 +536,8 @@ pub async fn get_network_status(instance_id: String) -> KVNetworkStatus {
                                         .iter()
                                         .filter_map(|c| c.stats.as_ref().map(|s| s.latency_us))
                                         .min()
-                                        .unwrap_or(0) as f64
+                                        .unwrap_or(0)
+                                        as f64
                                         / 1000.0;
 
                                     let avg_loss = p.conns.iter().map(|c| c.loss_rate).sum::<f32>()
@@ -622,12 +632,11 @@ pub async fn get_network_status(instance_id: String) -> KVNetworkStatus {
                                                     .conns
                                                     .iter()
                                                     .filter_map(|c| {
-                                                        c.stats
-                                                            .as_ref()
-                                                            .map(|s| s.latency_us)
+                                                        c.stats.as_ref().map(|s| s.latency_us)
                                                     })
                                                     .min()
-                                                    .unwrap_or(0) as f64
+                                                    .unwrap_or(0)
+                                                    as f64
                                                     / 1000.0;
 
                                                 let avg_loss = p
@@ -660,7 +669,8 @@ pub async fn get_network_status(instance_id: String) -> KVNetworkStatus {
                                         .iter()
                                         .filter_map(|c| c.stats.as_ref().map(|s| s.latency_us))
                                         .min()
-                                        .unwrap_or(0) as f64
+                                        .unwrap_or(0)
+                                        as f64
                                         / 1000.0;
 
                                     let avg_loss = p.conns.iter().map(|c| c.loss_rate).sum::<f32>()
