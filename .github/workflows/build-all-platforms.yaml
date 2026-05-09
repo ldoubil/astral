@@ -225,7 +225,23 @@ jobs:
         run: |
           set -e
           mkdir -p release
+          # Flutter 在不同 runner/架构下的输出目录可能不同（x64/arm64），这里做一次探测以避免路径漂移
           BUNDLE="${{ matrix.artifact_path }}"
+          if [ ! -d "$BUNDLE" ]; then
+            echo "预期目录不存在: $BUNDLE"
+            echo "尝试探测 build/linux/*/release/bundle ..."
+            BUNDLE_CANDIDATES=(build/linux/*/release/bundle)
+            if [ -d "${BUNDLE_CANDIDATES[0]}" ]; then
+              BUNDLE="${BUNDLE_CANDIDATES[0]}"
+            else
+              echo "未找到任何 bundle 目录。当前 build/linux 目录结构："
+              ls -la build || true
+              ls -la build/linux || true
+              ls -la build/linux/* || true
+              exit 1
+            fi
+          fi
+          echo "使用 bundle 目录: $BUNDLE"
           
           # 创建 tar.gz
           cd "$BUNDLE"
@@ -317,6 +333,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: 🛠️ 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: 📥 下载所有构建产物
         uses: actions/download-artifact@v4
         with:
