@@ -206,6 +206,14 @@ jobs:
       - name: 🐦 验证 Flutter
         run: flutter --version
         
+      # ============= Windows 依赖（Rust prost/protobuf） =============
+      - name: 📦 安装 Protobuf 编译器 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install protoc -y
+          protoc --version
+        shell: pwsh
+
       # ============= 构建步骤 =============
       - name: 🛠️ 构建应用
         run: ${{ matrix.build_cmd }}
@@ -306,6 +314,8 @@ jobs:
   merge-artifacts:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
     steps:
       - name: 📥 下载所有构建产物
         uses: actions/download-artifact@v4
@@ -324,3 +334,29 @@ jobs:
         run: |
           echo "=== 所有构建产物 ==="
           ls -lhR artifacts/
+
+      - name: 📝 生成 Release 说明（最近 50 条提交）
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          echo "构建产物已由 GitHub Actions 自动生成。" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "最近提交（最多 50 条）：" >> "$GITHUB_OUTPUT"
+          git log -50 --pretty=format:"- %s (%h)" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: 🚀 创建 Draft Release 并上传产物
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: true
+          prerelease: true
+          files: |
+            artifacts/**/*
