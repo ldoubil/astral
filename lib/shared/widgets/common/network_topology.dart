@@ -43,8 +43,9 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   @override
   void didUpdateWidget(NetworkTopologyView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final resumedFromBackground = oldWidget.isInBackground && !widget.isInBackground;
-    _syncGraph(force: resumedFromBackground);
+    final backgroundStateChanged =
+        oldWidget.isInBackground != widget.isInBackground;
+    _syncGraph(force: backgroundStateChanged);
   }
 
   @override
@@ -58,20 +59,23 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
   }
 
   void _syncGraph({bool force = false}) {
-    if (!force && widget.isInBackground) {
-      return;
-    }
+    final now = DateTime.now();
+    final shouldAnimate = _shouldAnimateConnections;
+    final animationStateChanged =
+        _lastShouldAnimateConnections != shouldAnimate;
+
+    if (!force && widget.isInBackground && !animationStateChanged) return;
 
     if (!force &&
         widget.reduceUpdates &&
+        !animationStateChanged &&
         _lastGraphSyncAt != null &&
-        DateTime.now().difference(_lastGraphSyncAt!) < _reducedSyncInterval) {
+        now.difference(_lastGraphSyncAt!) < _reducedSyncInterval) {
       return;
     }
 
     final localIp = ServiceManager().networkConfigState.ipv4.value;
     final graphSignature = _calculateGraphSignature(widget.nodes, localIp);
-    final shouldAnimate = _shouldAnimateConnections;
     if (_controller != null &&
         _lastGraphSignature == graphSignature &&
         _lastShouldAnimateConnections == shouldAnimate) {
@@ -102,14 +106,14 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
       );
       _lastGraphSignature = graphSignature;
       _lastShouldAnimateConnections = shouldAnimate;
-      _lastGraphSyncAt = DateTime.now();
+      _lastGraphSyncAt = now;
       return;
     }
 
     _applyGraphDiff(model);
     _lastGraphSignature = graphSignature;
     _lastShouldAnimateConnections = shouldAnimate;
-    _lastGraphSyncAt = DateTime.now();
+    _lastGraphSyncAt = now;
   }
 
   int _calculateGraphSignature(List<KVNodeInfo> nodes, String localIp) {
@@ -419,7 +423,9 @@ class _NetworkTopologyViewState extends State<NetworkTopologyView> {
               targetNodeId: hopId,
               targetPortId: 'in',
               animationEffect:
-                  _shouldAnimateConnections ? ConnectionEffects.particles : null,
+                  _shouldAnimateConnections
+                      ? ConnectionEffects.particles
+                      : null,
               label: ConnectionLabel(text: _formatLatencyLabel(hop.latencyMs)),
             );
           }

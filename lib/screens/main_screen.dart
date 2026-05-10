@@ -28,7 +28,10 @@ class MainScreen extends StatefulWidget {
 
 // MainScreen的状态管理类
 class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver, WindowListener {
+    with
+        SingleTickerProviderStateMixin,
+        WidgetsBindingObserver,
+        WindowListener {
   @override
   void initState() {
     super.initState();
@@ -107,13 +110,6 @@ class _MainScreenState extends State<MainScreen>
     // 屏幕尺寸变化时更新
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
-    final screenHeight = mediaQuery.size.height;
-
-    // 记录小窗口状态变化
-    bool isSmallWindow = screenWidth < 300 || screenHeight < 400;
-    print(
-      'Screen size changed: $screenWidth x $screenHeight, isSmallWindow: $isSmallWindow',
-    );
 
     // 更新分割宽度
     ServiceManager().uiState.updateScreenSplitWidth(screenWidth);
@@ -142,6 +138,18 @@ class _MainScreenState extends State<MainScreen>
   @override
   void onWindowFocus() {
     _setAppBackground(false);
+  }
+
+  @override
+  void onWindowEvent(String eventName) {
+    if (const {'hide', 'minimize', 'blur'}.contains(eventName)) {
+      _setAppBackground(true);
+      return;
+    }
+
+    if (const {'show', 'restore', 'focus', 'unminimize'}.contains(eventName)) {
+      _setAppBackground(false);
+    }
   }
 
   // 定义导航项列表
@@ -201,59 +209,65 @@ class _MainScreenState extends State<MainScreen>
       // 使用安全的索引值，确保不会越界
       final safeIndex =
           (currentIndex >= 0 && currentIndex < itemCount) ? currentIndex : 0;
+      final isInBackground = ServiceManager().uiState.isInBackground.value;
 
       // 构建Scaffold组件
-      return Scaffold(
-        // 自定义应用栏
-        appBar: isSmallWindow ? null : StatusBar(),
-        // 主体内容：使用Row布局
-        body: Row(
-          children: [
-            // 根据是否为桌面端决定是否显示左侧导航
-            if (ServiceManager().uiState.isDesktop.value && !isSmallWindow)
-              LeftNav(items: navigationItems, colorScheme: colorScheme),
-            // 主要内容区域
-            Expanded(
-              child: Column(
-                children: [
-                  // 在小窗口模式下显示简化的状态栏
-                  if (isSmallWindow)
-                    Container(
-                      height: 36,
-                      color: colorScheme.primaryContainer.withOpacity(0.4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        safeIndex < navigationItems.length
-                            ? navigationItems[safeIndex].label
-                            : '',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimaryContainer,
+      return TickerMode(
+        enabled: !isInBackground,
+        child: Scaffold(
+          // 自定义应用栏
+          appBar: isSmallWindow ? null : StatusBar(),
+          // 主体内容：使用Row布局
+          body: Row(
+            children: [
+              // 根据是否为桌面端决定是否显示左侧导航
+              if (ServiceManager().uiState.isDesktop.value && !isSmallWindow)
+                LeftNav(items: navigationItems, colorScheme: colorScheme),
+              // 主要内容区域
+              Expanded(
+                child: Column(
+                  children: [
+                    // 在小窗口模式下显示简化的状态栏
+                    if (isSmallWindow)
+                      Container(
+                        height: 36,
+                        color: colorScheme.primaryContainer.withValues(
+                          alpha: 0.4,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          safeIndex < navigationItems.length
+                              ? navigationItems[safeIndex].label
+                              : '',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
                         ),
                       ),
+                    // 主内容区域
+                    Expanded(
+                      child: IndexedStack(
+                        index: safeIndex, // 使用安全的索引
+                        children: _pages, // 页面列表
+                      ),
                     ),
-                  // 主内容区域
-                  Expanded(
-                    child: IndexedStack(
-                      index: safeIndex, // 使用安全的索引
-                      children: _pages, // 页面列表
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        // 底部导航栏：在非桌面端或小窗口模式下显示
-        bottomNavigationBar:
-            (ServiceManager().uiState.isDesktop.value && !isSmallWindow)
-                ? null
-                : BottomNav(
-                  navigationItems: navigationItems,
-                  colorScheme: colorScheme,
+                  ],
                 ),
+              ),
+            ],
+          ),
+          // 底部导航栏：在非桌面端或小窗口模式下显示
+          bottomNavigationBar:
+              (ServiceManager().uiState.isDesktop.value && !isSmallWindow)
+                  ? null
+                  : BottomNav(
+                    navigationItems: navigationItems,
+                    colorScheme: colorScheme,
+                  ),
+        ),
       );
     });
   }
