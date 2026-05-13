@@ -33,6 +33,8 @@ class NetworkConfigState {
   // ========== 高级网络配置 (10个) ==========
   final relayNetworkWhitelist = signal('');
   final disableP2p = signal(false);
+  /// Windows：捕获局域网 UDP 广播并转发到虚拟网（EasyTier `enable_udp_broadcast_relay`）。
+  final enableUdpBroadcastRelay = signal(false);
   final privateMode = signal(false);
   final enableQuicProxy = signal(false);
   final disableQuicInput = signal(false);

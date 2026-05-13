@@ -86,6 +86,9 @@ class NetConfig {
   /// 是否禁用P2P
   bool disable_p2p = false; //x
 
+  /// Windows：捕获局域网 UDP 广播并转发到虚拟网（EasyTier `enable_udp_broadcast_relay`）。
+  bool enable_udp_broadcast_relay = false;
+
   /// 是否中继所有对等RPC
   bool relay_all_peer_rpc = false; //x
 

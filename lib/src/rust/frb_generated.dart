@@ -18,7 +18,6 @@ import 'dart:convert';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -76,10 +75,10 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   @override
   int get rustContentHash => -2101453571;
 
-  static ExternalLibraryLoaderConfig get kDefaultExternalLibraryLoaderConfig =>
+  static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
         stem: 'rust_lib_astral',
-        ioDirectory: kReleaseMode ? 'rust/target/release/' : 'rust/target/debug/',
+        ioDirectory: 'rust/target/release/',
         webPrefix: 'pkg/',
         wasmBindgenName: 'wasm_bindgen',
       );
@@ -2808,8 +2807,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FlagsC dco_decode_flags_c(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 28)
-      throw Exception('unexpected arr length: expect 28 but see ${arr.length}');
+    if (arr.length != 29)
+      throw Exception('unexpected arr length: expect 29 but see ${arr.length}');
     return FlagsC(
       defaultProtocol: dco_decode_String(arr[0]),
       devName: dco_decode_String(arr[1]),
@@ -2822,23 +2821,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       useSmoltcp: dco_decode_bool(arr[8]),
       relayNetworkWhitelist: dco_decode_String(arr[9]),
       disableP2P: dco_decode_bool(arr[10]),
-      relayAllPeerRpc: dco_decode_bool(arr[11]),
-      disableUdpHolePunching: dco_decode_bool(arr[12]),
-      disableTcpHolePunching: dco_decode_bool(arr[13]),
-      multiThread: dco_decode_bool(arr[14]),
-      dataCompressAlgo: dco_decode_i_32(arr[15]),
-      bindDevice: dco_decode_bool(arr[16]),
-      enableKcpProxy: dco_decode_bool(arr[17]),
-      disableKcpInput: dco_decode_bool(arr[18]),
-      disableRelayKcp: dco_decode_bool(arr[19]),
-      proxyForwardBySystem: dco_decode_bool(arr[20]),
-      acceptDns: dco_decode_bool(arr[21]),
-      privateMode: dco_decode_bool(arr[22]),
-      enableQuicProxy: dco_decode_bool(arr[23]),
-      disableQuicInput: dco_decode_bool(arr[24]),
-      disableSymHolePunching: dco_decode_bool(arr[25]),
-      tcpWhitelist: dco_decode_String(arr[26]),
-      udpWhitelist: dco_decode_String(arr[27]),
+      enableUdpBroadcastRelay: dco_decode_bool(arr[11]),
+      relayAllPeerRpc: dco_decode_bool(arr[12]),
+      disableUdpHolePunching: dco_decode_bool(arr[13]),
+      disableTcpHolePunching: dco_decode_bool(arr[14]),
+      multiThread: dco_decode_bool(arr[15]),
+      dataCompressAlgo: dco_decode_i_32(arr[16]),
+      bindDevice: dco_decode_bool(arr[17]),
+      enableKcpProxy: dco_decode_bool(arr[18]),
+      disableKcpInput: dco_decode_bool(arr[19]),
+      disableRelayKcp: dco_decode_bool(arr[20]),
+      proxyForwardBySystem: dco_decode_bool(arr[21]),
+      acceptDns: dco_decode_bool(arr[22]),
+      privateMode: dco_decode_bool(arr[23]),
+      enableQuicProxy: dco_decode_bool(arr[24]),
+      disableQuicInput: dco_decode_bool(arr[25]),
+      disableSymHolePunching: dco_decode_bool(arr[26]),
+      tcpWhitelist: dco_decode_String(arr[27]),
+      udpWhitelist: dco_decode_String(arr[28]),
     );
   }
 
@@ -3450,6 +3450,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_useSmoltcp = sse_decode_bool(deserializer);
     var var_relayNetworkWhitelist = sse_decode_String(deserializer);
     var var_disableP2P = sse_decode_bool(deserializer);
+    var var_enableUdpBroadcastRelay = sse_decode_bool(deserializer);
     var var_relayAllPeerRpc = sse_decode_bool(deserializer);
     var var_disableUdpHolePunching = sse_decode_bool(deserializer);
     var var_disableTcpHolePunching = sse_decode_bool(deserializer);
@@ -3479,6 +3480,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       useSmoltcp: var_useSmoltcp,
       relayNetworkWhitelist: var_relayNetworkWhitelist,
       disableP2P: var_disableP2P,
+      enableUdpBroadcastRelay: var_enableUdpBroadcastRelay,
       relayAllPeerRpc: var_relayAllPeerRpc,
       disableUdpHolePunching: var_disableUdpHolePunching,
       disableTcpHolePunching: var_disableTcpHolePunching,
@@ -4224,6 +4226,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.useSmoltcp, serializer);
     sse_encode_String(self.relayNetworkWhitelist, serializer);
     sse_encode_bool(self.disableP2P, serializer);
+    sse_encode_bool(self.enableUdpBroadcastRelay, serializer);
     sse_encode_bool(self.relayAllPeerRpc, serializer);
     sse_encode_bool(self.disableUdpHolePunching, serializer);
     sse_encode_bool(self.disableTcpHolePunching, serializer);

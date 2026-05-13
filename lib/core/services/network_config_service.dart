@@ -36,6 +36,7 @@ class NetworkConfigService {
     state.cidrproxy.value = config.cidrproxy;
     state.relayNetworkWhitelist.value = config.relayNetworkWhitelist;
     state.disableP2p.value = config.disableP2p;
+    state.enableUdpBroadcastRelay.value = config.enableUdpBroadcastRelay;
     state.privateMode.value = config.privateMode;
     state.enableQuicProxy.value = config.enableQuicProxy;
     state.disableQuicInput.value = config.disableQuicInput;
@@ -177,6 +178,11 @@ class NetworkConfigService {
   Future<void> updateDisableP2p(bool value) async {
     state.disableP2p.value = value;
     await _repository.updateDisableP2p(value);
+  }
+
+  Future<void> updateEnableUdpBroadcastRelay(bool value) async {
+    state.enableUdpBroadcastRelay.value = value;
+    await _repository.updateEnableUdpBroadcastRelay(value);
   }
 
   Future<void> updatePrivateMode(bool value) async {

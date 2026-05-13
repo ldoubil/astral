@@ -334,6 +334,7 @@ pub fn create_server_with_flags(
         flags.use_smoltcp = flag.use_smoltcp;
         flags.relay_network_whitelist = flag.relay_network_whitelist;
         flags.disable_p2p = flag.disable_p2p;
+        flags.enable_udp_broadcast_relay = flag.enable_udp_broadcast_relay;
         flags.relay_all_peer_rpc = flag.relay_all_peer_rpc;
         flags.disable_udp_hole_punching = flag.disable_udp_hole_punching;
         flags.disable_tcp_hole_punching = flag.disable_tcp_hole_punching;

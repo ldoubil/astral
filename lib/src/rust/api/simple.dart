@@ -80,6 +80,7 @@ class FlagsC {
   final bool useSmoltcp;
   final String relayNetworkWhitelist;
   final bool disableP2P;
+  final bool enableUdpBroadcastRelay;
   final bool relayAllPeerRpc;
   final bool disableUdpHolePunching;
   final bool disableTcpHolePunching;
@@ -110,6 +111,7 @@ class FlagsC {
     required this.useSmoltcp,
     required this.relayNetworkWhitelist,
     required this.disableP2P,
+    required this.enableUdpBroadcastRelay,
     required this.relayAllPeerRpc,
     required this.disableUdpHolePunching,
     required this.disableTcpHolePunching,
@@ -142,6 +144,7 @@ class FlagsC {
       useSmoltcp.hashCode ^
       relayNetworkWhitelist.hashCode ^
       disableP2P.hashCode ^
+      enableUdpBroadcastRelay.hashCode ^
       relayAllPeerRpc.hashCode ^
       disableUdpHolePunching.hashCode ^
       disableTcpHolePunching.hashCode ^
@@ -176,6 +179,7 @@ class FlagsC {
           useSmoltcp == other.useSmoltcp &&
           relayNetworkWhitelist == other.relayNetworkWhitelist &&
           disableP2P == other.disableP2P &&
+          enableUdpBroadcastRelay == other.enableUdpBroadcastRelay &&
           relayAllPeerRpc == other.relayAllPeerRpc &&
           disableUdpHolePunching == other.disableUdpHolePunching &&
           disableTcpHolePunching == other.disableTcpHolePunching &&

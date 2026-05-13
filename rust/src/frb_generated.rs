@@ -2790,6 +2790,7 @@ impl SseDecode for crate::api::simple::FlagsC {
         let mut var_useSmoltcp = <bool>::sse_decode(deserializer);
         let mut var_relayNetworkWhitelist = <String>::sse_decode(deserializer);
         let mut var_disableP2P = <bool>::sse_decode(deserializer);
+        let mut var_enableUdpBroadcastRelay = <bool>::sse_decode(deserializer);
         let mut var_relayAllPeerRpc = <bool>::sse_decode(deserializer);
         let mut var_disableUdpHolePunching = <bool>::sse_decode(deserializer);
         let mut var_disableTcpHolePunching = <bool>::sse_decode(deserializer);
@@ -2819,6 +2820,7 @@ impl SseDecode for crate::api::simple::FlagsC {
             use_smoltcp: var_useSmoltcp,
             relay_network_whitelist: var_relayNetworkWhitelist,
             disable_p2p: var_disableP2P,
+            enable_udp_broadcast_relay: var_enableUdpBroadcastRelay,
             relay_all_peer_rpc: var_relayAllPeerRpc,
             disable_udp_hole_punching: var_disableUdpHolePunching,
             disable_tcp_hole_punching: var_disableTcpHolePunching,
@@ -3617,6 +3619,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::simple::FlagsC {
             self.use_smoltcp.into_into_dart().into_dart(),
             self.relay_network_whitelist.into_into_dart().into_dart(),
             self.disable_p2p.into_into_dart().into_dart(),
+            self.enable_udp_broadcast_relay.into_into_dart().into_dart(),
             self.relay_all_peer_rpc.into_into_dart().into_dart(),
             self.disable_udp_hole_punching.into_into_dart().into_dart(),
             self.disable_tcp_hole_punching.into_into_dart().into_dart(),
@@ -4076,6 +4079,7 @@ impl SseEncode for crate::api::simple::FlagsC {
         <bool>::sse_encode(self.use_smoltcp, serializer);
         <String>::sse_encode(self.relay_network_whitelist, serializer);
         <bool>::sse_encode(self.disable_p2p, serializer);
+        <bool>::sse_encode(self.enable_udp_broadcast_relay, serializer);
         <bool>::sse_encode(self.relay_all_peer_rpc, serializer);
         <bool>::sse_encode(self.disable_udp_hole_punching, serializer);
         <bool>::sse_encode(self.disable_tcp_hole_punching, serializer);

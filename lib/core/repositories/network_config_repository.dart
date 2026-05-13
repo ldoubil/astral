@@ -42,6 +42,8 @@ class NetworkConfigRepository {
   Future<String> getRelayNetworkWhitelist() =>
       _db.netConfigSetting.getRelayNetworkWhitelist();
   Future<bool> getDisableP2p() => _db.netConfigSetting.getDisableP2p();
+  Future<bool> getEnableUdpBroadcastRelay() =>
+      _db.netConfigSetting.getEnableUdpBroadcastRelay();
   Future<bool> getPrivateMode() => _db.netConfigSetting.getPrivateMode();
   Future<bool> getEnableQuicProxy() =>
       _db.netConfigSetting.getEnableQuicProxy();
@@ -123,6 +125,8 @@ class NetworkConfigRepository {
       _db.netConfigSetting.updateRelayNetworkWhitelist(value);
   Future<void> updateDisableP2p(bool value) =>
       _db.netConfigSetting.updateDisableP2p(value);
+  Future<void> updateEnableUdpBroadcastRelay(bool value) =>
+      _db.netConfigSetting.updateEnableUdpBroadcastRelay(value);
   Future<void> updatePrivateMode(bool value) =>
       _db.netConfigSetting.updatePrivateMode(value);
   Future<void> updateRelayAllPeerRpc(bool value) =>
@@ -192,6 +196,7 @@ class NetworkConfigRepository {
       cidrproxy: await getCidrproxy(),
       relayNetworkWhitelist: await getRelayNetworkWhitelist(),
       disableP2p: await getDisableP2p(),
+      enableUdpBroadcastRelay: await getEnableUdpBroadcastRelay(),
       privateMode: await getPrivateMode(),
       enableQuicProxy: await getEnableQuicProxy(),
       disableQuicInput: await getDisableQuicInput(),
@@ -236,6 +241,7 @@ class NetworkConfig {
   final List<String> cidrproxy;
   final String relayNetworkWhitelist;
   final bool disableP2p;
+  final bool enableUdpBroadcastRelay;
   final bool privateMode;
   final bool enableQuicProxy;
   final bool disableQuicInput;
@@ -276,6 +282,7 @@ class NetworkConfig {
     required this.cidrproxy,
     required this.relayNetworkWhitelist,
     required this.disableP2p,
+    required this.enableUdpBroadcastRelay,
     required this.privateMode,
     required this.enableQuicProxy,
     required this.disableQuicInput,

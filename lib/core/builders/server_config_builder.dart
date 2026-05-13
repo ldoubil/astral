@@ -225,6 +225,7 @@ class ServerConfigBuilder {
       useSmoltcp: nc.useSmoltcp.value,
       relayNetworkWhitelist: '*',
       disableP2P: rc?.disableP2p ?? nc.disableP2p.value,
+      enableUdpBroadcastRelay: nc.enableUdpBroadcastRelay.value,
       relayAllPeerRpc: true,
       disableUdpHolePunching:
           rc?.disableUdpHolePunching ?? nc.disableUdpHolePunching.value,

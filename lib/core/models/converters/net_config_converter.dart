@@ -385,6 +385,25 @@ class NetConfigRepository {
     return config?.disable_p2p ?? false;
   }
 
+  // 更新 UDP 广播转发（Windows）设置
+  Future<void> updateEnableUdpBroadcastRelay(
+    bool enableUdpBroadcastRelay,
+  ) async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    if (config != null) {
+      config.enable_udp_broadcast_relay = enableUdpBroadcastRelay;
+      await _isar.writeTxn(() async {
+        await _isar.netConfigs.put(config);
+      });
+    }
+  }
+
+  // 获取 UDP 广播转发（Windows）设置
+  Future<bool> getEnableUdpBroadcastRelay() async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    return config?.enable_udp_broadcast_relay ?? false;
+  }
+
   // 更新私有模式设置
   Future<void> updatePrivateMode(bool privateMode) async {
     NetConfig? config = await _isar.netConfigs.get(1);

@@ -363,6 +363,7 @@ pub struct FlagsC {
     pub use_smoltcp: bool,
     pub relay_network_whitelist: String,
     pub disable_p2p: bool,
+    pub enable_udp_broadcast_relay: bool,
     pub relay_all_peer_rpc: bool,
     pub disable_udp_hole_punching: bool,
     pub disable_tcp_hole_punching: bool,
@@ -454,6 +455,7 @@ pub fn create_server(
         flags.use_smoltcp = flag.use_smoltcp;
         flags.relay_network_whitelist = flag.relay_network_whitelist;
         flags.disable_p2p = flag.disable_p2p;
+        flags.enable_udp_broadcast_relay = flag.enable_udp_broadcast_relay;
         flags.relay_all_peer_rpc = flag.relay_all_peer_rpc;
         flags.disable_udp_hole_punching = flag.disable_udp_hole_punching;
         flags.disable_tcp_hole_punching = flag.disable_tcp_hole_punching;
