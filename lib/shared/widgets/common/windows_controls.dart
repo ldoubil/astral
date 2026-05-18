@@ -105,11 +105,8 @@ class _WindowControlsState extends State<WindowControls>
         IconButton(
           icon: const Icon(Icons.remove),
           onPressed: () async {
-             
-               print('Minimize button was pressed!');
             ServiceManager().uiState.setBackground(true);
             await windowManager.minimize();
-             
           },
           tooltip: '最小化',
           iconSize: 20,
