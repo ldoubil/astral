@@ -274,6 +274,7 @@ pub struct KVNodeInfo {
 
     pub version: String,
     pub cost: i32,
+    pub proxy_cidrs: Vec<String>,
 }
 // 定义节点网络状态结构体
 pub struct KVNetworkStatus {
@@ -928,6 +929,7 @@ pub async fn get_network_status() -> KVNetworkStatus {
                     .to_string(),
                 rx_bytes: pair.get_rx_bytes().unwrap_or_default(),
                 tx_bytes: pair.get_tx_bytes().unwrap_or_default(),
+                proxy_cidrs: route.proxy_cidrs.clone(),
             };
 
             // 收集连接统计信息

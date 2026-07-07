@@ -422,9 +422,27 @@ class ServerConnectionManager {
     });
 
     if (Platform.isAndroid) {
+      // 主动获取网络状态，确保能拿到子网代理路由
+      List<String> proxyCidrs = [];
+      try {
+        final netStatus = await getNetworkStatus();
+        ServiceManager().connectionState.netStatus.value = netStatus;
+        for (final node in netStatus.nodes) {
+          for (final cidr in node.proxyCidrs) {
+            if (isValidCIDR(cidr) && !proxyCidrs.contains(cidr)) {
+              proxyCidrs.add(cidr);
+            }
+          }
+        }
+      } catch (_) {
+        // 如果获取失败，回退到从 state 中读取
+        proxyCidrs = _extractProxyCidrs();
+      }
+
       await VpnManager.instance.start(
         ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
         mtu: ServiceManager().networkConfigState.mtu.value,
+        proxyCidrs: proxyCidrs,
       );
 
       if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
@@ -472,9 +490,23 @@ class ServerConnectionManager {
 
       try {
         final netStatus = await getNetworkStatus();
+        final previousProxyCidrs = _extractProxyCidrs();
         batch(() {
           ServiceManager().connectionState.netStatus.value = netStatus;
         });
+
+        // 当 peer 子网代理路由发生变化时，刷新 Android VPN 路由。
+        if (Platform.isAndroid) {
+          final currentProxyCidrs = _extractProxyCidrs();
+          if (currentProxyCidrs.toSet().difference(previousProxyCidrs.toSet()).isNotEmpty ||
+              previousProxyCidrs.toSet().difference(currentProxyCidrs.toSet()).isNotEmpty) {
+            await VpnManager.instance.start(
+              ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
+              mtu: ServiceManager().networkConfigState.mtu.value,
+              proxyCidrs: currentProxyCidrs,
+            );
+          }
+        }
       } catch (_) {
         // Notification updates should continue even if network stats fail.
       }
@@ -498,6 +530,22 @@ class ServerConnectionManager {
     } finally {
       _isMonitoringNetwork = false;
     }
+  }
+
+  /// 从网络状态中提取子网代理路由
+  List<String> _extractProxyCidrs() {
+    final netStatus = ServiceManager().connectionState.netStatus.value;
+    if (netStatus == null) return [];
+
+    final cidrs = <String>[];
+    for (final node in netStatus.nodes) {
+      for (final cidr in node.proxyCidrs) {
+        if (isValidCIDR(cidr) && !cidrs.contains(cidr)) {
+          cidrs.add(cidr);
+        }
+      }
+    }
+    return cidrs;
   }
 
   /// 提取IPv4地址

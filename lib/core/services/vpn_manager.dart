@@ -36,6 +36,7 @@ class VpnManager {
     required String ipv4Addr,
     int mtu = 1300,
     List<String> disallowedApplications = const ['com.kevin.astral'],
+    List<String> proxyCidrs = const [],
   }) async {
     final plugin = _plugin;
     if (plugin == null) return;
@@ -48,10 +49,13 @@ class VpnManager {
     }
 
     // 获取有效的VPN路由
-    final routes =
+    final customRoutes =
         ServiceManager().vpnState.customVpn.value
             .where((route) => isValidCIDR(route))
             .toList();
+    
+    // 合并自定义路由和子网代理路由
+    final routes = [...customRoutes, ...proxyCidrs.where((route) => isValidCIDR(route))];
 
     await plugin.startVpn(
       ipv4Addr: finalIpv4,
