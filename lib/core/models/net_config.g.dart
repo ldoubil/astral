@@ -115,83 +115,93 @@ const NetConfigSchema = CollectionSchema(
       name: r'enable_quic_proxy',
       type: IsarType.bool,
     ),
-    r'enable_udp_broadcast_relay': PropertySchema(
+    r'enable_socks5': PropertySchema(
       id: 20,
+      name: r'enable_socks5',
+      type: IsarType.bool,
+    ),
+    r'enable_udp_broadcast_relay': PropertySchema(
+      id: 21,
       name: r'enable_udp_broadcast_relay',
       type: IsarType.bool,
     ),
     r'hostname': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'hostname',
       type: IsarType.string,
     ),
     r'instance_name': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'instance_name',
       type: IsarType.string,
     ),
-    r'ipv4': PropertySchema(id: 23, name: r'ipv4', type: IsarType.string),
+    r'ipv4': PropertySchema(id: 24, name: r'ipv4', type: IsarType.string),
     r'latency_first': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'latency_first',
       type: IsarType.bool,
     ),
     r'listeners': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'listeners',
       type: IsarType.stringList,
     ),
-    r'mtu': PropertySchema(id: 26, name: r'mtu', type: IsarType.long),
+    r'mtu': PropertySchema(id: 27, name: r'mtu', type: IsarType.long),
     r'multi_thread': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'multi_thread',
       type: IsarType.bool,
     ),
-    r'netns': PropertySchema(id: 28, name: r'netns', type: IsarType.string),
+    r'netns': PropertySchema(id: 29, name: r'netns', type: IsarType.string),
     r'network_name': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'network_name',
       type: IsarType.string,
     ),
     r'network_secret': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'network_secret',
       type: IsarType.string,
     ),
-    r'no_tun': PropertySchema(id: 31, name: r'no_tun', type: IsarType.bool),
-    r'peer': PropertySchema(id: 32, name: r'peer', type: IsarType.stringList),
+    r'no_tun': PropertySchema(id: 32, name: r'no_tun', type: IsarType.bool),
+    r'peer': PropertySchema(id: 33, name: r'peer', type: IsarType.stringList),
     r'private_mode': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'private_mode',
       type: IsarType.bool,
     ),
     r'proxy_forward_by_system': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'proxy_forward_by_system',
       type: IsarType.bool,
     ),
     r'relay_all_peer_rpc': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'relay_all_peer_rpc',
       type: IsarType.bool,
     ),
     r'relay_network_whitelist': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'relay_network_whitelist',
       type: IsarType.string,
     ),
+    r'socks5_port': PropertySchema(
+      id: 38,
+      name: r'socks5_port',
+      type: IsarType.long,
+    ),
     r'tcp_whitelist': PropertySchema(
-      id: 37,
+      id: 39,
       name: r'tcp_whitelist',
       type: IsarType.string,
     ),
     r'udp_whitelist': PropertySchema(
-      id: 38,
+      id: 40,
       name: r'udp_whitelist',
       type: IsarType.string,
     ),
     r'use_smoltcp': PropertySchema(
-      id: 39,
+      id: 41,
       name: r'use_smoltcp',
       type: IsarType.bool,
     ),
@@ -299,26 +309,28 @@ void _netConfigSerialize(
   writer.writeBool(offsets[17], object.enable_ipv6);
   writer.writeBool(offsets[18], object.enable_kcp_proxy);
   writer.writeBool(offsets[19], object.enable_quic_proxy);
-  writer.writeBool(offsets[20], object.enable_udp_broadcast_relay);
-  writer.writeString(offsets[21], object.hostname);
-  writer.writeString(offsets[22], object.instance_name);
-  writer.writeString(offsets[23], object.ipv4);
-  writer.writeBool(offsets[24], object.latency_first);
-  writer.writeStringList(offsets[25], object.listeners);
-  writer.writeLong(offsets[26], object.mtu);
-  writer.writeBool(offsets[27], object.multi_thread);
-  writer.writeString(offsets[28], object.netns);
-  writer.writeString(offsets[29], object.network_name);
-  writer.writeString(offsets[30], object.network_secret);
-  writer.writeBool(offsets[31], object.no_tun);
-  writer.writeStringList(offsets[32], object.peer);
-  writer.writeBool(offsets[33], object.private_mode);
-  writer.writeBool(offsets[34], object.proxy_forward_by_system);
-  writer.writeBool(offsets[35], object.relay_all_peer_rpc);
-  writer.writeString(offsets[36], object.relay_network_whitelist);
-  writer.writeString(offsets[37], object.tcp_whitelist);
-  writer.writeString(offsets[38], object.udp_whitelist);
-  writer.writeBool(offsets[39], object.use_smoltcp);
+  writer.writeBool(offsets[20], object.enable_socks5);
+  writer.writeBool(offsets[21], object.enable_udp_broadcast_relay);
+  writer.writeString(offsets[22], object.hostname);
+  writer.writeString(offsets[23], object.instance_name);
+  writer.writeString(offsets[24], object.ipv4);
+  writer.writeBool(offsets[25], object.latency_first);
+  writer.writeStringList(offsets[26], object.listeners);
+  writer.writeLong(offsets[27], object.mtu);
+  writer.writeBool(offsets[28], object.multi_thread);
+  writer.writeString(offsets[29], object.netns);
+  writer.writeString(offsets[30], object.network_name);
+  writer.writeString(offsets[31], object.network_secret);
+  writer.writeBool(offsets[32], object.no_tun);
+  writer.writeStringList(offsets[33], object.peer);
+  writer.writeBool(offsets[34], object.private_mode);
+  writer.writeBool(offsets[35], object.proxy_forward_by_system);
+  writer.writeBool(offsets[36], object.relay_all_peer_rpc);
+  writer.writeString(offsets[37], object.relay_network_whitelist);
+  writer.writeLong(offsets[38], object.socks5_port);
+  writer.writeString(offsets[39], object.tcp_whitelist);
+  writer.writeString(offsets[40], object.udp_whitelist);
+  writer.writeBool(offsets[41], object.use_smoltcp);
 }
 
 NetConfig _netConfigDeserialize(
@@ -355,27 +367,29 @@ NetConfig _netConfigDeserialize(
   object.enable_ipv6 = reader.readBool(offsets[17]);
   object.enable_kcp_proxy = reader.readBool(offsets[18]);
   object.enable_quic_proxy = reader.readBool(offsets[19]);
-  object.enable_udp_broadcast_relay = reader.readBool(offsets[20]);
-  object.hostname = reader.readString(offsets[21]);
+  object.enable_socks5 = reader.readBool(offsets[20]);
+  object.enable_udp_broadcast_relay = reader.readBool(offsets[21]);
+  object.hostname = reader.readString(offsets[22]);
   object.id = id;
-  object.instance_name = reader.readString(offsets[22]);
-  object.ipv4 = reader.readString(offsets[23]);
-  object.latency_first = reader.readBool(offsets[24]);
-  object.listeners = reader.readStringList(offsets[25]) ?? [];
-  object.mtu = reader.readLong(offsets[26]);
-  object.multi_thread = reader.readBool(offsets[27]);
-  object.netns = reader.readString(offsets[28]);
-  object.network_name = reader.readString(offsets[29]);
-  object.network_secret = reader.readString(offsets[30]);
-  object.no_tun = reader.readBool(offsets[31]);
-  object.peer = reader.readStringList(offsets[32]) ?? [];
-  object.private_mode = reader.readBool(offsets[33]);
-  object.proxy_forward_by_system = reader.readBool(offsets[34]);
-  object.relay_all_peer_rpc = reader.readBool(offsets[35]);
-  object.relay_network_whitelist = reader.readString(offsets[36]);
-  object.tcp_whitelist = reader.readString(offsets[37]);
-  object.udp_whitelist = reader.readString(offsets[38]);
-  object.use_smoltcp = reader.readBool(offsets[39]);
+  object.instance_name = reader.readString(offsets[23]);
+  object.ipv4 = reader.readString(offsets[24]);
+  object.latency_first = reader.readBool(offsets[25]);
+  object.listeners = reader.readStringList(offsets[26]) ?? [];
+  object.mtu = reader.readLong(offsets[27]);
+  object.multi_thread = reader.readBool(offsets[28]);
+  object.netns = reader.readString(offsets[29]);
+  object.network_name = reader.readString(offsets[30]);
+  object.network_secret = reader.readString(offsets[31]);
+  object.no_tun = reader.readBool(offsets[32]);
+  object.peer = reader.readStringList(offsets[33]) ?? [];
+  object.private_mode = reader.readBool(offsets[34]);
+  object.proxy_forward_by_system = reader.readBool(offsets[35]);
+  object.relay_all_peer_rpc = reader.readBool(offsets[36]);
+  object.relay_network_whitelist = reader.readString(offsets[37]);
+  object.socks5_port = reader.readLong(offsets[38]);
+  object.tcp_whitelist = reader.readString(offsets[39]);
+  object.udp_whitelist = reader.readString(offsets[40]);
+  object.use_smoltcp = reader.readBool(offsets[41]);
   return object;
 }
 
@@ -436,42 +450,46 @@ P _netConfigDeserializeProp<P>(
     case 20:
       return (reader.readBool(offset)) as P;
     case 21:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 22:
       return (reader.readString(offset)) as P;
     case 23:
       return (reader.readString(offset)) as P;
     case 24:
-      return (reader.readBool(offset)) as P;
-    case 25:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 26:
-      return (reader.readLong(offset)) as P;
-    case 27:
-      return (reader.readBool(offset)) as P;
-    case 28:
       return (reader.readString(offset)) as P;
+    case 25:
+      return (reader.readBool(offset)) as P;
+    case 26:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 27:
+      return (reader.readLong(offset)) as P;
+    case 28:
+      return (reader.readBool(offset)) as P;
     case 29:
       return (reader.readString(offset)) as P;
     case 30:
       return (reader.readString(offset)) as P;
     case 31:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 32:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 33:
       return (reader.readBool(offset)) as P;
+    case 33:
+      return (reader.readStringList(offset) ?? []) as P;
     case 34:
       return (reader.readBool(offset)) as P;
     case 35:
       return (reader.readBool(offset)) as P;
     case 36:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 37:
       return (reader.readString(offset)) as P;
     case 38:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 39:
+      return (reader.readString(offset)) as P;
+    case 40:
+      return (reader.readString(offset)) as P;
+    case 41:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1318,6 +1336,15 @@ extension NetConfigQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'enable_quic_proxy', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  enable_socks5EqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'enable_socks5', value: value),
       );
     });
   }
@@ -2917,6 +2944,63 @@ extension NetConfigQueryFilter
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition> socks5_portEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'socks5_port', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
+  socks5_portGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'socks5_port',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition> socks5_portLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'socks5_port',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition> socks5_portBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'socks5_port',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterFilterCondition>
   tcp_whitelistEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -3455,6 +3539,18 @@ extension NetConfigQuerySortBy on QueryBuilder<NetConfig, NetConfig, QSortBy> {
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByEnable_socks5() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enable_socks5', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortByEnable_socks5Desc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enable_socks5', Sort.desc);
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterSortBy>
   sortByEnable_udp_broadcast_relay() {
     return QueryBuilder.apply(this, (query) {
@@ -3639,6 +3735,18 @@ extension NetConfigQuerySortBy on QueryBuilder<NetConfig, NetConfig, QSortBy> {
   sortByRelay_network_whitelistDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'relay_network_whitelist', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortBySocks5_port() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'socks5_port', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> sortBySocks5_portDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'socks5_port', Sort.desc);
     });
   }
 
@@ -3912,6 +4020,18 @@ extension NetConfigQuerySortThenBy
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByEnable_socks5() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enable_socks5', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByEnable_socks5Desc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enable_socks5', Sort.desc);
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterSortBy>
   thenByEnable_udp_broadcast_relay() {
     return QueryBuilder.apply(this, (query) {
@@ -4111,6 +4231,18 @@ extension NetConfigQuerySortThenBy
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenBySocks5_port() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'socks5_port', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenBySocks5_portDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'socks5_port', Sort.desc);
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QAfterSortBy> thenByTcp_whitelist() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'tcp_whitelist', Sort.asc);
@@ -4274,6 +4406,12 @@ extension NetConfigQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NetConfig, NetConfig, QDistinct> distinctByEnable_socks5() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'enable_socks5');
+    });
+  }
+
   QueryBuilder<NetConfig, NetConfig, QDistinct>
   distinctByEnable_udp_broadcast_relay() {
     return QueryBuilder.apply(this, (query) {
@@ -4397,6 +4535,12 @@ extension NetConfigQueryWhereDistinct
         r'relay_network_whitelist',
         caseSensitive: caseSensitive,
       );
+    });
+  }
+
+  QueryBuilder<NetConfig, NetConfig, QDistinct> distinctBySocks5_port() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'socks5_port');
     });
   }
 
@@ -4561,6 +4705,12 @@ extension NetConfigQueryProperty
     });
   }
 
+  QueryBuilder<NetConfig, bool, QQueryOperations> enable_socks5Property() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'enable_socks5');
+    });
+  }
+
   QueryBuilder<NetConfig, bool, QQueryOperations>
   enable_udp_broadcast_relayProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -4663,6 +4813,12 @@ extension NetConfigQueryProperty
   relay_network_whitelistProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'relay_network_whitelist');
+    });
+  }
+
+  QueryBuilder<NetConfig, int, QQueryOperations> socks5_portProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'socks5_port');
     });
   }
 

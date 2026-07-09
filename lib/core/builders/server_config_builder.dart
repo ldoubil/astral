@@ -245,9 +245,10 @@ class ServerConfigBuilder {
           rc?.disableSymHolePunching ?? nc.disableSymHolePunching.value,
       tcpWhitelist: nc.tcpWhitelist.value,
       udpWhitelist: nc.udpWhitelist.value,
+      socks5Port: nc.enableSocks5.value ? nc.socks5Port.value : 0,
     );
 
-    _log('⚙️  运行标志配置完成 (加密: $enableEncryption)');
+    _log('⚙️  运行标志配置完成 (加密: $enableEncryption, SOCKS5: ${_flags!.socks5Port})');
     return this;
   }
 

@@ -334,6 +334,40 @@ class NetConfigRepository {
     return config?.no_tun ?? false;
   }
 
+  // 更新 SOCKS5 服务器设置
+  Future<void> updateEnableSocks5(bool enableSocks5) async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    if (config != null) {
+      config.enable_socks5 = enableSocks5;
+      await _isar.writeTxn(() async {
+        await _isar.netConfigs.put(config);
+      });
+    }
+  }
+
+  // 获取 SOCKS5 服务器设置
+  Future<bool> getEnableSocks5() async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    return config?.enable_socks5 ?? false;
+  }
+
+  // 更新 SOCKS5 端口
+  Future<void> updateSocks5Port(int socks5Port) async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    if (config != null) {
+      config.socks5_port = socks5Port;
+      await _isar.writeTxn(() async {
+        await _isar.netConfigs.put(config);
+      });
+    }
+  }
+
+  // 获取 SOCKS5 端口
+  Future<int> getSocks5Port() async {
+    NetConfig? config = await _isar.netConfigs.get(1);
+    return config?.socks5_port ?? 1080;
+  }
+
   // 更新smoltcp网络栈设置
   Future<void> updateUseSmoltcp(bool useSmoltcp) async {
     NetConfig? config = await _isar.netConfigs.get(1);

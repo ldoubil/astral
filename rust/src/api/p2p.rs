@@ -352,6 +352,14 @@ pub fn create_server_with_flags(
         flags.disable_sym_hole_punching = flag.disable_sym_hole_punching;
         cfg.set_flags(flags);
 
+        if flag.socks5_port > 0 {
+            let portal = format!("socks5://127.0.0.1:{}", flag.socks5_port);
+            match portal.parse() {
+                Ok(url) => cfg.set_socks5_portal(Some(url)),
+                Err(e) => return Err(format!("invalid socks5 portal: {}, error: {}", portal, e)),
+            }
+        }
+
         if !flag.tcp_whitelist.is_empty() {
             let tcp_ports: Vec<String> = flag
                 .tcp_whitelist

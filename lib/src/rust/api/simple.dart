@@ -99,6 +99,9 @@ class FlagsC {
   final String tcpWhitelist;
   final String udpWhitelist;
 
+  /// SOCKS5 监听端口，0 表示禁用
+  final int socks5Port;
+
   const FlagsC({
     required this.defaultProtocol,
     required this.devName,
@@ -129,6 +132,7 @@ class FlagsC {
     required this.disableSymHolePunching,
     required this.tcpWhitelist,
     required this.udpWhitelist,
+    required this.socks5Port,
   });
 
   @override
@@ -161,7 +165,8 @@ class FlagsC {
       disableQuicInput.hashCode ^
       disableSymHolePunching.hashCode ^
       tcpWhitelist.hashCode ^
-      udpWhitelist.hashCode;
+      udpWhitelist.hashCode ^
+      socks5Port.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -196,7 +201,8 @@ class FlagsC {
           disableQuicInput == other.disableQuicInput &&
           disableSymHolePunching == other.disableSymHolePunching &&
           tcpWhitelist == other.tcpWhitelist &&
-          udpWhitelist == other.udpWhitelist;
+          udpWhitelist == other.udpWhitelist &&
+          socks5Port == other.socks5Port;
 }
 
 class Forward {
@@ -308,7 +314,7 @@ class KVNodeInfo {
     required this.txBytes,
     required this.version,
     required this.cost,
-    this.proxyCidrs = const [],
+    required this.proxyCidrs,
   });
 
   @override

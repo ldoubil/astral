@@ -39,8 +39,9 @@ class _ConnectButtonState extends State<ConnectButton>
     if (Platform.isAndroid) {
       NotificationService.instance.initialize();
 
-      // 监听VPN事件
+      // 监听VPN事件（NO-TUN 模式下不使用 VpnService）
       VpnManager.instance.plugin?.onVpnServiceStarted.listen((data) {
+        if (ServiceManager().networkConfigState.noTun.value) return;
         VpnManager.instance.configureTunFd(data['fd']);
       });
     }

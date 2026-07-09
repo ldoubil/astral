@@ -112,6 +112,11 @@ abstract class  LocaleKeys {
   static const magic_dns_desc = 'magic_dns_desc';
   static const tun_device = 'tun_device';
   static const tun_device_desc = 'tun_device_desc';
+  static const enable_socks5 = 'enable_socks5';
+  static const enable_socks5_desc = 'enable_socks5_desc';
+  static const socks5_port = 'socks5_port';
+  static const socks5_port_desc = 'socks5_port_desc';
+  static const socks5_address_hint = 'socks5_address_hint';
   static const smoltcp_stack = 'smoltcp_stack';
   static const not_recommended = 'not_recommended';
   static const smoltcp_stack_desc = 'smoltcp_stack_desc';

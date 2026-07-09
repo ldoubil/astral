@@ -77,6 +77,12 @@ class NetConfig {
   /// 是否禁用TUN设备
   bool no_tun = false; //x
 
+  /// 是否启用 SOCKS5 服务器
+  bool enable_socks5 = false;
+
+  /// SOCKS5 监听端口
+  int socks5_port = 1080;
+
   /// 是否使用smoltcp网络栈
   bool use_smoltcp = false; //x
 

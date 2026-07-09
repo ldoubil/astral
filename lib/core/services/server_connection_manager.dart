@@ -122,10 +122,12 @@ class ServerConnectionManager {
           return false;
         }
 
-        // 准备VPN（Android）
-        if (Platform.isAndroid) {
+        // 准备VPN（Android，NO-TUN 模式下由 Clash 等工具接管）
+        if (Platform.isAndroid && !services.networkConfigState.noTun.value) {
           await NotificationService.instance.initialize();
           await VpnManager.instance.prepare();
+        } else if (Platform.isAndroid) {
+          await NotificationService.instance.initialize();
         }
 
         // 初始化服务器
@@ -249,7 +251,9 @@ class ServerConnectionManager {
 
     // 停止VPN
     if (Platform.isAndroid) {
-      await VpnManager.instance.stop();
+      if (!ServiceManager().networkConfigState.noTun.value) {
+        await VpnManager.instance.stop();
+      }
       await NotificationService.instance.cancelConnectionNotification();
     }
 
@@ -421,7 +425,7 @@ class ServerConnectionManager {
       _markActiveServers();
     });
 
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid && !ServiceManager().networkConfigState.noTun.value) {
       // 主动获取网络状态，确保能拿到子网代理路由
       List<String> proxyCidrs = [];
       try {
@@ -496,7 +500,7 @@ class ServerConnectionManager {
         });
 
         // 当 peer 子网代理路由发生变化时，刷新 Android VPN 路由。
-        if (Platform.isAndroid) {
+        if (Platform.isAndroid && !ServiceManager().networkConfigState.noTun.value) {
           final currentProxyCidrs = _extractProxyCidrs();
           if (currentProxyCidrs.toSet().difference(previousProxyCidrs.toSet()).isNotEmpty ||
               previousProxyCidrs.toSet().difference(currentProxyCidrs.toSet()).isNotEmpty) {

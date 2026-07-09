@@ -231,6 +231,62 @@ class NetworkSettingsPage extends BaseSettingsPage {
                   ServiceManager().networkConfig.updateNoTun(value);
                 },
               ),
+              SwitchListTile(
+                title: Text(LocaleKeys.enable_socks5.tr()),
+                subtitle: Text(LocaleKeys.enable_socks5_desc.tr()),
+                value: ServiceManager().networkConfigState.enableSocks5.value,
+                onChanged: (value) {
+                  ServiceManager().networkConfig.updateEnableSocks5(value);
+                },
+              ),
+              if (ServiceManager().networkConfigState.enableSocks5.value) ...[
+                ListTile(
+                  title: Text(LocaleKeys.socks5_port.tr()),
+                  subtitle: Text(LocaleKeys.socks5_port_desc.tr()),
+                  trailing: SizedBox(
+                    width: 100,
+                    child: TextFormField(
+                      key: ValueKey(
+                        ServiceManager().networkConfigState.socks5Port.value,
+                      ),
+                      initialValue: ServiceManager()
+                          .networkConfigState
+                          .socks5Port
+                          .value
+                          .toString(),
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.end,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onFieldSubmitted: (value) {
+                        final port = int.tryParse(value);
+                        if (port != null && port > 0 && port <= 65535) {
+                          ServiceManager().networkConfig.updateSocks5Port(port);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    LocaleKeys.socks5_address_hint.tr(
+                      namedArgs: {
+                        'port': ServiceManager()
+                            .networkConfigState
+                            .socks5Port
+                            .value
+                            .toString(),
+                      },
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ],

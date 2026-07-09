@@ -31,6 +31,8 @@ class NetworkConfigService {
     state.latencyFirst.value = config.latencyFirst;
     state.enableExitNode.value = config.enableExitNode;
     state.noTun.value = config.noTun;
+    state.enableSocks5.value = config.enableSocks5;
+    state.socks5Port.value = config.socks5Port;
     state.useSmoltcp.value = config.useSmoltcp;
     state.dataCompressAlgo.value = config.dataCompressAlgo;
     state.cidrproxy.value = config.cidrproxy;
@@ -156,6 +158,16 @@ class NetworkConfigService {
   Future<void> updateNoTun(bool value) async {
     state.noTun.value = value;
     await _repository.updateNoTun(value);
+  }
+
+  Future<void> updateEnableSocks5(bool value) async {
+    state.enableSocks5.value = value;
+    await _repository.updateEnableSocks5(value);
+  }
+
+  Future<void> updateSocks5Port(int value) async {
+    state.socks5Port.value = value;
+    await _repository.updateSocks5Port(value);
   }
 
   Future<void> updateUseSmoltcp(bool value) async {

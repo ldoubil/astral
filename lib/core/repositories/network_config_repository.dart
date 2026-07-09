@@ -33,6 +33,8 @@ class NetworkConfigRepository {
   Future<bool> getLatencyFirst() => _db.netConfigSetting.getLatencyFirst();
   Future<bool> getEnableExitNode() => _db.netConfigSetting.getEnableExitNode();
   Future<bool> getNoTun() => _db.netConfigSetting.getNoTun();
+  Future<bool> getEnableSocks5() => _db.netConfigSetting.getEnableSocks5();
+  Future<int> getSocks5Port() => _db.netConfigSetting.getSocks5Port();
   Future<bool> getUseSmoltcp() => _db.netConfigSetting.getUseSmoltcp();
   Future<int> getDataCompressAlgo() =>
       _db.netConfigSetting.getDataCompressAlgo();
@@ -114,6 +116,10 @@ class NetworkConfigRepository {
       _db.netConfigSetting.updateEnableExitNode(value);
   Future<void> updateNoTun(bool value) =>
       _db.netConfigSetting.updateNoTun(value);
+  Future<void> updateEnableSocks5(bool value) =>
+      _db.netConfigSetting.updateEnableSocks5(value);
+  Future<void> updateSocks5Port(int value) =>
+      _db.netConfigSetting.updateSocks5Port(value);
   Future<void> updateUseSmoltcp(bool value) =>
       _db.netConfigSetting.updateUseSmoltcp(value);
   Future<void> updateDataCompressAlgo(int value) =>
@@ -191,6 +197,8 @@ class NetworkConfigRepository {
       latencyFirst: await getLatencyFirst(),
       enableExitNode: await getEnableExitNode(),
       noTun: await getNoTun(),
+      enableSocks5: await getEnableSocks5(),
+      socks5Port: await getSocks5Port(),
       useSmoltcp: await getUseSmoltcp(),
       dataCompressAlgo: await getDataCompressAlgo(),
       cidrproxy: await getCidrproxy(),
@@ -236,6 +244,8 @@ class NetworkConfig {
   final bool latencyFirst;
   final bool enableExitNode;
   final bool noTun;
+  final bool enableSocks5;
+  final int socks5Port;
   final bool useSmoltcp;
   final int dataCompressAlgo;
   final List<String> cidrproxy;
@@ -277,6 +287,8 @@ class NetworkConfig {
     required this.latencyFirst,
     required this.enableExitNode,
     required this.noTun,
+    required this.enableSocks5,
+    required this.socks5Port,
     required this.useSmoltcp,
     required this.dataCompressAlgo,
     required this.cidrproxy,

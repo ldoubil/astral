@@ -26,6 +26,8 @@ class NetworkConfigState {
   final latencyFirst = signal(false);
   final enableExitNode = signal(false);
   final noTun = signal(false);
+  final enableSocks5 = signal(false);
+  final socks5Port = signal(1080);
   final useSmoltcp = signal(false);
   final dataCompressAlgo = signal(1);
   final cidrproxy = signal<List<String>>([]);
