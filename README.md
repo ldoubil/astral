@@ -1,10 +1,3 @@
-
-
-最新版可以在群里查看 很多issues都在计划内 😘
-涉及到太多内容修改以及各种需求  因为更新频率太高了 所以还没发
-
-
-
 <div align="center">
   <img width="300" src="https://astral.fan/_astro/%E6%9A%97%E8%89%B2.C9IdEQgX.svg" alt="Astral Logo">
   <h1 id="astral"></h1>
@@ -41,7 +34,7 @@ Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的
 
 - **前端**: Flutter (Dart)
 - **后端**: Rust (EasyTier)
-- **网络**: P2P、VPN、WireGuard
+- **网络**: P2P、WireGuard
 
 ## 📦 功能说明
 
@@ -57,12 +50,7 @@ Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的
 |------|---------|------|
 | 🇨🇳 简体中文 | zh | [zh.json](assets/translations/zh.json) |
 | 🇺🇸 英语 | en | [en.json](assets/translations/en.json) |
-| 🇩🇪 德语 | de | [de.json](assets/translations/de.json) |
-| 🇪🇸 西班牙语 | es | [es.json](assets/translations/es.json) |
-| 🇫🇷 法语 | fr | [fr.json](assets/translations/fr.json) |
-| 🇯🇵 日语 | ja | [ja.json](assets/translations/ja.json) |
-| 🇰🇷 韩语 | ko | [ko.json](assets/translations/ko.json) |
-| 🇷🇺 俄语 | ru | [ru.json](assets/translations/ru.json) |
+
 
 
 ## 📄 许可协议
@@ -101,6 +89,6 @@ Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的
 ### 联系与资源
 - 🔗 **QQ群**：808169040
 - 📚 **项目文档**：[astral.fan](https://astral.fan)
-- 🌐 **语言支持**：如需帮助翻译或报告翻译问题，请参考[多语言支持](#-多语言支持-1)章节并通过QQ群联系我们
+- 🌐 **语言支持**：如需帮助翻译或报告翻译问题，请参考[多语言支持](#-多语言支持-1)章节
 
 
