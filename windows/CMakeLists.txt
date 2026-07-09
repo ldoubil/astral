@@ -46,6 +46,26 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
 endfunction()
 
+# MSVC 14.51+ rejects experimental coroutines (/await). Affected C++/WinRT
+# plugins must use C++20 <coroutine> instead of legacy /await.
+function(ASTRAL_ENABLE_CPP20_COROUTINES TARGET_NAME)
+  if(NOT TARGET ${TARGET_NAME})
+    return()
+  endif()
+  target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
+  if(MSVC)
+    get_target_property(_compile_options ${TARGET_NAME} COMPILE_OPTIONS)
+    if(_compile_options AND NOT _compile_options STREQUAL "_compile_options-NOTFOUND")
+      list(FILTER _compile_options EXCLUDE REGEX "^/await$")
+      set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_OPTIONS "${_compile_options}")
+    endif()
+    # ATL CW2A -> std::string needs permissive mode under C++20 in older plugins.
+    if(${TARGET_NAME} STREQUAL "flutter_local_notifications_windows")
+      target_compile_options(${TARGET_NAME} PRIVATE /permissive)
+    endif()
+  endif()
+endfunction()
+
 # Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
@@ -58,6 +78,14 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Only plugins that use C++/WinRT coroutines need C++20 without /await.
+set(ASTRAL_CPP20_COROUTINE_TARGETS
+  permission_handler_windows_plugin
+  flutter_local_notifications_windows
+)
+foreach(_astral_target ${ASTRAL_CPP20_COROUTINE_TARGETS})
+  ASTRAL_ENABLE_CPP20_COROUTINES(${_astral_target})
+endforeach()
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can

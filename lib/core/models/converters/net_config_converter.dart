@@ -1,6 +1,13 @@
 ﻿import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/net_config.dart';
 
+int _normalizeSocks5Port(int port) {
+  if (port <= 0 || port > 65535) {
+    return 1080;
+  }
+  return port;
+}
+
 class NetConfigRepository {
   final Isar _isar;
 
@@ -14,7 +21,22 @@ class NetConfigRepository {
       await _isar.writeTxn(() async {
         await _isar.netConfigs.put(NetConfig());
       });
+      return;
     }
+    await _migrateSocks5Fields();
+  }
+
+  Future<void> _migrateSocks5Fields() async {
+    final config = await _isar.netConfigs.get(1);
+    if (config == null) return;
+
+    final normalizedPort = _normalizeSocks5Port(config.socks5_port);
+    if (config.socks5_port == normalizedPort) return;
+
+    config.socks5_port = normalizedPort;
+    await _isar.writeTxn(() async {
+      await _isar.netConfigs.put(config);
+    });
   }
 
   // 更新网络命名空间
@@ -355,7 +377,7 @@ class NetConfigRepository {
   Future<void> updateSocks5Port(int socks5Port) async {
     NetConfig? config = await _isar.netConfigs.get(1);
     if (config != null) {
-      config.socks5_port = socks5Port;
+      config.socks5_port = _normalizeSocks5Port(socks5Port);
       await _isar.writeTxn(() async {
         await _isar.netConfigs.put(config);
       });
@@ -365,7 +387,7 @@ class NetConfigRepository {
   // 获取 SOCKS5 端口
   Future<int> getSocks5Port() async {
     NetConfig? config = await _isar.netConfigs.get(1);
-    return config?.socks5_port ?? 1080;
+    return _normalizeSocks5Port(config?.socks5_port ?? 1080);
   }
 
   // 更新smoltcp网络栈设置
