@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
 import 'package:astral/shared/utils/helpers/update_helper.dart';
 import 'package:astral/features/settings/pages/general/history_versions_page.dart';
 import 'package:astral/core/ui/base_settings_page.dart';
@@ -59,12 +60,8 @@ class UpdateSettingsPage extends BaseSettingsPage {
               buildDivider(),
               ListTile(
                 leading: const Icon(Icons.bolt),
-                title: const Text('下载加速前缀'),
-                subtitle: Text(
-                  ServiceManager().updateState.downloadAccelerate.value.isEmpty
-                      ? '未启用（直连 GitHub）'
-                      : ServiceManager().updateState.downloadAccelerate.value,
-                ),
+                title: Text(LocaleKeys.download_acceleration.tr()),
+                subtitle: Text(_downloadAccelerateDescription()),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _editDownloadAccelerate(context),
               ),
@@ -205,46 +202,152 @@ class UpdateSettingsPage extends BaseSettingsPage {
     );
   }
 
+  String _downloadAccelerateDescription() {
+    final setting = ServiceManager().updateState.downloadAccelerate.value;
+    if (!GitHubProxySelector.isAccelerationEnabled(setting)) {
+      return LocaleKeys.download_acceleration_disabled.tr();
+    }
+    if (GitHubProxySelector.isAutoMode(setting)) {
+      final resolved =
+          ServiceManager().updateState.resolvedDownloadAccelerate.value;
+      if (resolved != null && resolved.isNotEmpty) {
+        return LocaleKeys.download_acceleration_auto_current.tr(
+          namedArgs: {'mirror': resolved},
+        );
+      }
+      return LocaleKeys.download_acceleration_auto_pending.tr();
+    }
+    return setting;
+  }
+
   void _editDownloadAccelerate(BuildContext context) {
     final current = ServiceManager().updateState.downloadAccelerate.value;
-    final controller = TextEditingController(text: current);
+    var mode = GitHubProxySelector.isAccelerationEnabled(current)
+        ? (GitHubProxySelector.isAutoMode(current) ? 'auto' : 'manual')
+        : 'off';
+    final controller = TextEditingController(
+      text: GitHubProxySelector.isAutoMode(current) ? '' : current,
+    );
+    var probing = false;
+    String? probeResult;
 
     showDialog(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('设置下载加速前缀'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: '例如: https://gh.xmly.dev/',
-                border: OutlineInputBorder(),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          Future<void> runProbe() async {
+            setState(() {
+              probing = true;
+              probeResult = null;
+            });
+            GitHubProxySelector.invalidateCache();
+            final prefix = await GitHubProxySelector.selectFastest(
+              forceRefresh: true,
+            );
+            if (!dialogContext.mounted) return;
+            setState(() {
+              probing = false;
+              probeResult = prefix ?? LocaleKeys.download_acceleration_probe_failed.tr();
+            });
+            if (prefix != null) {
+              ServiceManager().updateState.setResolvedDownloadAccelerate(prefix);
+            }
+          }
+
+          return AlertDialog(
+            title: Text(LocaleKeys.download_acceleration_title.tr()),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(LocaleKeys.download_acceleration_info_desc.tr()),
+                  const SizedBox(height: 12),
+                  RadioListTile<String>(
+                    title: Text(LocaleKeys.download_acceleration_auto.tr()),
+                    subtitle: Text(
+                      GitHubProxySelector.builtInMirrors.join('\n'),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    value: 'auto',
+                    groupValue: mode,
+                    onChanged: (value) => setState(() => mode = value!),
+                  ),
+                  RadioListTile<String>(
+                    title: Text(LocaleKeys.download_acceleration_manual.tr()),
+                    value: 'manual',
+                    groupValue: mode,
+                    onChanged: (value) => setState(() => mode = value!),
+                  ),
+                  if (mode == 'manual')
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        hintText: LocaleKeys.download_acceleration_manual_hint.tr(),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  RadioListTile<String>(
+                    title: Text(LocaleKeys.download_acceleration_disabled.tr()),
+                    value: 'off',
+                    groupValue: mode,
+                    onChanged: (value) => setState(() => mode = value!),
+                  ),
+                  if (mode == 'auto') ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: probing ? null : runProbe,
+                      icon: probing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.speed),
+                      label: Text(
+                        probing
+                            ? LocaleKeys.download_acceleration_probing.tr()
+                            : LocaleKeys.download_acceleration_reprobe.tr(),
+                      ),
+                    ),
+                    if (probeResult != null) ...[
+                      const SizedBox(height: 8),
+                      Text(probeResult!, style: const TextStyle(fontSize: 13)),
+                    ],
+                  ],
+                ],
               ),
             ),
             actions: [
-              TextButton(
-                onPressed: () async {
-                  await ServiceManager().appSettings.setDownloadAccelerate('');
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-                child: const Text('关闭加速'),
-              ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
                 child: Text(LocaleKeys.cancel.tr()),
               ),
               ElevatedButton(
                 onPressed: () async {
-                  final value = controller.text.trim();
-                  final normalized =
-                      value.isEmpty
-                          ? ''
-                          : (value.endsWith('/') ? value : '$value/');
-                  await ServiceManager().appSettings.setDownloadAccelerate(
-                    normalized,
-                  );
+                  switch (mode) {
+                    case 'auto':
+                      await ServiceManager().appSettings.setDownloadAccelerate(
+                        GitHubProxySelector.autoMode,
+                      );
+                      break;
+                    case 'manual':
+                      final value = controller.text.trim();
+                      final normalized = GitHubProxySelector.normalizePrefix(
+                        value.isEmpty
+                            ? GitHubProxySelector.builtInMirrors.first
+                            : value,
+                      );
+                      await ServiceManager().appSettings.setDownloadAccelerate(
+                        normalized,
+                      );
+                      break;
+                    case 'off':
+                      await ServiceManager().appSettings.setDownloadAccelerate('');
+                      GitHubProxySelector.invalidateCache();
+                      ServiceManager().updateState.setResolvedDownloadAccelerate(null);
+                      break;
+                  }
                   if (dialogContext.mounted) {
                     Navigator.of(dialogContext).pop();
                   }
@@ -252,7 +355,9 @@ class UpdateSettingsPage extends BaseSettingsPage {
                 child: Text(LocaleKeys.save.tr()),
               ),
             ],
-          ),
+          );
+        },
+      ),
     ).then((_) => controller.dispose());
   }
 }

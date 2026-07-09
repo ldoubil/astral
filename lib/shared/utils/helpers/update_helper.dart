@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -268,11 +269,24 @@ class UpdateChecker {
     return fallback;
   }
 
-  String _buildAcceleratedUrl(String rawUrl) {
-    final prefix = ServiceManager().updateState.downloadAccelerate.value.trim();
-    if (prefix.isEmpty) return rawUrl;
-    final normalizedPrefix = prefix.endsWith('/') ? prefix : '$prefix/';
-    return '$normalizedPrefix$rawUrl';
+  Future<String> _resolveAcceleratedUrl(String rawUrl) async {
+    final setting = ServiceManager().updateState.downloadAccelerate.value;
+    if (!GitHubProxySelector.isAccelerationEnabled(setting)) {
+      return rawUrl;
+    }
+
+    final prefix = await GitHubProxySelector.resolvePrefix(setting);
+    if (prefix == null || prefix.isEmpty) {
+      return rawUrl;
+    }
+
+    if (GitHubProxySelector.isAutoMode(setting)) {
+      ServiceManager().updateState.setResolvedDownloadAccelerate(prefix);
+    }
+
+    final acceleratedUrl = GitHubProxySelector.buildProxiedUrl(prefix, rawUrl);
+    debugPrint('下载加速前缀: $prefix');
+    return acceleratedUrl;
   }
 
   /// 处理下载逻辑
@@ -293,7 +307,8 @@ class UpdateChecker {
         return;
       }
 
-      final acceleratedUrl = _buildAcceleratedUrl(downloadUrl);
+      final acceleratedUrl = await _resolveAcceleratedUrl(downloadUrl);
+      if (!context.mounted) return;
       debugPrint('下载链接: $acceleratedUrl');
 
       final fileName = _getPlatformFileName();
@@ -373,11 +388,11 @@ class UpdateChecker {
   }
 
   /// 开始下载指定文件
-  void _startDownload(
+  Future<void> _startDownload(
     BuildContext context,
     Map<String, dynamic> releaseInfo,
     String fileName,
-  ) {
+  ) async {
     final downloadUrl = _getDownloadUrlForFile(releaseInfo, fileName);
     if (downloadUrl == null) {
       ScaffoldMessenger.of(
@@ -386,7 +401,8 @@ class UpdateChecker {
       return;
     }
 
-    final acceleratedUrl = _buildAcceleratedUrl(downloadUrl);
+    final acceleratedUrl = await _resolveAcceleratedUrl(downloadUrl);
+    if (!context.mounted) return;
     debugPrint('下载链接: $acceleratedUrl');
 
     // 显示下载进度对话框

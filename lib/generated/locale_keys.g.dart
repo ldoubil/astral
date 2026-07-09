@@ -196,6 +196,15 @@ abstract class  LocaleKeys {
   static const auto_update_info_desc = 'auto_update_info_desc';
   static const download_acceleration_title = 'download_acceleration_title';
   static const download_acceleration_info_desc = 'download_acceleration_info_desc';
+  static const download_acceleration_auto = 'download_acceleration_auto';
+  static const download_acceleration_manual = 'download_acceleration_manual';
+  static const download_acceleration_manual_hint = 'download_acceleration_manual_hint';
+  static const download_acceleration_disabled = 'download_acceleration_disabled';
+  static const download_acceleration_auto_current = 'download_acceleration_auto_current';
+  static const download_acceleration_auto_pending = 'download_acceleration_auto_pending';
+  static const download_acceleration_reprobe = 'download_acceleration_reprobe';
+  static const download_acceleration_probing = 'download_acceleration_probing';
+  static const download_acceleration_probe_failed = 'download_acceleration_probe_failed';
   static const current_version = 'current_version';
   static const update_channel = 'update_channel';
   static const advanced_network_settings = 'advanced_network_settings';

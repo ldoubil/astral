@@ -11,6 +11,7 @@ import 'package:astral/core/states/firewall_state.dart';
 import 'package:astral/core/states/app_settings_state.dart';
 import 'package:astral/core/repositories/app_settings_repository.dart';
 import 'package:astral/core/services/notification_service.dart';
+import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
 import 'package:astral/shared/utils/helpers/regex_patterns.dart';
 import 'package:astral/src/rust/api/hops.dart';
 
@@ -62,7 +63,12 @@ class AppSettingsService {
 
     updateState.setBeta(settings.beta);
     updateState.setAutoCheckUpdate(settings.autoCheckUpdate);
-    updateState.setDownloadAccelerate(settings.downloadAccelerate);
+    var downloadAccelerate = settings.downloadAccelerate;
+    if (downloadAccelerate == 'https://gh.xmly.dev/') {
+      downloadAccelerate = GitHubProxySelector.autoMode;
+      await _repository.setDownloadAccelerate(downloadAccelerate);
+    }
+    updateState.setDownloadAccelerate(downloadAccelerate);
     updateState.setLatestVersion(settings.latestVersion);
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
