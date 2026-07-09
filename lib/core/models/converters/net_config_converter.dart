@@ -1,4 +1,4 @@
-﻿import 'package:isar_community/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/net_config.dart';
 
 int _normalizeSocks5Port(int port) {

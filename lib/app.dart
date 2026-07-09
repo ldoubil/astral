@@ -1,5 +1,6 @@
 ﻿import 'package:astral/shared/utils/network/astral_udp.dart';
 import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
+import 'package:astral/shared/widgets/common/home_widget_refresh_binder.dart';
 import 'package:astral/features/home/pages/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:astral/core/services/service_manager.dart';
@@ -79,7 +80,7 @@ class _KevinAppState extends State<KevinApp> {
           ),
         ),
         themeMode: themeMode, // 使用监听的主题模式
-        home: MainScreen(),
+        home: const HomeWidgetRefreshBinder(child: MainScreen()),
       );
     });
   }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_brand">Astral</string>
+    <string name="widget_status_default">未连接</string>
+    <string name="widget_room_default">未选择</string>
+    <string name="widget_ip_default">--</string>
+    <string name="widget_duration_default">00:00:00</string>
+</resources>

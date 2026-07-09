@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_corner_radius">20dp</dimen>
+    <dimen name="widget_inner_corner_radius">12dp</dimen>
+    <dimen name="widget_padding">12dp</dimen>
+</resources>

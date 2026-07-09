@@ -28,9 +28,12 @@ class AppDatabase {
   late AllSettingsCz AllSettings;
   late ServerCz ServerSetting;
   late MagicWallModelCz MagicWallSetting;
+  bool _initialized = false;
+  bool get isInitialized => _initialized;
 
   /// 初始化数据库
   Future<void> init([String? customDbDir]) async {
+    if (_initialized) return;
     late final String dbDir;
 
     if (customDbDir != null) {
@@ -78,6 +81,7 @@ class AppDatabase {
     // 确保初始化完成
     await RoomSetting.init();
     await ServerSetting.init();
+    _initialized = true;
   }
 
   /// 导出数据库到指定路径

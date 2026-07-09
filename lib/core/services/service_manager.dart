@@ -60,6 +60,9 @@ class ServiceManager {
 
   factory ServiceManager() => instance;
 
+  bool _initialized = false;
+  bool get isInitialized => _initialized;
+
   ServiceManager._internal() {
     _initializeStates();
     _initializeRepositories();
@@ -159,6 +162,7 @@ class ServiceManager {
 
   /// 初始化所有服务（从数据库加载数据）
   Future<void> init() async {
+    if (_initialized) return;
     // 使用 Future.wait 并发初始化所有服务
     // 但即使某些服务失败，也要继续初始化其他服务
     final results = await Future.wait([
@@ -175,6 +179,7 @@ class ServiceManager {
     if (failedServices > 0) {
       debugPrint('警告: $failedServices 个服务初始化失败，但应用将继续运行');
     }
+    _initialized = true;
   }
 
   /// 安全地初始化单个服务

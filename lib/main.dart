@@ -105,6 +105,9 @@ Future<void> _initializeApp() async {
 
     // 初始化贴片服务
     WidgetService.instance.initialize();
+    if (Platform.isAndroid) {
+      await WidgetService.instance.syncAll();
+    }
     FileLogger().info('WidgetService initialized');
 
     try {
