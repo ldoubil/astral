@@ -87,12 +87,21 @@ jobs:
           search_artifacts: true
           if_no_artifact_found: warn
 
-      - name: 📦 下载 linux 构件
+      - name: 📦 下载 linux x64 构件
         uses: dawidd6/action-download-artifact@v6
         with:
           workflow: 'linux-build.yaml'
           name: astral-linux-x64-all
           path: ./downloaded/linux
+          search_artifacts: true
+          if_no_artifact_found: warn
+
+      - name: 📦 下载 linux arm64 构件
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: 'linux-build.yaml'
+          name: astral-linux-arm64-all
+          path: ./downloaded/linux-arm64
           search_artifacts: true
           if_no_artifact_found: warn
 
@@ -112,8 +121,10 @@ jobs:
           ls -la ./downloaded/windows || echo "目录不存在"
           echo "WindowsSetup 文件:"
           ls -la ./downloaded/WindowsSetup || echo "目录不存在"
-          echo "Linux 文件:"
+          echo "Linux x64 文件:"
           ls -la ./downloaded/linux || echo "目录不存在"
+          echo "Linux arm64 文件:"
+          ls -la ./downloaded/linux-arm64 || echo "目录不存在"
           
       - name: 🤖 生成分支差异提交内容（自动检测可用 Gemini 模型）
         id: generate_changelog
@@ -241,5 +252,8 @@ jobs:
             ./downloaded/linux/astral-linux-x64.tar.gz
             ./downloaded/linux/astral-linux-x64.deb
             ./downloaded/linux/astral-linux-x64.rpm
+            ./downloaded/linux-arm64/astral-linux-arm64.tar.gz
+            ./downloaded/linux-arm64/astral-linux-arm64.deb
+            ./downloaded/linux-arm64/astral-linux-arm64.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
