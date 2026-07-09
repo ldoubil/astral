@@ -25,6 +25,17 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: 📌 读取应用版本号
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '\r')
+            VERSION="${VERSION%%+*}"
+          fi
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Resolved version: $VERSION"
+
       - name: 🦀 设置 Rust 工具链 ${{ env.RUST_VERSION }}
         run: |
           chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
@@ -77,13 +88,13 @@ jobs:
       - name: 📦 打包 deb 包
         run: |
           mkdir -p release
-          fpm -s dir -t deb -n astral -v 1.0.0 --prefix /opt/astral -C build/linux/x64/release/bundle .
-          mv *.deb $GITHUB_WORKSPACE/release/astral-linux-x64.deb
+          fpm -s dir -t deb -n astral -v "${APP_VERSION}" --prefix /opt/astral -C build/linux/x64/release/bundle .
+          mv *.deb "$GITHUB_WORKSPACE/release/astral-linux-x64.deb"
 
       - name: 📦 打包 rpm 包
         run: |
-          fpm -s dir -t rpm -n astral -v 1.0.0 --prefix /opt/astral -C build/linux/x64/release/bundle .
-          mv *.rpm $GITHUB_WORKSPACE/release/astral-linux-x64.rpm
+          fpm -s dir -t rpm -n astral -v "${APP_VERSION}" --prefix /opt/astral -C build/linux/x64/release/bundle .
+          mv *.rpm "$GITHUB_WORKSPACE/release/astral-linux-x64.rpm"
 
       - name: 📤 上传所有 Linux 构建产物
         uses: actions/upload-artifact@v4
