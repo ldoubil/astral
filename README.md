@@ -10,7 +10,7 @@
   <h1 id="astral"></h1>
 
   [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ldoubil/astral)
-  ![License](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)
+  ![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-lightgrey.svg)
   ![Platforms](https://img.shields.io/badge/平台-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-blue?style=flat-square)
   ![Languages](https://img.shields.io/badge/多语言支持-中文%7C英文%7C德文%7C西班牙文%7C法文%7C日文%7C韩文%7C俄文-orange?style=flat-square)
   
@@ -65,22 +65,16 @@ Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的
 | 🇷🇺 俄语 | ru | [ru.json](assets/translations/ru.json) |
 
 
-## 📄 开源许可协议
+## 📄 许可协议
 
-本作品采用 [知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.zh-hans) 进行许可。
-
-<div align="center">
-  <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.zh-hans" target="_blank">
-    <img src="https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png" alt="CC BY-NC-ND 4.0 许可协议">
-  </a>
-</div>
+本软件采用 [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) 进行许可。
 
 ### 使用限制说明
 ⚠️ 本软件仅供学习和非商业用途使用，使用时需遵守以下条款：
 - ❌ **禁止商业使用** - 不得将本软件用于任何商业目的
 - ❌ **禁止修改软件名称** - 不得更改 "Astral" 软件名称以混淆身份或进行二次售卖
-- ✅ **保留原作者信息** - 必须完整保留所有原作者的版权信息
-- ✅ **遵循开源协议** - 严格遵守上述开源许可协议的全部条款
+- ✅ **保留版权声明** - 分发时必须保留 `LICENSE` 中的 Required Notice 及许可全文
+- ✅ **遵循许可协议** - 严格遵守上述许可协议的全部条款
 
 ## 🙏 鸣谢
 
