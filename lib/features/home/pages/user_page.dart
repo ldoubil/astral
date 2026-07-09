@@ -1,5 +1,6 @@
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
+import 'package:astral/shared/utils/network/node_utils.dart';
 import 'package:astral/shared/widgets/cards/all_user_card.dart';
 import 'package:astral/shared/widgets/cards/mini_user_card.dart';
 import 'package:astral/shared/widgets/common/network_topology.dart';
@@ -159,15 +160,11 @@ class _UserPageState extends State<UserPage> {
           if (displayMode == 1) {
             // 仅显示用户（排除服务器）
             filteredNodes =
-                nodes
-                    .where((node) => !node.hostname.startsWith('PublicServer_'))
-                    .toList();
+                nodes.where((node) => !isServerNode(node)).toList();
           } else if (displayMode == 2) {
             // 仅显示服务器
             filteredNodes =
-                nodes
-                    .where((node) => node.hostname.startsWith('PublicServer_'))
-                    .toList();
+                nodes.where((node) => isServerNode(node)).toList();
           }
 
           // 返回一个可滚动的视图
