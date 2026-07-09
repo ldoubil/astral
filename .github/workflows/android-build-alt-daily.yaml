@@ -32,7 +32,14 @@ jobs:
         run: |
           BUILD_DATE=$(date -u +%Y%m%d)
           RAND=$(openssl rand -hex 4)
-          PACKAGE_ID="com.astral.alt.${BUILD_DATE}.${RAND}"
+          rand_seg() {
+            local letter
+            letter=$(printf '%s\n' {a..z} | shuf -n 1)
+            echo "${letter}$(openssl rand -hex 3)"
+          }
+          BRAND_SEG=$(rand_seg)
+          APP_SEG=$(rand_seg)
+          PACKAGE_ID="com.${BRAND_SEG}.${APP_SEG}.d${BUILD_DATE}.r${RAND}"
           KEYSTORE_PASS=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 20)
           KEY_PASS="$KEYSTORE_PASS"
 
