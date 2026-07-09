@@ -291,6 +291,7 @@ class KVNodeInfo {
   final BigInt txBytes;
   final String version;
   final int cost;
+  final List<String> proxyCidrs;
 
   const KVNodeInfo({
     required this.peerId,
@@ -307,6 +308,7 @@ class KVNodeInfo {
     required this.txBytes,
     required this.version,
     required this.cost,
+    this.proxyCidrs = const [],
   });
 
   @override
@@ -324,7 +326,8 @@ class KVNodeInfo {
       rxBytes.hashCode ^
       txBytes.hashCode ^
       version.hashCode ^
-      cost.hashCode;
+      cost.hashCode ^
+      proxyCidrs.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -344,7 +347,8 @@ class KVNodeInfo {
           rxBytes == other.rxBytes &&
           txBytes == other.txBytes &&
           version == other.version &&
-          cost == other.cost;
+          cost == other.cost &&
+          proxyCidrs == other.proxyCidrs;
 }
 
 class NodeHopStats {

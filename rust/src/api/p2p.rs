@@ -726,6 +726,7 @@ pub async fn get_network_status(instance_id: String) -> KVNetworkStatus {
                     .to_string(),
                 rx_bytes: pair.get_rx_bytes().unwrap_or_default(),
                 tx_bytes: pair.get_tx_bytes().unwrap_or_default(),
+                proxy_cidrs: route.proxy_cidrs.clone(),
             };
 
             if let Some(peer) = &pair.peer {
