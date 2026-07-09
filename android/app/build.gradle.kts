@@ -6,8 +6,14 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // Add this line
-    id("com.google.gms.google-services")
+}
+
+val altBuild =
+    System.getenv("ALT_BUILD") == "true" ||
+        project.findProperty("altBuild") == "true"
+
+if (!altBuild) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 val keystoreProperties = Properties()
@@ -15,6 +21,11 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+
+val resolvedApplicationId =
+    System.getenv("ANDROID_APPLICATION_ID")
+        ?: project.findProperty("applicationId") as String?
+        ?: "com.kevin.astral"
 
 android {
     namespace = "com.kevin.astral"
@@ -39,7 +50,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.kevin.astral"
+        applicationId = resolvedApplicationId
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -76,11 +87,13 @@ dependencies {
     // 添加对窗口模式的支持
     implementation("androidx.window:window:1.2.0-beta05")
     implementation("androidx.window:window-java:1.2.0-beta05")
-    
-    // add the Firebase SDK for Google Analytics
-    implementation("com.google.firebase:firebase-analytics:17.4.1")
-    // add SDKs for any other desired Firebase products
-    // https://firebase.google.com/docs/android/setup#available-libraries
+
+    if (!altBuild) {
+        // add the Firebase SDK for Google Analytics
+        implementation("com.google.firebase:firebase-analytics:17.4.1")
+        // add SDKs for any other desired Firebase products
+        // https://firebase.google.com/docs/android/setup#available-libraries
+    }
 }
 
 flutter {
