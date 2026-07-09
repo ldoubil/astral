@@ -136,7 +136,7 @@ jobs:
           WizardStyle=modern
 
           [Languages]
-          Name: "chinese"; MessagesFile: "D:\ChineseSimplified.isl"
+          Name: "chinesesimplified"; MessagesFile: "$env:GITHUB_WORKSPACE\installer\ChineseSimplified.isl"
 
           [Tasks]
           Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -163,11 +163,31 @@ jobs:
       - name: 🔨 编译 Inno Setup 安装程序
         run: |
           echo "正在编译 Inno Setup 安装程序..."
-          # 下载中文语言文件
-          # 下载中文语言文件到 D: 根目录
-          curl -o D:\ChineseSimplified.isl https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl
-          # 编译安装程序
+          $langFile = "$env:GITHUB_WORKSPACE\installer\ChineseSimplified.isl"
+          if (-not (Test-Path $langFile) -or ((Get-Item $langFile).Length -lt 1000)) {
+            New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\installer" | Out-Null
+            $urls = @(
+              "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl",
+              "https://raw.githubusercontent.com/kira-96/Inno-Setup-Chinese-Simplified-Translation/main/ChineseSimplified.isl"
+            )
+            $downloaded = $false
+            foreach ($url in $urls) {
+              try {
+                curl.exe -fsSL -o $langFile $url
+                if ((Get-Item $langFile).Length -ge 1000) {
+                  $downloaded = $true
+                  break
+                }
+              } catch {
+                Write-Host "下载失败: $url"
+              }
+            }
+            if (-not $downloaded) {
+              throw "ChineseSimplified.isl 下载失败，请检查仓库 installer 目录或网络"
+            }
+          }
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "$env:GITHUB_WORKSPACE\setup.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           echo "Inno Setup 安装程序编译完成！"
 
       # 上传 Inno Setup 安装程序作为 Artifact
