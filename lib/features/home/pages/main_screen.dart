@@ -127,6 +127,24 @@ class _MainScreenState extends State<MainScreen>
     _setAppBackground(false);
   }
 
+  @override
+  void onWindowClose() async {
+    final services = ServiceManager();
+    if (services.uiState.trayHidden.value) {
+      _setAppBackground(true);
+      await windowManager.hide();
+      return;
+    }
+
+    if (services.windowState.closeMinimize.value) {
+      _setAppBackground(true);
+      await windowManager.hide();
+      return;
+    }
+
+    await windowManager.destroy();
+  }
+
   List<NavigationItem> get navigationItems => [
     NavigationItem(
       icon: Icons.home_outlined,

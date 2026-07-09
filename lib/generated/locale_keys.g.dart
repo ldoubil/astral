@@ -152,6 +152,12 @@ abstract class  LocaleKeys {
   static const install_permission_not_granted = 'install_permission_not_granted';
   static const minimize = 'minimize';
   static const minimize_desc = 'minimize_desc';
+  static const tray_show_window = 'tray_show_window';
+  static const tray_exit = 'tray_exit';
+  static const tray_hide = 'tray_hide';
+  static const tray_hide_title = 'tray_hide_title';
+  static const tray_hide_message = 'tray_hide_message';
+  static const tray_hide_confirm = 'tray_hide_confirm';
   static const player_list_card = 'player_list_card';
   static const player_list_card_desc = 'player_list_card_desc';
   static const enable_discover_page = 'enable_discover_page';

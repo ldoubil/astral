@@ -44,6 +44,8 @@ class WindowManagerUtils {
         }
       });
 
+      await windowManager.setPreventClose(true);
+
       await handleStartupSetting(
         ServiceManager().startupState.startup.value,
       );

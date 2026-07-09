@@ -10,6 +10,7 @@ class UIState {
   final selectedIndex = signal(0);
   final hoveredIndex = signal<int?>(null);
   final isInBackground = signal(false);
+  final trayHidden = signal(false);
 
   // 应用名称
   final appName = signal('Astral');
@@ -39,5 +40,9 @@ class UIState {
 
   void setBackground(bool value) {
     isInBackground.value = value;
+  }
+
+  void setTrayHidden(bool value) {
+    trayHidden.value = value;
   }
 }
