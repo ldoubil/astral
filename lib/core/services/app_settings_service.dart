@@ -72,6 +72,9 @@ class AppSettingsService {
     updateState.setLatestVersion(settings.latestVersion);
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
+    appSettingsState.updateEnableServerRecommendation(
+      settings.enableServerRecommendation,
+    );
     appSettingsState.updateEnableConnectionNotification(settings.enableConnectionNotification);
     appSettingsState.updateReduceAnimationUpdates(settings.reduceAnimationUpdates);
     appSettingsState.updateAutoRetryOnFailure(settings.autoRetryOnFailure);
@@ -180,6 +183,11 @@ class AppSettingsService {
   Future<void> updateEnableBannerCarousel(bool enable) async {
     appSettingsState.updateEnableBannerCarousel(enable);
     await _repository.setEnableBannerCarousel(enable);
+  }
+
+  Future<void> updateEnableServerRecommendation(bool enable) async {
+    appSettingsState.updateEnableServerRecommendation(enable);
+    await _repository.setEnableServerRecommendation(enable);
   }
 
   Future<void> updateEnableConnectionNotification(bool enable) async {

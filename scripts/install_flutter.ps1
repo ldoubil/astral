@@ -1,5 +1,5 @@
 # 统一的Flutter安装脚本 (Windows)
-# 使用环境变量 FLUTTER_VERSION 和 FLUTTER_CHANNEL
+# FLUTTER_VERSION=main 表示克隆 main 分支，即 main 通道最新预发布版
 
 $FLUTTER_VERSION = if ($env:FLUTTER_VERSION) { $env:FLUTTER_VERSION } else { "main" }
 $FLUTTER_PATH = "$env:GITHUB_WORKSPACE/flutter"

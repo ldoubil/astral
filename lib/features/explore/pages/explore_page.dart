@@ -9,8 +9,10 @@ import 'package:astral/features/nat_test/pages/nat_test_page.dart';
 import 'package:astral/features/magic_wall/pages/magic_wall_page.dart';
 import 'package:astral/features/settings/pages/network/port_whitelist_page.dart';
 import 'package:astral/core/app_s/file_logger.dart';
+import 'package:astral/core/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:signals_flutter/signals_flutter.dart';
 import 'package:astral/shared/widgets/cards/minecraft_server_card.dart';
 
 /// 服务器配置
@@ -75,10 +77,21 @@ class _ExplorePageState extends State<ExplorePage> {
 
   // 连接状态管理（服务器host:port -> 连接信息）
   final Map<String, ServerConnection> _connections = {};
+  bool _serversLoadRequested = false;
 
   @override
   void initState() {
     super.initState();
+    _requestLoadServersIfNeeded();
+  }
+
+  void _requestLoadServersIfNeeded() {
+    if (_serversLoadRequested) return;
+    if (!ServiceManager().appSettingsState.enableServerRecommendation.value) {
+      _isLoadingServers = false;
+      return;
+    }
+    _serversLoadRequested = true;
     _loadServers();
   }
 
@@ -301,82 +314,94 @@ class _ExplorePageState extends State<ExplorePage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(16.0),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                ..._buildServerRecommendationSection(context),
-                const SizedBox(height: 32),
+          Watch((context) {
+            final enableServerRecommendation = ServiceManager()
+                .appSettingsState
+                .enableServerRecommendation
+                .watch(context);
+            if (enableServerRecommendation) {
+              _requestLoadServersIfNeeded();
+            }
+            final serverSection =
+                enableServerRecommendation
+                    ? _buildServerRecommendationSection(context)
+                    : <Widget>[];
 
-                _buildSectionTitle(context, '联机工具'),
-                const SizedBox(height: 12),
-                // 魔法墙功能（仅 Windows 平台显示）
-                if (Platform.isWindows) ...[
+            return SliverPadding(
+              padding: const EdgeInsets.all(16.0),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  ...serverSection,
+                  if (serverSection.isNotEmpty) const SizedBox(height: 32),
+                  _buildSectionTitle(context, '联机工具'),
+                  const SizedBox(height: 12),
+                  if (Platform.isWindows) ...[
+                    _buildListTile(
+                      context,
+                      GameItem(
+                        title: '魔法墙',
+                        subtitle: '高级防火墙管理',
+                        icon: Icons.security,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MagicWallPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   _buildListTile(
                     context,
                     GameItem(
-                      title: '魔法墙',
-                      subtitle: '高级防火墙管理',
-                      icon: Icons.security,
+                      title: '端口白名单',
+                      subtitle: '配置TCP/UDP端口访问白名单',
+                      icon: Icons.security_outlined,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MagicWallPage(),
+                            builder: (context) => const PortWhitelistPage(),
                           ),
                         );
                       },
                     ),
                   ),
                   const SizedBox(height: 8),
-                ],
-                _buildListTile(
-                  context,
-                  GameItem(
-                    title: '端口白名单',
-                    subtitle: '配置TCP/UDP端口访问白名单',
-                    icon: Icons.security_outlined,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PortWhitelistPage(),
-                        ),
-                      );
-                    },
+                  _buildListTile(
+                    context,
+                    GameItem(
+                      title: 'NAT 类型测试',
+                      subtitle: '检测您的网络 NAT 类型',
+                      icon: Icons.network_check,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NatTestPage(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _buildListTile(
-                  context,
-                  GameItem(
-                    title: 'NAT 类型测试',
-                    subtitle: '检测您的网络 NAT 类型',
-                    icon: Icons.network_check,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NatTestPage(),
-                        ),
-                      );
-                    },
+                  const SizedBox(height: 8),
+                  _buildListTile(
+                    context,
+                    GameItem(
+                      title: 'Minecraft局域网修复',
+                      subtitle: '..... 开发中 .....',
+                      icon: Icons.group,
+                      onTap: () {},
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _buildListTile(
-                  context,
-                  GameItem(
-                    title: 'Minecraft局域网修复',
-                    subtitle: '..... 开发中 .....',
-                    icon: Icons.group,
-                    onTap: () {},
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ]),
-            ),
-          ),
+                  const SizedBox(height: 32),
+                ]),
+              ),
+            );
+          }),
         ],
       ),
     );

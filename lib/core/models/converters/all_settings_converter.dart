@@ -38,6 +38,15 @@ class AllSettingsCz {
         needsUpdate = true;
       }
 
+      const currentSettingsSchemaVersion = 1;
+      if (settings.settingsSchemaVersion < currentSettingsSchemaVersion) {
+        if (settings.settingsSchemaVersion < 1) {
+          settings.enableServerRecommendation = true;
+        }
+        settings.settingsSchemaVersion = currentSettingsSchemaVersion;
+        needsUpdate = true;
+      }
+
       if (needsUpdate) {
         await _isar.writeTxn(() async {
           await _isar.allSettings.put(settings!);
@@ -61,6 +70,23 @@ class AllSettingsCz {
   Future<bool> getEnableBannerCarousel() async {
     AllSettings? settings = await _isar.allSettings.get(1);
     return settings?.enableBannerCarousel ?? true;
+  }
+
+  /// 设置探索页服务器推荐开关
+  Future<void> setEnableServerRecommendation(bool enable) async {
+    AllSettings? settings = await _isar.allSettings.get(1);
+    if (settings != null) {
+      settings.enableServerRecommendation = enable;
+      await _isar.writeTxn(() async {
+        await _isar.allSettings.put(settings);
+      });
+    }
+  }
+
+  /// 获取探索页服务器推荐开关
+  Future<bool> getEnableServerRecommendation() async {
+    AllSettings? settings = await _isar.allSettings.get(1);
+    return settings?.enableServerRecommendation ?? true;
   }
 
   /// 设置连接状态通知开关

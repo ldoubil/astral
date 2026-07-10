@@ -1,6 +1,6 @@
 #!/bin/bash
 # 统一的Flutter安装脚本 (Linux/macOS)
-# 使用环境变量 FLUTTER_VERSION 和 FLUTTER_CHANNEL
+# FLUTTER_VERSION=main 表示克隆 main 分支，即 main 通道最新预发布版
 
 set -e
 

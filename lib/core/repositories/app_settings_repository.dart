@@ -66,6 +66,10 @@ class AppSettingsRepository {
       _db.AllSettings.getEnableBannerCarousel();
   Future<void> setEnableBannerCarousel(bool value) =>
       _db.AllSettings.setEnableBannerCarousel(value);
+  Future<bool> getEnableServerRecommendation() =>
+      _db.AllSettings.getEnableServerRecommendation();
+  Future<void> setEnableServerRecommendation(bool value) =>
+      _db.AllSettings.setEnableServerRecommendation(value);
   Future<bool> getEnableConnectionNotification() =>
       _db.AllSettings.getEnableConnectionNotification();
   Future<void> setEnableConnectionNotification(bool value) =>
@@ -125,6 +129,7 @@ class AppSettingsRepository {
       downloadAccelerate: await getDownloadAccelerate(),
       latestVersion: await getLatestVersion(),
       enableBannerCarousel: await getEnableBannerCarousel(),
+      enableServerRecommendation: await getEnableServerRecommendation(),
       enableConnectionNotification: await getEnableConnectionNotification(),
       reduceAnimationUpdates: await getReduceAnimationUpdates(),
       hasShownBannerTip: await getHasShownBannerTip(),
@@ -153,6 +158,7 @@ class AppSettings {
   final String downloadAccelerate;
   final String? latestVersion;
   final bool enableBannerCarousel;
+  final bool enableServerRecommendation;
   final bool enableConnectionNotification;
   final bool reduceAnimationUpdates;
   final bool hasShownBannerTip;
@@ -177,6 +183,7 @@ class AppSettings {
     required this.downloadAccelerate,
     required this.latestVersion,
     required this.enableBannerCarousel,
+    required this.enableServerRecommendation,
     required this.enableConnectionNotification,
     required this.reduceAnimationUpdates,
     required this.hasShownBannerTip,

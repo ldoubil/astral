@@ -163,6 +163,8 @@
   "enable_discover_page_desc": "Show discover page in main navigation",
   "enable_banner_carousel": "Enable Banner Carousel",
   "enable_banner_carousel_desc": "Display advertising carousel on home page",
+  "enable_server_recommendation": "Enable Server Recommendations",
+  "enable_server_recommendation_desc": "Show server recommendations on Explore page",
   "update_settings": "Update Settings",
   "join_beta": "Join Beta",
   "join_beta_desc": "Join group to share your bugs",

@@ -164,6 +164,9 @@ abstract class  LocaleKeys {
   static const enable_discover_page_desc = 'enable_discover_page_desc';
   static const enable_banner_carousel = 'enable_banner_carousel';
   static const enable_banner_carousel_desc = 'enable_banner_carousel_desc';
+  static const enable_server_recommendation = 'enable_server_recommendation';
+  static const enable_server_recommendation_desc =
+      'enable_server_recommendation_desc';
   static const update_settings = 'update_settings';
   static const join_beta = 'join_beta';
   static const join_beta_desc = 'join_beta_desc';

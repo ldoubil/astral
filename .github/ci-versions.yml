@@ -1,7 +1,7 @@
 # CI 版本参考配置（非 workflow，勿放在 workflows/ 目录）
 # 各工作流在 jobs.env 中手动保持与此一致
 env:
-  # Flutter 版本配置
+  # Flutter：克隆 flutter 仓库 main 分支 = main 通道最新预发布版（与本地 flutter channel main 一致）
   FLUTTER_VERSION: main
   FLUTTER_CHANNEL: main
 

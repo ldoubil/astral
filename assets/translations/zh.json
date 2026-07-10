@@ -163,6 +163,8 @@
   "enable_discover_page_desc": "在主导航中显示探索页面",
   "enable_banner_carousel": "启用轮播图",
   "enable_banner_carousel_desc": "在主页显示广告轮播图",
+  "enable_server_recommendation": "启用服务器推荐",
+  "enable_server_recommendation_desc": "在探索页面显示服务器推荐",
   "update_settings": "更新设置",
   "join_beta": "参与内测版",
   "join_beta_desc": "加群分享你的bug",
