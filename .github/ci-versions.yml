@@ -1,8 +1,9 @@
 # CI 版本参考配置（非 workflow，勿放在 workflows/ 目录）
 # 各工作流在 jobs.env 中手动保持与此一致
 env:
-  # Flutter：与本地一致（git tag / 预发布版）
-  FLUTTER_VERSION: 3.46.0-1.0.pre-1
+  # Flutter：与本地一致。3.46.0-1.0.pre-1 只是版本号，不是 git tag；
+  # 本地 revision cec88b6b47 = 完整 commit 如下
+  FLUTTER_VERSION: cec88b6b47bd65d21ff643ea5dc3f306bc49af66
   FLUTTER_CHANNEL: main
 
   # Rust 版本配置
