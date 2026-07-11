@@ -129,20 +129,23 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void onWindowClose() async {
+    // setPreventClose(true) 时才会拦截；二次 close 时直接放行，避免死循环
+    final isPreventClose = await windowManager.isPreventClose();
+    if (!isPreventClose) return;
+
     final services = ServiceManager();
-    if (services.uiState.trayHidden.value) {
+    // 隐藏托盘后，或开启「关闭时最小化」：只隐藏窗口
+    if (services.uiState.trayHidden.value ||
+        services.windowState.closeMinimize.value) {
       _setAppBackground(true);
       await windowManager.hide();
       return;
     }
 
-    if (services.windowState.closeMinimize.value) {
-      _setAppBackground(true);
-      await windowManager.hide();
-      return;
-    }
-
-    await windowManager.destroy();
+    // 真正退出：不要用 destroy()，Windows 上会卡死数秒甚至无响应
+    // 见 https://github.com/leanflutter/window_manager/issues/478
+    await windowManager.setPreventClose(false);
+    await windowManager.close();
   }
 
   List<NavigationItem> get navigationItems => [

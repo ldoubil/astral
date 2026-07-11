@@ -189,8 +189,9 @@ class _WindowControlsState extends State<WindowControls>
         ),
         IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () async {
-            await windowManager.close();
+          // 不要 await：close 会触发 onWindowClose，真正退出时不应卡住标题栏按钮
+          onPressed: () {
+            windowManager.close();
           },
           tooltip: '关闭',
           iconSize: 20,
