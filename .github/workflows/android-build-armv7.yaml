@@ -10,7 +10,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 确保有写入权�?
+      contents: write  # 确保有写入权限
       packages: write
     
     env:
@@ -22,13 +22,13 @@ jobs:
       CMAKE_VERSION: 3.18.1
     
     steps:
-      - name: 🛠�?检出代码仓�?
+      - name: 🛠️ 检出代码仓库
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具�?1.89.0
+      - name: 🦀 设置 Rust 工具链 1.89.0
         run: |
           chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
           $GITHUB_WORKSPACE/scripts/install_rust.sh
@@ -50,7 +50,7 @@ jobs:
           rustup target add i686-linux-android
           rustup target add x86_64-linux-android
 
-      - name: �?设置 JDK 17
+      - name: ☕ 设置 JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -80,9 +80,9 @@ jobs:
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           # 调试信息（不会显示敏感内容）
-          echo "检�?key.properties 是否创建成功:"
+          echo "检查 key.properties 是否创建成功:"
           ls -la android/key.properties
-          echo "检�?keystore 是否创建成功:"
+          echo "检查 keystore 是否创建成功:"
           ls -la android/app/upload-keystore.jks
 
       - name: 🐦 设置 Flutter
@@ -97,19 +97,19 @@ jobs:
         run: |
           echo "BINDGEN_EXTRA_CLANG_ARGS=-I/usr/include -I/usr/include/x86_64-linux-gnu" >> $GITHUB_ENV
           echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
-          # 创建 Rust 工具链配�?
+          # 创建 Rust 工具链配置
           cat > rust/rust-toolchain.toml << EOF
           [toolchain]
           channel = "stable"
           targets = ["armv7-linux-androideabi", "aarch64-linux-android", "i686-linux-android", "x86_64-linux-android"]
           EOF
 
-      - name: 🛠�?构建 armeabi-v7a 架构 APK
+      - name: 🛠️ 构建 armeabi-v7a 架构 APK
         run: |
           # 构建 APK
           flutter build apk --release --target-platform android-arm
 
-      - name: 📤 上传 armeabi-v7a 架构 APK �?Artifacts
+      - name: 📤 上传 armeabi-v7a 架构 APK 到 Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: astral-armeabi-v7a-apk
