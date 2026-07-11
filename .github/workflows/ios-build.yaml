@@ -14,18 +14,18 @@ jobs:
       packages: write
     
     env:
-      FLUTTER_VERSION: cec88b6b47bd65d21ff643ea5dc3f306bc49af66
-      FLUTTER_CHANNEL: main
+      FLUTTER_VERSION: beta
+      FLUTTER_CHANNEL: beta
       RUST_VERSION: 1.89.0
     
     steps:
-      - name: 🛠️ 检出代码仓库
+      - name: 🛠�?检出代码仓�?
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: 🦀 设置 Rust 工具链 ${{ env.RUST_VERSION }}
+      - name: 🦀 设置 Rust 工具�?${{ env.RUST_VERSION }}
         run: |
           chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
           $GITHUB_WORKSPACE/scripts/install_rust.sh
@@ -58,7 +58,7 @@ jobs:
           flutter pub get
           cd ios && pod install && cd ..
 
-      - name: 🛠️ 构建 iOS 应用
+      - name: 🛠�?构建 iOS 应用
         run: |
           flutter build ios --release --no-codesign --verbose
 
@@ -67,9 +67,9 @@ jobs:
           cd ios
           # 创建临时目录
           mkdir -p Payload
-          # 复制应用到 Payload 目录
+          # 复制应用�?Payload 目录
           cp -r build/Release-iphoneos/Runner.app Payload/
-          # 创建证书和配置文件
+          # 创建证书和配置文�?
           security create-keychain -p github_action build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p github_action build.keychain

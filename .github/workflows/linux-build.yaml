@@ -29,22 +29,20 @@ jobs:
       packages: write
 
     env:
-      FLUTTER_VERSION: cec88b6b47bd65d21ff643ea5dc3f306bc49af66
-      FLUTTER_CHANNEL: main
+      FLUTTER_VERSION: beta
+      FLUTTER_CHANNEL: beta
       RUST_VERSION: 1.89.0
       BUNDLE_DIR: ${{ matrix.bundle-dir }}
       RELEASE_PREFIX: ${{ matrix.release-prefix }}
       ARTIFACT_NAME: ${{ matrix.artifact-name }}
 
     steps:
-      - name: 🛠️ 检出代码仓库
-        uses: actions/checkout@v4
+      - name: 🛠�?检出代码仓�?        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: 📌 读取应用版本号
-        run: |
+      - name: 📌 读取应用版本�?        run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
@@ -54,7 +52,7 @@ jobs:
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Resolved version: $VERSION"
 
-      - name: 🦀 设置 Rust 工具链 ${{ env.RUST_VERSION }}
+      - name: 🦀 设置 Rust 工具�?${{ env.RUST_VERSION }}
         run: |
           chmod +x $GITHUB_WORKSPACE/scripts/install_rust.sh
           $GITHUB_WORKSPACE/scripts/install_rust.sh
@@ -85,7 +83,7 @@ jobs:
         run: |
           flutter pub get
 
-      - name: 🛠️ 构建 Linux 应用 (${{ matrix.arch }})
+      - name: 🛠�?构建 Linux 应用 (${{ matrix.arch }})
         run: |
           flutter build linux --release
           ls -la "$BUNDLE_DIR"
@@ -99,14 +97,12 @@ jobs:
           echo "打包完成，检查文件大小："
           ls -lh "$GITHUB_WORKSPACE/release/"
 
-      - name: 📦 打包 deb 包
-        run: |
+      - name: 📦 打包 deb �?        run: |
           mkdir -p release
           fpm -s dir -t deb -n astral -v "${APP_VERSION}" --prefix /opt/astral -C "$BUNDLE_DIR" .
           mv *.deb "$GITHUB_WORKSPACE/release/${RELEASE_PREFIX}.deb"
 
-      - name: 📦 打包 rpm 包
-        run: |
+      - name: 📦 打包 rpm �?        run: |
           mkdir -p release
           fpm -s dir -t rpm -n astral -v "${APP_VERSION}" --prefix /opt/astral -C "$BUNDLE_DIR" .
           mv *.rpm "$GITHUB_WORKSPACE/release/${RELEASE_PREFIX}.rpm"

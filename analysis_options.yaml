@@ -13,6 +13,14 @@ analyzer:
     experimental_member_use: ignore
     file_names: ignore
     non_constant_identifier_names: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

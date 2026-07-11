@@ -10,18 +10,18 @@ jobs:
   build:
     runs-on: windows-latest
 
-    # 调整 GITHUB_TOKEN 的权限
+    # 调整 GITHUB_TOKEN 的权�?
     permissions:
       contents: write  # 允许写入仓库内容（上传文件）
       packages: write
     
     env:
-      FLUTTER_VERSION: cec88b6b47bd65d21ff643ea5dc3f306bc49af66
-      FLUTTER_CHANNEL: main
+      FLUTTER_VERSION: beta
+      FLUTTER_CHANNEL: beta
       RUST_VERSION: 1.89.0
       
     steps:
-      - name: 🛠️ 检出代码仓库
+      - name: 🛠�?检出代码仓�?
         uses: actions/checkout@v4
 
         # 安装 Rust
@@ -41,16 +41,16 @@ jobs:
         run: |
           echo "正在获取 Flutter 依赖..."
           flutter pub get
-          echo "Flutter 依赖安装完成！"
+          echo "Flutter 依赖安装完成�?
         shell: pwsh
 
-      - name: 📦 安装 Protobuf 编译器 (protoc)
+      - name: 📦 安装 Protobuf 编译�?(protoc)
         run: |
           choco install protoc -y
           protoc --version
         shell: pwsh
 
-      - name: 📦 安装 Npcap SDK（提供 Packet.lib / wpcap.lib）
+      - name: 📦 安装 Npcap SDK（提�?Packet.lib / wpcap.lib�?
         run: |
           $sdkVer = "1.16"
           $zip = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
@@ -77,22 +77,22 @@ jobs:
         shell: pwsh
 
       # 编译 Flutter Windows 应用
-      - name: 🛠️ 编译 Flutter Windows 应用
+      - name: 🛠�?编译 Flutter Windows 应用
         run: |
           echo "正在编译 Flutter Windows Release 版本..."
           flutter build windows --release
-          echo "Flutter Windows Release 编译完成！"
+          echo "Flutter Windows Release 编译完成�?
         shell: pwsh
 
 
-      # 复制 DLL 文件到输出目录
-      - name: 📂 复制 DLL 文件到 Release 目录
+      # 复制 DLL 文件到输出目�?
+      - name: 📂 复制 DLL 文件�?Release 目录
         run: |
-          echo "正在复制 DLL 文件到 Release 目录..."
+          echo "正在复制 DLL 文件�?Release 目录..."
           $dllSourceDir = "$env:GITHUB_WORKSPACE\dlls"
           $releaseDir = "$env:GITHUB_WORKSPACE\build\windows\x64\runner\Release"
           Copy-Item -Path "$dllSourceDir\*" -Destination $releaseDir -Recurse -Force
-          echo "DLL 文件已复制到 $releaseDir！"
+          echo "DLL 文件已复制到 $releaseDir�?
 
       # 压缩 Release 目录
       - name: 📦 压缩 Release 目录
@@ -101,7 +101,7 @@ jobs:
           $releaseDir = "$env:GITHUB_WORKSPACE\build\windows\x64\runner\Release"
           $zipFile = "$env:GITHUB_WORKSPACE\astral-windows-x64-zip.zip"
           Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipFile -Force
-          echo "Release 目录已压缩为 $zipFile！"
+          echo "Release 目录已压缩为 $zipFile�?
 
       # 上传压缩后的 Release 目录作为 Artifact
       - name: 📤 上传压缩后的 Release 目录
