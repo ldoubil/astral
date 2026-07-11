@@ -16,7 +16,7 @@ jobs:
       packages: write
     
     env:
-      FLUTTER_VERSION: main
+      FLUTTER_VERSION: 3.46.0-1.0.pre-1
       FLUTTER_CHANNEL: main
       RUST_VERSION: 1.89.0
       

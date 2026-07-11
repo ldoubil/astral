@@ -1,6 +1,6 @@
 #!/bin/bash
 # 统一的Flutter安装脚本 (Linux/macOS)
-# FLUTTER_VERSION=main 表示克隆 main 分支，即 main 通道最新预发布版
+# FLUTTER_VERSION 可为分支名（如 main）或版本 tag（如 3.46.0-1.0.pre-1）
 
 set -e
 
