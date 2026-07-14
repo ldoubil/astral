@@ -1,13 +1,15 @@
-﻿import 'package:astral/shared/utils/ui/random_name.dart';
+import 'package:astral/features/rooms/utils/random_name.dart';
 import 'package:astral/features/rooms/dialogs/add_room_dialog.dart';
 import 'package:astral/features/rooms/dialogs/edit_room_dialog.dart';
-import 'package:astral/shared/utils/data/room_share_helper.dart';
-import 'package:astral/features/home/pages/user_page.dart';
+import 'package:astral/features/rooms/dialogs/room_share_export_dialog.dart';
+import 'package:astral/features/rooms/dialogs/room_share_import_dialog.dart';
+import 'package:astral/features/rooms/pages/user_page.dart';
 import 'package:astral/features/rooms/widgets/room_card.dart';
 import 'package:astral/features/rooms/widgets/room_reorder_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/connection_state.dart';
 import 'package:astral/core/models/room.dart';
 import 'package:uuid/uuid.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -62,7 +64,7 @@ class _RoomPageState extends State<RoomPage> {
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     Navigator.of(context).pop();
-                    await RoomShareHelper.importFromClipboard(context);
+                    await RoomShareImportDialogs.importFromClipboard(context);
                   },
                   icon: const Icon(Icons.paste),
                   label: const Text('从剪贴板导入'),
@@ -81,7 +83,7 @@ class _RoomPageState extends State<RoomPage> {
               onPressed: () async {
                 if (shareCode.isNotEmpty) {
                   Navigator.of(context).pop();
-                  await RoomShareHelper.importRoom(context, shareCode);
+                  await RoomShareImportDialogs.importRoom(context, shareCode);
                 }
               },
               child: const Text('导入'),
@@ -114,6 +116,7 @@ class _RoomPageState extends State<RoomPage> {
                 final room = rooms[index];
                 final isSelected = selectedRoom?.id == room.id;
                 return RoomCard(
+                  key: ValueKey(room.id),
                   room: room,
                   isSelected: isSelected,
                   onEdit: () {
@@ -123,7 +126,7 @@ class _RoomPageState extends State<RoomPage> {
                     _services.room.deleteRoom(room.id);
                   },
                   onShare: () {
-                    RoomShareHelper.showShareDialog(context, room);
+                    RoomShareExportDialogs.showShareDialog(context, room);
                   },
                 );
               },
@@ -180,7 +183,7 @@ class _RoomPageState extends State<RoomPage> {
                           onTap:
                               isConnected == CoState.connected
                                   ? () {
-                                    RoomShareHelper.copyShareLink(
+                                    RoomShareExportDialogs.copyShareLink(
                                       context,
                                       selectedRoom,
                                       linkOnly: true,

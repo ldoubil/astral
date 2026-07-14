@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class LogsPage extends StatefulWidget {
   const LogsPage({super.key});
@@ -21,23 +23,13 @@ class _LogsPageState extends State<LogsPage> {
   void _copyAllLogs() {
     final logs = ServiceManager().appSettingsState.logs.value;
     if (logs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无日志可复制')),
-      );
+      AppSnackBars.info(context, '提示', '暂无日志可复制');
       return;
     }
 
     final allLogsText = logs.join('\n');
     Clipboard.setData(ClipboardData(text: allLogsText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已复制 ${logs.length} 条日志到剪贴板'),
-        action: SnackBarAction(
-          label: '撤销',
-          onPressed: () {},
-        ),
-      ),
-    );
+    AppSnackBars.success(context, '复制成功', '已复制 ${logs.length} 条日志到剪贴板');
   }
 
   void _scrollToBottom() {
@@ -86,9 +78,7 @@ class _LogsPageState extends State<LogsPage> {
                       onPressed: () {
                         ServiceManager().appSettingsState.logs.value = [];
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('日志已清空')),
-                        );
+                        AppSnackBars.success(context, '已清空', '日志已清空');
                       },
                       child: const Text('确定'),
                     ),
@@ -99,9 +89,8 @@ class _LogsPageState extends State<LogsPage> {
           ),
         ],
       ),
-      body: Builder(
-        builder: (context) {
-          final logs = ServiceManager().appSettingsState.logs.value;
+      body: Watch((context) {
+          final logs = ServiceManager().appSettingsState.logs.watch(context);
 
           if (logs.isEmpty) {
             return const Center(
@@ -170,20 +159,16 @@ class _LogsPageState extends State<LogsPage> {
                               : null,
                     ),
                   ),
-                  subtitle: Text(
-                    DateTime.now().toString().substring(0, 19),
-                    style: const TextStyle(fontSize: 10),
-                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.copy, size: 16),
                     tooltip: '复制此条日志',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: log));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('日志已复制到剪贴板'),
-                          duration: Duration(seconds: 1),
-                        ),
+                      AppSnackBars.success(
+                        context,
+                        '复制成功',
+                        '日志已复制到剪贴板',
+                        duration: const Duration(seconds: 1),
                       );
                     },
                   ),
@@ -191,8 +176,7 @@ class _LogsPageState extends State<LogsPage> {
               );
             },
           );
-        },
-      ),
+        }),
       floatingActionButton: FloatingActionButton(
         onPressed: _scrollToBottom,
         tooltip: '滚动到底部',

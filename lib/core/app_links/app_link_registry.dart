@@ -1,4 +1,4 @@
-import 'package:astral/core/app_links/core/app_link_definitions.dart';
+import 'package:astral/core/app_links/definitions/app_link_definitions.dart';
 import 'package:astral/core/app_links/handlers/link_handlers.dart';
 
 typedef SimpleHandler = Future<void> Function(Uri uri);

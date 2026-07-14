@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/magic_wall_model.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 
 /// 规则编辑对话框
 class MagicWallRuleDialog extends StatefulWidget {
@@ -68,16 +69,12 @@ class _MagicWallRuleDialogState extends State<MagicWallRuleDialog> {
 
   void _save() {
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入规则名称')));
+      AppSnackBars.error(context, '无法保存', '请输入规则名称');
       return;
     }
 
     if (_groupId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请选择规则组')));
+      AppSnackBars.error(context, '无法保存', '请选择规则组');
       return;
     }
 

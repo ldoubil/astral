@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/display_state.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 // 房间设置弹窗组件
@@ -162,18 +163,24 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
                 _buildSettingSection('用户显示', [
                   _buildOptionButton(
                     '默认',
-                    displayMode == 0,
-                    () => ServiceManager().appSettings.setDisplayMode(0),
+                    displayMode == UserDisplayMode.all,
+                    () => ServiceManager().appSettings.setDisplayMode(
+                      UserDisplayMode.all,
+                    ),
                   ),
                   _buildOptionButton(
                     '用户',
-                    displayMode == 1,
-                    () => ServiceManager().appSettings.setDisplayMode(1),
+                    displayMode == UserDisplayMode.users,
+                    () => ServiceManager().appSettings.setDisplayMode(
+                      UserDisplayMode.users,
+                    ),
                   ),
                   _buildOptionButton(
                     '服务器',
-                    displayMode == 2,
-                    () => ServiceManager().appSettings.setDisplayMode(2),
+                    displayMode == UserDisplayMode.servers,
+                    () => ServiceManager().appSettings.setDisplayMode(
+                      UserDisplayMode.servers,
+                    ),
                   ),
                 ], colorScheme),
 
@@ -181,18 +188,24 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
                 _buildSettingSection('用户排序', [
                   _buildOptionButton(
                     '默认',
-                    sortOption == 0,
-                    () => ServiceManager().appSettings.setSortOption(0),
+                    sortOption == UserSortOption.none,
+                    () => ServiceManager().appSettings.setSortOption(
+                      UserSortOption.none,
+                    ),
                   ),
                   _buildOptionButton(
                     '延迟',
-                    sortOption == 1,
-                    () => ServiceManager().appSettings.setSortOption(1),
+                    sortOption == UserSortOption.latency,
+                    () => ServiceManager().appSettings.setSortOption(
+                      UserSortOption.latency,
+                    ),
                   ),
                   _buildOptionButton(
                     '用户名',
-                    sortOption == 2,
-                    () => ServiceManager().appSettings.setSortOption(2),
+                    sortOption == UserSortOption.nameLength,
+                    () => ServiceManager().appSettings.setSortOption(
+                      UserSortOption.nameLength,
+                    ),
                   ),
                 ], colorScheme),
 
@@ -200,13 +213,17 @@ class _RoomSettingsSheetState extends State<RoomSettingsSheet> {
                 _buildSettingSection('排序方式', [
                   _buildOptionButton(
                     '升序',
-                    sortOrder == 0,
-                    () => ServiceManager().appSettings.setSortOrder(0),
+                    sortOrder == UserSortOrder.ascending,
+                    () => ServiceManager().appSettings.setSortOrder(
+                      UserSortOrder.ascending,
+                    ),
                   ),
                   _buildOptionButton(
                     '降序',
-                    sortOrder == 1,
-                    () => ServiceManager().appSettings.setSortOrder(1),
+                    sortOrder == UserSortOrder.descending,
+                    () => ServiceManager().appSettings.setSortOrder(
+                      UserSortOrder.descending,
+                    ),
                   ),
                 ], colorScheme),
               ],

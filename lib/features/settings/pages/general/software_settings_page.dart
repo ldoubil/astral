@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 import 'package:astral/core/ui/base_settings_page.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
@@ -57,25 +58,29 @@ class _SoftwareSettingsPageState
       await _checkNotificationPermission();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            status.isGranted
-                ? LocaleKeys.permission_notification_success.tr()
-                : LocaleKeys.permission_notification_failed.tr(),
-          ),
-        ),
-      );
+      if (status.isGranted) {
+        AppSnackBars.success(
+          context,
+          LocaleKeys.permission_notification_success.tr(),
+          '',
+        );
+      } else {
+        AppSnackBars.error(
+          context,
+          LocaleKeys.permission_notification_failed.tr(),
+          '',
+        );
+      }
 
       if (status.isPermanentlyDenied) {
         _showNotificationPermissionDialog();
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleKeys.permission_notification_request_failed.tr()),
-        ),
+      AppSnackBars.error(
+        context,
+        LocaleKeys.permission_notification_request_failed.tr(),
+        '',
       );
     }
   }
@@ -130,25 +135,29 @@ class _SoftwareSettingsPageState
       await _checkInstallPermission();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            status.isGranted
-                ? LocaleKeys.permission_install_success.tr()
-                : LocaleKeys.permission_install_failed.tr(),
-          ),
-        ),
-      );
+      if (status.isGranted) {
+        AppSnackBars.success(
+          context,
+          LocaleKeys.permission_install_success.tr(),
+          '',
+        );
+      } else {
+        AppSnackBars.error(
+          context,
+          LocaleKeys.permission_install_failed.tr(),
+          '',
+        );
+      }
 
       if (status.isPermanentlyDenied) {
         _showPermissionDialog();
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(LocaleKeys.permission_install_request_failed.tr()),
-        ),
+      AppSnackBars.error(
+        context,
+        LocaleKeys.permission_install_request_failed.tr(),
+        '',
       );
     }
   }
@@ -223,17 +232,6 @@ class _SoftwareSettingsPageState
                 value: ServiceManager().displayState.userListSimple.watch(context),
                 onChanged: (value) {
                   ServiceManager().appSettings.setUserListSimple(value);
-                },
-              ),
-              SwitchListTile(
-                title: Text(LocaleKeys.enable_banner_carousel.tr()),
-                subtitle: Text(LocaleKeys.enable_banner_carousel_desc.tr()),
-                value: ServiceManager().appSettingsState.enableBannerCarousel
-                    .watch(context),
-                onChanged: (value) async {
-                  await ServiceManager().appSettings.updateEnableBannerCarousel(
-                    value,
-                  );
                 },
               ),
               SwitchListTile(

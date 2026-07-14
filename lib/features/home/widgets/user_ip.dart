@@ -1,6 +1,7 @@
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/shared/widgets/common/home_box.dart';
-import 'package:astral/shared/widgets/common/canvas_jump.dart';
+import 'package:astral/core/states/connection_state.dart';
+import 'package:astral/features/home/widgets/home_box.dart';
+import 'package:astral/features/home/widgets/canvas_jump.dart';
 import 'package:astral/core/models/room.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';

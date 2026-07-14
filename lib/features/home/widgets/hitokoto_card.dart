@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:astral/shared/widgets/common/home_box.dart';
+import 'package:astral/features/home/widgets/home_box.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

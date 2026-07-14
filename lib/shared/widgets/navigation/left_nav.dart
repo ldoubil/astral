@@ -1,5 +1,5 @@
-﻿import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/navigation.dart';
+import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/ui/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
@@ -43,8 +43,8 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
   void _updateAnimation(int newIndex) {
     if (_targetIndex != newIndex) {
       setState(() {
-        _currentIndex = _targetIndex; // 当前位置变为上次的目标位置
-        _targetIndex = newIndex; // 新的目标位置
+        _currentIndex = _targetIndex;
+        _targetIndex = newIndex;
       });
       _animationController.forward(from: 0);
     }
@@ -53,19 +53,19 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Watch((context) {
-      final selectedIndex = ServiceManager().uiState.selectedIndex.value;
-      final hoveredIndex = ServiceManager().uiState.hoveredIndex.value;
+      final selectedIndex = ServiceManager().uiState.selectedIndex.watch(
+        context,
+      );
+      final hoveredIndex = ServiceManager().uiState.hoveredIndex.watch(context);
       final colorScheme = widget.colorScheme;
 
-      _updateAnimation(selectedIndex);
-      // 修改导航项构建方法
-      Widget buildNavItem(
-        IconData icon,
-        String label,
-        int index,
-        ColorScheme colorScheme,
-        dynamic item,
-      ) {
+      if (selectedIndex != _targetIndex) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _updateAnimation(selectedIndex);
+        });
+      }
+
+      Widget buildNavItem(int index, NavigationItem item) {
         final isSelected = selectedIndex == index;
         return RepaintBoundary(
           child: MouseRegion(
@@ -130,7 +130,6 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
           padding: const EdgeInsets.only(top: 14),
           child: Stack(
             children: [
-              // 优化的滑动指示器 - 使用 AnimatedBuilder
               AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -156,7 +155,6 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
                   );
                 },
               ),
-              // 鼠标悬停指示器
               if (hoveredIndex != null && hoveredIndex != selectedIndex)
                 Positioned(
                   top: 4.0 + (hoveredIndex * 72.0),
@@ -174,7 +172,6 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
                     ),
                   ),
                 ),
-              // 导航项列表
               Column(
                 children: [
                   Expanded(
@@ -182,14 +179,7 @@ class _LeftNavState extends State<LeftNav> with SingleTickerProviderStateMixin {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: widget.items.length,
                       itemBuilder: (context, index) {
-                        final item = widget.items[index];
-                        return buildNavItem(
-                          item.icon,
-                          item.label,
-                          index,
-                          colorScheme,
-                          item,
-                        );
+                        return buildNavItem(index, widget.items[index]);
                       },
                     ),
                   ),

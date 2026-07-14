@@ -1,6 +1,7 @@
 import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/shared/utils/network/ip_utils.dart';
 import 'package:astral/src/rust/api/simple.dart';
 
 /// 服务器配置构建器
@@ -42,7 +43,7 @@ class ServerConfigBuilder {
     bool forceDhcp =
         currentIp.isEmpty ||
         currentIp == "0.0.0.0" ||
-        !_isValidIpAddress(currentIp);
+        !isValidIpAddress(currentIp, excludeLoopback: false);
 
     if (forceDhcp) {
       _enableDhcp = true;
@@ -169,7 +170,7 @@ class ServerConfigBuilder {
       devName: nc.devName.value,
       enableEncryption: enableEncryption,
       enableIpv6: nc.enableIpv6.value,
-      mtu: enableEncryption ? 1360 : 1380,
+      mtu: nc.mtu.value,
       multiThread: nc.multiThread.value,
       latencyFirst: rc?.latencyFirst ?? nc.latencyFirst.value,
       enableExitNode: nc.enableExitNode.value,
@@ -178,16 +179,16 @@ class ServerConfigBuilder {
       relayNetworkWhitelist: '*',
       disableP2P: rc?.disableP2p ?? nc.disableP2p.value,
       enableUdpBroadcastRelay: nc.enableUdpBroadcastRelay.value,
-      relayAllPeerRpc: true,
+      relayAllPeerRpc: nc.relayAllPeerRpc.value,
       disableUdpHolePunching:
           rc?.disableUdpHolePunching ?? nc.disableUdpHolePunching.value,
       disableTcpHolePunching:
           rc?.disableTcpHolePunching ?? nc.disableTcpHolePunching.value,
       dataCompressAlgo: rc?.dataCompressAlgo ?? nc.dataCompressAlgo.value,
-      bindDevice: (rc?.bindDevice == true) ? nc.bindDevice.value : false,
+      bindDevice: rc?.bindDevice ?? nc.bindDevice.value,
       enableKcpProxy: rc?.enableKcpProxy ?? nc.enableKcpProxy.value,
       disableKcpInput: nc.disableKcpInput.value,
-      disableRelayKcp: false,
+      disableRelayKcp: nc.disableRelayKcp.value,
       proxyForwardBySystem: nc.proxyForwardBySystem.value,
       acceptDns: nc.acceptDns.value,
       privateMode: nc.privateMode.value,
@@ -239,11 +240,4 @@ class ServerConfigBuilder {
     );
   }
 
-  bool _isValidIpAddress(String ip) {
-    if (ip.isEmpty) return false;
-    final RegExp ipRegex = RegExp(
-      r"^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
-    );
-    return ipRegex.hasMatch(ip) && ip != "0.0.0.0" && ip != "255.255.255.255";
-  }
 }

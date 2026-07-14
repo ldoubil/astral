@@ -16,8 +16,8 @@ String intToIp(int ipInt) {
 /// 验证IPv4地址格式是否有效
 ///
 /// 返回 true 如果地址有效，否则返回 false
-/// 排除特殊地址如 0.0.0.0, 255.255.255.255, 127.x.x.x
-bool isValidIpAddress(String ip) {
+/// 排除特殊地址如 0.0.0.0, 255.255.255.255；默认也排除 127.x.x.x
+bool isValidIpAddress(String ip, {bool excludeLoopback = true}) {
   if (ip.isEmpty) return false;
 
   // 严格的正则表达式验证（每个数字段 0-255）
@@ -29,7 +29,7 @@ bool isValidIpAddress(String ip) {
   if (!ipRegex.hasMatch(ip) ||
       ip == "0.0.0.0" ||
       ip == "255.255.255.255" ||
-      ip.startsWith("127.")) {
+      (excludeLoopback && ip.startsWith("127."))) {
     return false;
   }
   return true;

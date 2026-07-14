@@ -151,13 +151,8 @@ class _RoomReorderSheetState extends State<RoomReorderSheet> {
                 return child;
               },
               // 处理重新排序的回调
-              onReorder: (oldIndex, newIndex) {
+              onReorderItem: (oldIndex, newIndex) {
                 setState(() {
-                  // 由于移除项后列表长度减1，需要调整新位置的索引
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  // 移除原位置的房间并插入到新位置
                   final room = _rooms.removeAt(oldIndex);
                   _rooms.insert(newIndex, room);
                 });

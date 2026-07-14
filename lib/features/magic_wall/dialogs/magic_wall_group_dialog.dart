@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/magic_wall_model.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 
 /// 规则组编辑对话框
 class MagicWallGroupDialog extends StatefulWidget {
@@ -41,16 +42,12 @@ class _MagicWallGroupDialogState extends State<MagicWallGroupDialog> {
     final process = _processController.text.trim();
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入规则组名称')));
+      AppSnackBars.error(context, '无法保存', '请输入规则组名称');
       return;
     }
 
     if (_autoManage && process.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('启用自动监听时需填写进程名称')));
+      AppSnackBars.error(context, '无法保存', '启用自动监听时需填写进程名称');
       return;
     }
 

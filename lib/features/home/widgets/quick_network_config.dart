@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/shared/widgets/common/home_box.dart';
+import 'package:astral/features/home/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';

@@ -4,7 +4,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:astral/generated/locale_keys.g.dart';
-import 'package:astral/shared/models/history_version.dart';
+import 'package:astral/features/settings/models/history_version.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 import 'package:astral/core/ui/base_settings_page.dart';
 
 class HistoryVersionsPage extends BaseStatefulSettingsPage {
@@ -79,9 +80,7 @@ class _HistoryVersionsPageState
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('无法打开链接: $url')));
+        AppSnackBars.error(context, '无法打开链接', url);
       }
     }
   }

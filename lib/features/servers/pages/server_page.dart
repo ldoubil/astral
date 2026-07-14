@@ -3,6 +3,8 @@ import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/states/server_status_state.dart';
 import 'package:astral/shared/utils/network/blocked_servers.dart';
 import 'package:astral/features/servers/dialogs/server_dialog.dart';
+import 'package:astral/features/servers/server_status_style.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 import 'package:astral/core/ui/base_settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -36,21 +38,11 @@ class _ServersPageState extends BaseStatefulSettingsPageState<ServersPage> {
     super.dispose();
   }
 
-  Color _getStatusColor(ServerStatus status, ColorScheme colorScheme) {
-    switch (status) {
-      case ServerStatus.online:
-        return Colors.green;
-      case ServerStatus.offline:
-        return Colors.red;
-      case ServerStatus.inUse:
-        return Colors.blue;
-      case ServerStatus.unknown:
-        return colorScheme.outline;
-    }
-  }
+  @override
+  bool get showAppBar => false;
 
   @override
-  String get title => '服务器管理';
+  String get title => '';
 
   @override
   bool get showBackButton => false;
@@ -93,11 +85,8 @@ class _ServersPageState extends BaseStatefulSettingsPageState<ServersPage> {
             child: child,
           );
         },
-        onReorder: (oldIndex, newIndex) async {
+        onReorderItem: (oldIndex, newIndex) async {
           final newServers = List<ServerMod>.from(servers);
-          if (oldIndex < newIndex) {
-            newIndex -= 1;
-          }
           final server = newServers.removeAt(oldIndex);
           newServers.insert(newIndex, server);
           await ServiceManager().server.reorderServers(newServers);
@@ -116,7 +105,7 @@ class _ServersPageState extends BaseStatefulSettingsPageState<ServersPage> {
                   width: 4,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _getStatusColor(status, colorScheme),
+                    color: ServerStatusStyle.color(status, colorScheme),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -149,11 +138,11 @@ class _ServersPageState extends BaseStatefulSettingsPageState<ServersPage> {
                       onSelected: (value) {
                         if (value == 'edit') {
                           if (BlockedServers.isBlocked(server.url)) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('此服务器不可编辑'),
-                                duration: Duration(seconds: 2),
-                              ),
+                            AppSnackBars.info(
+                              context,
+                              '不可编辑',
+                              '此服务器不可编辑',
+                              duration: const Duration(seconds: 2),
                             );
                           } else {
                             showEditServerDialog(context, server: server);

@@ -23,49 +23,47 @@ class ListenListPage extends BaseSettingsPage {
 
   @override
   Widget buildContent(BuildContext context) {
-    return Watch((context) {
-      final listenList = ServiceManager().playerState.listenList.watch(context);
+    final listenList = ServiceManager().playerState.listenList.watch(context);
 
-      if (listenList.isEmpty) {
-        return buildEmptyState(
-          context: context,
-          icon: Icons.list_alt,
-          title: '暂无监听项',
-          actionLabel: LocaleKeys.add_listen_item.tr(),
-          onAction: () => _addListenItem(context),
-        );
-      }
-
-      return ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: listenList.length,
-        itemBuilder: (context, index) {
-          final item = listenList[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text(item),
-              leading: const Icon(Icons.dns),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    tooltip: LocaleKeys.edit.tr(),
-                    onPressed: () => _editListenItem(context, index, item),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 20),
-                    tooltip: LocaleKeys.delete.tr(),
-                    onPressed: () => _deleteListenItem(context, index, item),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    if (listenList.isEmpty) {
+      return buildEmptyState(
+        context: context,
+        icon: Icons.list_alt,
+        title: '暂无监听项',
+        actionLabel: LocaleKeys.add_listen_item.tr(),
+        onAction: () => _addListenItem(context),
       );
-    });
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: listenList.length,
+      itemBuilder: (context, index) {
+        final item = listenList[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            title: Text(item),
+            leading: const Icon(Icons.dns),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 20),
+                  tooltip: LocaleKeys.edit.tr(),
+                  onPressed: () => _editListenItem(context, index, item),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 20),
+                  tooltip: LocaleKeys.delete.tr(),
+                  onPressed: () => _deleteListenItem(context, index, item),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _addListenItem(BuildContext context) async {

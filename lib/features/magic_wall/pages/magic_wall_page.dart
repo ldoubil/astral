@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:signals_flutter/signals_flutter.dart';
-import 'package:astral/core/models/magic_wall_model.dart';
-import 'package:astral/core/database/app_data.dart';
-import 'package:uuid/uuid.dart';
-import 'dart:async';
 import 'dart:io';
-import 'package:astral/src/rust/api/magic_wall.dart' as rust_api;
-import 'package:astral/features/magic_wall/models/magic_wall_group_bundle.dart';
+
+import 'package:astral/core/models/magic_wall_model.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
 import 'package:astral/features/magic_wall/dialogs/magic_wall_group_dialog.dart';
 import 'package:astral/features/magic_wall/dialogs/magic_wall_rule_dialog.dart';
+import 'package:astral/features/magic_wall/services/magic_wall_controller.dart';
+import 'package:astral/features/magic_wall/widgets/magic_wall_control_panel.dart';
+import 'package:astral/features/magic_wall/widgets/magic_wall_group_list.dart';
+import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 class MagicWallPage extends StatefulWidget {
   const MagicWallPage({super.key});
@@ -18,158 +18,34 @@ class MagicWallPage extends StatefulWidget {
 }
 
 class _MagicWallPageState extends State<MagicWallPage> {
-  final _isRunning = signal(false);
-  final _groups = signal<List<MagicWallGroupBundle>>([]);
-  final _activeRulesCount = signal(0);
-  Timer? _processMonitorTimer;
-  final Map<String, bool> _processActive = {};
-  final Map<String, String> _processExecutablePaths = {};
-  bool _isCheckingProcesses = false;
   final Set<String> _collapsedGroups = <String>{};
+  late final MagicWallController _controller;
 
   @override
   void initState() {
     super.initState();
-    _loadData().then((_) => _fixIncompleteAppPaths());
-    _checkStatus();
+    _controller = MagicWallController(
+      onSuccess: _showSuccess,
+      onError: _showError,
+      onValidGroupIdsChanged: _pruneCollapsedGroups,
+    );
+    _controller.init();
+    _controller.loadData().then(
+      (_) => _controller.processMonitor.fixIncompleteAppPaths(),
+    );
+    _controller.checkStatus();
     if (Platform.isWindows) {
-      _startProcessMonitor();
+      _controller.processMonitor.start();
     }
   }
 
   @override
   void dispose() {
-    _processMonitorTimer?.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    try {
-      final repo = AppDatabase().MagicWallSetting;
-      final rules = await repo.getAllMagicWallRulesSorted();
-      final groups = await repo.getAllMagicWallGroupsSorted();
-
-      final hasOrphan = rules.any((rule) => rule.groupId.isEmpty);
-      if (groups.isEmpty || hasOrphan) {
-        await _migrateLegacyData(rules, groups);
-        final refreshedRules = await repo.getAllMagicWallRulesSorted();
-        final refreshedGroups = await repo.getAllMagicWallGroupsSorted();
-        _applyGroupData(refreshedGroups, refreshedRules);
-        return;
-      }
-
-      _applyGroupData(groups, rules);
-    } catch (e) {
-      _showError('加载配置失败: $e');
-    }
-  }
-
-  Future<void> _migrateLegacyData(
-    List<MagicWallRuleModel> rules,
-    List<MagicWallGroupModel> groups,
-  ) async {
-    final repo = AppDatabase().MagicWallSetting;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    final orphanRules = rules
-        .where((rule) => rule.groupId.isEmpty)
-        .toList(growable: false);
-    if (orphanRules.isEmpty) {
-      return;
-    }
-
-    final existingNames = groups.map((g) => g.name).toSet();
-    final createdGroups = <MagicWallGroupModel>[];
-    final provisionalGroups = <String, MagicWallGroupModel>{};
-
-    String deriveName(MagicWallRuleModel rule) {
-      if (rule.name.isNotEmpty) {
-        return rule.name;
-      }
-      final appPath = rule.appPath;
-      if (appPath != null && appPath.isNotEmpty) {
-        final sanitized = appPath.split(RegExp(r'[\\/]')).last;
-        if (sanitized.isNotEmpty) {
-          return sanitized;
-        }
-      }
-      return '导入规则组';
-    }
-
-    String ensureUniqueName(String baseName, Set<String> usedNames) {
-      var name = baseName;
-      var index = 1;
-      while (usedNames.contains(name)) {
-        index += 1;
-        name = '$baseName($index)';
-      }
-      usedNames.add(name);
-      return name;
-    }
-
-    final usedNames = {...existingNames};
-
-    MagicWallGroupModel obtainGroup(String baseName) {
-      final existing = provisionalGroups[baseName];
-      if (existing != null) {
-        return existing;
-      }
-      final uniqueName = ensureUniqueName(baseName, usedNames);
-      final group =
-          MagicWallGroupModel()
-            ..groupId = const Uuid().v4()
-            ..name = uniqueName
-            ..processName = ''
-            ..enabled = false
-            ..autoManage = false
-            ..createdAt = now
-            ..updatedAt = now;
-      provisionalGroups[baseName] = group;
-      createdGroups.add(group);
-      return group;
-    }
-
-    for (final rule in orphanRules) {
-      final baseName = deriveName(rule);
-      final group = obtainGroup(baseName);
-      rule.groupId = group.groupId;
-      rule.createdAt ??= now;
-      rule.updatedAt = now;
-    }
-
-    for (final group in createdGroups) {
-      await repo.addMagicWallGroup(group);
-    }
-
-    await repo.addMagicWallRules(orphanRules);
-  }
-
-  void _applyGroupData(
-    List<MagicWallGroupModel> groups,
-    List<MagicWallRuleModel> rules,
-  ) {
-    final grouped = <String, List<MagicWallRuleModel>>{};
-    for (final rule in rules) {
-      grouped.putIfAbsent(rule.groupId, () => []).add(rule);
-    }
-
-    final bundles = groups
-        .map(
-          (group) => MagicWallGroupBundle(
-            group: group,
-            rules: List<MagicWallRuleModel>.unmodifiable(
-              grouped[group.groupId] ?? const <MagicWallRuleModel>[],
-            ),
-          ),
-        )
-        .toList(growable: false);
-
-    _groups.value = bundles;
-    final validGroupIds = bundles.map((bundle) => bundle.group.groupId).toSet();
-    _processActive.removeWhere((key, value) => !validGroupIds.contains(key));
-    _processExecutablePaths.removeWhere(
-      (key, value) => !validGroupIds.contains(key),
-    );
+  void _pruneCollapsedGroups(Set<String> validGroupIds) {
     final toRemove =
         _collapsedGroups.where((id) => !validGroupIds.contains(id)).toList();
     if (toRemove.isNotEmpty && mounted) {
@@ -177,7 +53,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
         _collapsedGroups.removeAll(toRemove);
       });
     }
-    _updateActiveCount();
   }
 
   void _toggleGroupCollapse(String groupId) {
@@ -193,617 +68,8 @@ class _MagicWallPageState extends State<MagicWallPage> {
     });
   }
 
-  /// 修复数据库中不完整的应用路径（仅进程名而非完整路径）
-  Future<void> _fixIncompleteAppPaths() async {
-    if (!Platform.isWindows) {
-      return;
-    }
-
-    try {
-      final repo = AppDatabase().MagicWallSetting;
-      bool anyUpdated = false;
-
-      for (final bundle in _groups.value) {
-        if (bundle.group.processName.trim().isEmpty) {
-          continue;
-        }
-
-        // 检查组内规则是否需要修复
-        bool needsFix = false;
-        for (final rule in bundle.rules) {
-          final path = rule.appPath;
-          if (path == null ||
-              path.isEmpty ||
-              (!path.contains('\\') && !path.contains('/'))) {
-            needsFix = true;
-            break;
-          }
-        }
-
-        if (!needsFix) {
-          continue;
-        }
-
-        // 尝试解析完整路径
-        final executablePath = await _getProcessExecutablePath(
-          bundle.group.processName,
-        );
-        if (executablePath == null || executablePath.isEmpty) {
-          continue;
-        }
-
-        // 更新所有不完整的规则
-        for (final rule in bundle.rules) {
-          final path = rule.appPath;
-          if (path == null ||
-              path.isEmpty ||
-              (!path.contains('\\') && !path.contains('/'))) {
-            final updated =
-                MagicWallRuleModel()
-                  ..id = rule.id
-                  ..ruleId = rule.ruleId
-                  ..groupId = rule.groupId
-                  ..name = rule.name
-                  ..enabled = rule.enabled
-                  ..action = rule.action
-                  ..protocol = rule.protocol
-                  ..direction = rule.direction
-                  ..appPath = executablePath
-                  ..remoteIp = rule.remoteIp
-                  ..localIp = rule.localIp
-                  ..remotePort = rule.remotePort
-                  ..localPort = rule.localPort
-                  ..description = rule.description
-                  ..createdAt = rule.createdAt
-                  ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-            await repo.updateMagicWallRule(updated);
-            anyUpdated = true;
-          }
-        }
-      }
-
-      if (anyUpdated) {
-        await _loadData();
-      }
-    } catch (e) {
-      debugPrint('修复应用路径失败: $e');
-    }
-  }
-
-  /// 更新单个规则的应用路径为完整路径（如果需要）
-  Future<MagicWallRuleModel> _ensureRuleHasCompletePath(
-    MagicWallRuleModel rule,
-    String? groupAppPath,
-  ) async {
-    // 如果已经有完整路径，不需要更新
-    final currentPath = rule.appPath;
-    if (currentPath != null &&
-        currentPath.isNotEmpty &&
-        (currentPath.contains('\\') || currentPath.contains('/'))) {
-      return rule;
-    }
-
-    // 如果没有提供 groupAppPath，尝试从组中解析
-    String? resolvedPath = groupAppPath;
-    if (resolvedPath == null || resolvedPath.isEmpty) {
-      for (final bundle in _groups.value) {
-        if (bundle.group.groupId == rule.groupId) {
-          resolvedPath = await _resolveGroupAppPath(bundle.group);
-          break;
-        }
-      }
-    }
-
-    // 如果仍然没有路径，返回原规则
-    if (resolvedPath == null || resolvedPath.isEmpty) {
-      return rule;
-    }
-
-    // 更新规则的路径
-    final updated =
-        MagicWallRuleModel()
-          ..id = rule.id
-          ..ruleId = rule.ruleId
-          ..groupId = rule.groupId
-          ..name = rule.name
-          ..enabled = rule.enabled
-          ..action = rule.action
-          ..protocol = rule.protocol
-          ..direction = rule.direction
-          ..appPath = resolvedPath
-          ..remoteIp = rule.remoteIp
-          ..localIp = rule.localIp
-          ..remotePort = rule.remotePort
-          ..localPort = rule.localPort
-          ..description = rule.description
-          ..createdAt = rule.createdAt
-          ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-
-    await AppDatabase().MagicWallSetting.updateMagicWallRule(updated);
-    return updated;
-  }
-
-  Future<void> _recordEvent({
-    required String targetType,
-    required String targetId,
-    required String action,
-    String? message,
-  }) async {
-    try {
-      final log =
-          MagicWallEventLogModel()
-            ..targetType = targetType
-            ..targetId = targetId
-            ..action = action
-            ..message = message
-            ..timestamp = DateTime.now().millisecondsSinceEpoch;
-      await AppDatabase().MagicWallSetting.addMagicWallEvent(log);
-    } catch (e) {
-      debugPrint('记录事件失败: $e');
-    }
-  }
-
-  Future<String?> _resolveGroupAppPath(MagicWallGroupModel group) async {
-    if (group.processName.trim().isEmpty) {
-      return null;
-    }
-
-    final cached = _processExecutablePaths[group.groupId];
-    if (cached != null && cached.isNotEmpty) {
-      return cached;
-    }
-
-    for (final bundle in _groups.value) {
-      if (bundle.group.groupId == group.groupId) {
-        for (final rule in bundle.rules) {
-          final candidate = rule.appPath;
-          if (candidate != null && candidate.isNotEmpty) {
-            _processExecutablePaths[group.groupId] = candidate;
-            return candidate;
-          }
-        }
-        break;
-      }
-    }
-
-    final path = await _getProcessExecutablePath(group.processName);
-    if (path != null && path.isNotEmpty) {
-      _processExecutablePaths[group.groupId] = path;
-      return path;
-    }
-    return null;
-  }
-
-  Future<String?> _getProcessExecutablePath(String processName) async {
-    final trimmed = processName.trim();
-    if (trimmed.isEmpty) {
-      return null;
-    }
-
-    if (trimmed.contains('\\') || trimmed.contains('/')) {
-      final file = File(trimmed);
-      if (await file.exists()) {
-        return file.path;
-      }
-    }
-
-    final sanitized = trimmed.replaceAll(
-      RegExp(r'\.exe$', caseSensitive: false),
-      '',
-    );
-    if (sanitized.isEmpty) {
-      return null;
-    }
-
-    final escaped = sanitized.replaceAll("'", "''");
-    final command =
-        "Get-Process -Name '$escaped' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path";
-
-    try {
-      final result = await Process.run('powershell', [
-        '-NoProfile',
-        '-Command',
-        command,
-      ]);
-      if (result.exitCode != 0) {
-        return null;
-      }
-      final output = (result.stdout as String?)?.trim() ?? '';
-      if (output.isEmpty) {
-        return null;
-      }
-      return output;
-    } catch (e) {
-      debugPrint('解析进程路径失败: $e');
-      return null;
-    }
-  }
-
-  void _startProcessMonitor() {
-    _processMonitorTimer?.cancel();
-    _processMonitorTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => _checkProcesses(),
-    );
-    _checkProcesses();
-  }
-
-  Future<void> _checkProcesses() async {
-    if (!Platform.isWindows) {
-      return;
-    }
-
-    if (_isCheckingProcesses) {
-      return;
-    }
-
-    final targets = _groups.value
-        .where(
-          (bundle) =>
-              bundle.group.autoManage && bundle.group.processName.isNotEmpty,
-        )
-        .toList(growable: false);
-
-    if (targets.isEmpty) {
-      _processActive.clear();
-      _processExecutablePaths.clear();
-      return;
-    }
-
-    _isCheckingProcesses = true;
-    var requireReload = false;
-    try {
-      for (final bundle in targets) {
-        final executable = await _getProcessExecutablePath(
-          bundle.group.processName,
-        );
-        final isRunning = executable != null && executable.isNotEmpty;
-        final wasRunning = _processActive[bundle.group.groupId] ?? false;
-
-        if (isRunning) {
-          _processExecutablePaths[bundle.group.groupId] = executable;
-        } else {
-          _processExecutablePaths.remove(bundle.group.groupId);
-        }
-
-        if (isRunning && !wasRunning) {
-          final changed = await _handleProcessStarted(bundle);
-          requireReload = requireReload || changed;
-          _processActive[bundle.group.groupId] = true;
-        } else if (!isRunning && wasRunning) {
-          final changed = await _handleProcessStopped(bundle);
-          requireReload = requireReload || changed;
-          _processActive[bundle.group.groupId] = false;
-        }
-      }
-    } finally {
-      _isCheckingProcesses = false;
-    }
-
-    if (requireReload) {
-      await _loadData();
-    }
-  }
-
-  Future<bool> _handleProcessStarted(MagicWallGroupBundle bundle) async {
-    var stateChanged = false;
-    final group = bundle.group;
-
-    if (!_isRunning.value) {
-      try {
-        await _startEngineAndSyncRules();
-        await _recordEvent(
-          targetType: 'engine',
-          targetId: 'engine',
-          action: 'auto_on',
-          message: '进程 ${group.processName}',
-        );
-      } catch (e) {
-        _showError('自动启动魔法墙失败: $e');
-      }
-    }
-
-    if (!group.enabled) {
-      final updatedGroup =
-          MagicWallGroupModel()
-            ..id = group.id
-            ..groupId = group.groupId
-            ..name = group.name
-            ..processName = group.processName
-            ..autoManage = group.autoManage
-            ..enabled = true
-            ..createdAt = group.createdAt
-            ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-      await AppDatabase().MagicWallSetting.updateMagicWallGroup(updatedGroup);
-      stateChanged = true;
-    }
-
-    final rules = await AppDatabase().MagicWallSetting.getMagicWallRulesByGroup(
-      group.groupId,
-    );
-    final executablePath = await _resolveGroupAppPath(group);
-
-    // 更新规则的 appPath 为完整可执行文件路径
-    if (executablePath != null && executablePath.isNotEmpty) {
-      final repo = AppDatabase().MagicWallSetting;
-      for (final rule in rules) {
-        final needsUpdate =
-            rule.appPath == null ||
-            rule.appPath!.isEmpty ||
-            !rule.appPath!.contains('\\') && !rule.appPath!.contains('/');
-        if (needsUpdate) {
-          final updated =
-              MagicWallRuleModel()
-                ..id = rule.id
-                ..ruleId = rule.ruleId
-                ..groupId = rule.groupId
-                ..name = rule.name
-                ..enabled = rule.enabled
-                ..action = rule.action
-                ..protocol = rule.protocol
-                ..direction = rule.direction
-                ..appPath = executablePath
-                ..remoteIp = rule.remoteIp
-                ..localIp = rule.localIp
-                ..remotePort = rule.remotePort
-                ..localPort = rule.localPort
-                ..description = rule.description
-                ..createdAt = rule.createdAt
-                ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-          await repo.updateMagicWallRule(updated);
-        }
-      }
-    }
-
-    // 重新加载更新后的规则
-    final updatedRules = await AppDatabase().MagicWallSetting
-        .getMagicWallRulesByGroup(group.groupId);
-
-
-    // 使用 Set 去重，避免重复添加
-    final addedRuleIds = <String>{};
-    for (final rule in updatedRules.where((rule) => rule.enabled)) {
-      if (addedRuleIds.contains(rule.ruleId)) {
-        continue;
-      }
-      addedRuleIds.add(rule.ruleId);
-
-      try {
-        await rust_api.addMagicWallRule(
-          rule: _convertToRustRule(rule, fallbackAppPath: executablePath),
-        );
-      } catch (e) {
-        debugPrint('⚠️  添加规则失败: ${rule.name}, 错误: $e');
-        // 如果规则已存在，忽略错误继续
-        if (!e.toString().contains('已存在')) {
-          rethrow;
-        }
-      }
-    }
-
-    await _recordEvent(
-      targetType: 'group',
-      targetId: group.groupId,
-      action: 'auto_on',
-      message: '进程 ${group.processName}',
-    );
-
-    return stateChanged;
-  }
-
-  Future<bool> _handleProcessStopped(MagicWallGroupBundle bundle) async {
-    var stateChanged = false;
-    final group = bundle.group;
-
-    final rules = await AppDatabase().MagicWallSetting.getMagicWallRulesByGroup(
-      group.groupId,
-    );
-
-    // 使用 Set 去重
-    final uniqueRuleIds = <String>{};
-    for (final rule in rules) {
-      if (uniqueRuleIds.contains(rule.ruleId)) {
-        continue;
-      }
-      uniqueRuleIds.add(rule.ruleId);
-
-      try {
-        await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-      } catch (e) {
-        debugPrint('⚠️  移除规则失败: ${rule.name}, 错误: $e');
-        // 继续移除其他规则
-      }
-    }
-
-    if (group.enabled) {
-      final updatedGroup =
-          MagicWallGroupModel()
-            ..id = group.id
-            ..groupId = group.groupId
-            ..name = group.name
-            ..processName = group.processName
-            ..autoManage = group.autoManage
-            ..enabled = false
-            ..createdAt = group.createdAt
-            ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-      await AppDatabase().MagicWallSetting.updateMagicWallGroup(updatedGroup);
-      stateChanged = true;
-    }
-
-    await _recordEvent(
-      targetType: 'group',
-      targetId: group.groupId,
-      action: 'auto_off',
-      message: '进程 ${group.processName}',
-    );
-
-    var otherGroupEnabled = false;
-    for (final item in _groups.value) {
-      if (item.group.groupId == group.groupId) {
-        continue;
-      }
-      if (item.group.enabled) {
-        otherGroupEnabled = true;
-        break;
-      }
-    }
-
-    if (!otherGroupEnabled && _isRunning.value) {
-      try {
-        await rust_api.stopMagicWall();
-        _isRunning.value = false;
-        await _recordEvent(
-          targetType: 'engine',
-          targetId: 'engine',
-          action: 'auto_off',
-          message: '进程 ${group.processName}',
-        );
-      } catch (e) {
-        _showError('自动停止魔法墙失败: $e');
-      }
-    }
-
-    return stateChanged;
-  }
-
-  Future<void> _checkStatus() async {
-    try {
-      final status = await rust_api.getMagicWallStatus();
-      _isRunning.value = status.isRunning;
-      _activeRulesCount.value = status.activeRules.toInt();
-    } catch (e) {
-      debugPrint('检查状态失败: $e');
-    }
-  }
-
-  void _updateActiveCount() {
-    final bundles = _groups.value;
-    final count = bundles.fold<int>(
-      0,
-      (acc, bundle) =>
-          bundle.group.enabled
-              ? acc + bundle.rules.where((rule) => rule.enabled).length
-              : acc,
-    );
-    _activeRulesCount.value = count;
-  }
-
-  rust_api.MagicWallRule _convertToRustRule(
-    MagicWallRuleModel model, {
-    String? fallbackAppPath,
-  }) {
-    String? resolvedAppPath;
-    // 优先使用 fallbackAppPath（解析出的完整路径）
-    if (fallbackAppPath != null && fallbackAppPath.isNotEmpty) {
-      resolvedAppPath = fallbackAppPath;
-    } else if (model.appPath != null && model.appPath!.isNotEmpty) {
-      resolvedAppPath = model.appPath;
-    }
-
-    return rust_api.MagicWallRule(
-      id: model.ruleId,
-      name: model.name,
-      enabled: model.enabled,
-      action: model.action,
-      protocol: model.protocol,
-      direction: model.direction,
-      appPath: resolvedAppPath,
-      remoteIp: model.remoteIp,
-      localIp: model.localIp,
-      remotePort: model.remotePort,
-      localPort: model.localPort,
-      description: model.description,
-      createdAt: model.createdAt,
-    );
-  }
-
-  Future<void> _startEngineAndSyncRules() async {
-    // 先同步所有启用的规则到 Rust 层
-    final repo = AppDatabase().MagicWallSetting;
-    for (final bundle in _groups.value.where((b) => b.group.enabled)) {
-      final groupExecutable = await _resolveGroupAppPath(bundle.group);
-
-      // 更新规则的 appPath 为完整路径
-      if (groupExecutable != null && groupExecutable.isNotEmpty) {
-        for (final rule in bundle.rules) {
-          final needsUpdate =
-              rule.appPath == null ||
-              rule.appPath!.isEmpty ||
-              (!rule.appPath!.contains('\\') && !rule.appPath!.contains('/'));
-          if (needsUpdate) {
-            final updated =
-                MagicWallRuleModel()
-                  ..id = rule.id
-                  ..ruleId = rule.ruleId
-                  ..groupId = rule.groupId
-                  ..name = rule.name
-                  ..enabled = rule.enabled
-                  ..action = rule.action
-                  ..protocol = rule.protocol
-                  ..direction = rule.direction
-                  ..appPath = groupExecutable
-                  ..remoteIp = rule.remoteIp
-                  ..localIp = rule.localIp
-                  ..remotePort = rule.remotePort
-                  ..localPort = rule.localPort
-                  ..description = rule.description
-                  ..createdAt = rule.createdAt
-                  ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-            await repo.updateMagicWallRule(updated);
-          }
-        }
-      }
-
-      // 重新加载更新后的规则
-      final updatedRules = await repo.getMagicWallRulesByGroup(
-        bundle.group.groupId,
-      );
-      for (final rule in updatedRules.where((r) => r.enabled)) {
-        try {
-          await rust_api.addMagicWallRule(
-            rule: _convertToRustRule(rule, fallbackAppPath: groupExecutable),
-          );
-        } catch (e) {
-          debugPrint('⚠️  应用规则失败: ${rule.name}, 错误: $e');
-        }
-      }
-    }
-    
-    // 启动魔法墙引擎，Rust 层会自动应用 RULE_STORE 中的所有规则
-    await rust_api.startMagicWall();
-    _isRunning.value = true;
-  }
-
-  Future<void> _toggleEngine() async {
-    try {
-      if (_isRunning.value) {
-        await rust_api.stopMagicWall();
-        _isRunning.value = false;
-        await _recordEvent(
-          targetType: 'engine',
-          targetId: 'engine',
-          action: 'off',
-          message: '手动操作',
-        );
-        _showSuccess('魔法墙已停止');
-      } else {
-        await _startEngineAndSyncRules();
-        await _recordEvent(
-          targetType: 'engine',
-          targetId: 'engine',
-          action: 'on',
-          message: '手动操作',
-        );
-        _showSuccess('魔法墙已启动');
-      }
-    } catch (e) {
-      _showError('操作失败: $e');
-      _checkStatus(); // 发生错误时刷新状态，避免 UI 状态不同步
-    }
-  }
-
   Future<void> _addRule({String? groupId, bool allowGroupChange = true}) async {
-    final groups = _groups.value.map((bundle) => bundle.group).toList();
+    final groups = _controller.groups.value.map((bundle) => bundle.group).toList();
     if (groups.isEmpty) {
       _showError('请先创建规则组');
       return;
@@ -822,59 +88,16 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (rule != null) {
-      try {
-        final resolvedGroupId =
-            rule.groupId.isEmpty ? targetGroupId : rule.groupId;
-        rule.groupId = resolvedGroupId;
-        MagicWallGroupModel? targetGroup;
-        for (final group in groups) {
-          if (group.groupId == resolvedGroupId) {
-            targetGroup = group;
-            break;
-          }
-        }
-        final groupAppPath =
-            targetGroup != null
-                ? await _resolveGroupAppPath(targetGroup)
-                : null;
-        rule.appPath = groupAppPath;
-        await AppDatabase().MagicWallSetting.addMagicWallRule(rule);
-
-        // 确保规则有完整路径
-        final updatedRule = await _ensureRuleHasCompletePath(
-          rule,
-          groupAppPath,
-        );
-        await _loadData();
-
-        final isGroupEnabled = _groups.value.any(
-          (bundle) =>
-              bundle.group.groupId == resolvedGroupId && bundle.group.enabled,
-        );
-
-        if (_isRunning.value && isGroupEnabled && updatedRule.enabled) {
-          try {
-            await rust_api.addMagicWallRule(
-              rule: _convertToRustRule(
-                updatedRule,
-                fallbackAppPath: groupAppPath,
-              ),
-            );
-          } catch (e) {
-            debugPrint('⚠️  添加规则到防火墙失败: ${updatedRule.name}, 错误: $e');
-            rethrow;
-          }
-        }
-
-        _showSuccess('规则已添加');
-      } catch (e) {
-        _showError('添加规则失败: $e');
-      }
+      await _controller.addRule(
+        rule,
+        targetGroupId: targetGroupId,
+        groupsList: groups,
+      );
     }
   }
 
   Future<void> _editRule(MagicWallRuleModel rule) async {
-    final groups = _groups.value.map((bundle) => bundle.group).toList();
+    final groups = _controller.groups.value.map((bundle) => bundle.group).toList();
     if (groups.isEmpty) {
       _showError('请先创建规则组');
       return;
@@ -891,60 +114,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (updated != null) {
-      try {
-        MagicWallGroupModel? targetGroup;
-        for (final group in groups) {
-          if (group.groupId == updated.groupId) {
-            targetGroup = group;
-            break;
-          }
-        }
-        final groupAppPath =
-            targetGroup != null
-                ? await _resolveGroupAppPath(targetGroup)
-                : null;
-        if (groupAppPath != null && groupAppPath.isNotEmpty) {
-          updated.appPath = groupAppPath;
-        }
-        await AppDatabase().MagicWallSetting.updateMagicWallRule(updated);
-
-        // 确保规则有完整路径
-        final updatedRuleWithPath = await _ensureRuleHasCompletePath(
-          updated,
-          groupAppPath,
-        );
-        await _loadData();
-
-        // 如果引擎正在运行,更新 Rust 中的规则
-        if (_isRunning.value) {
-          final isGroupEnabled = _groups.value.any(
-            (bundle) =>
-                bundle.group.groupId == updatedRuleWithPath.groupId &&
-                bundle.group.enabled,
-          );
-
-          if (updatedRuleWithPath.enabled && isGroupEnabled) {
-            await rust_api.updateMagicWallRule(
-              rule: _convertToRustRule(
-                updatedRuleWithPath,
-                fallbackAppPath: groupAppPath ?? updatedRuleWithPath.appPath,
-              ),
-            );
-          } else {
-            try {
-              await rust_api.removeMagicWallRule(
-                ruleId: updatedRuleWithPath.ruleId,
-              );
-            } catch (e) {
-              debugPrint('⚠️  移除规则失败: ${updatedRuleWithPath.name}, 错误: $e');
-            }
-          }
-        }
-
-        _showSuccess('规则已更新');
-      } catch (e) {
-        _showError('更新规则失败: $e');
-      }
+      await _controller.updateRule(updated, groupsList: groups);
     }
   }
 
@@ -969,186 +139,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (confirm == true) {
-      try {
-        // 如果引擎正在运行且规则启用,从 Rust 中删除
-        final isGroupEnabled = _groups.value.any(
-          (bundle) =>
-              bundle.group.groupId == rule.groupId && bundle.group.enabled,
-        );
-        if (_isRunning.value && rule.enabled && isGroupEnabled) {
-          try {
-            await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-          } catch (e) {
-            debugPrint('⚠️  从防火墙删除规则失败: ${rule.name}, 错误: $e');
-            // 继续删除数据库记录
-          }
-        }
-
-        await AppDatabase().MagicWallSetting.deleteMagicWallRule(rule.id);
-        await _loadData();
-        _showSuccess('规则已删除');
-      } catch (e) {
-        _showError('删除规则失败: $e');
-      }
-    }
-  }
-
-  Future<void> _toggleRule(MagicWallRuleModel rule) async {
-    try {
-      await AppDatabase().MagicWallSetting.toggleMagicWallRule(rule.id);
-      await _loadData();
-
-      // 如果引擎正在运行,应用/移除规则
-      if (_isRunning.value) {
-        MagicWallGroupBundle? bundle;
-        for (final item in _groups.value) {
-          if (item.group.groupId == rule.groupId) {
-            bundle = item;
-            break;
-          }
-        }
-
-        if (bundle == null) {
-          return;
-        }
-
-        MagicWallRuleModel? updatedRule;
-        for (final item in bundle.rules) {
-          if (item.ruleId == rule.ruleId) {
-            updatedRule = item;
-            break;
-          }
-        }
-
-        updatedRule ??= rule;
-
-        if (bundle.group.enabled && updatedRule.enabled) {
-          final groupAppPath = await _resolveGroupAppPath(bundle.group);
-
-          // 确保规则有完整路径
-          updatedRule = await _ensureRuleHasCompletePath(
-            updatedRule,
-            groupAppPath,
-          );
-
-          await rust_api.addMagicWallRule(
-            rule: _convertToRustRule(
-              updatedRule,
-              fallbackAppPath: groupAppPath,
-            ),
-          );
-        } else {
-          try {
-            await rust_api.removeMagicWallRule(ruleId: updatedRule.ruleId);
-          } catch (e) {
-            debugPrint('⚠️  移除规则失败: ${updatedRule.name}, 错误: $e');
-            // 即使删除失败也继续，可能规则已经不存在了
-          }
-        }
-      }
-    } catch (e) {
-      _showError('切换规则状态失败: $e');
-    }
-  }
-
-  Future<void> _toggleGroup(MagicWallGroupModel group) async {
-    try {
-      await AppDatabase().MagicWallSetting.toggleMagicWallGroup(group.groupId);
-      await _loadData();
-
-      if (_isRunning.value) {
-        MagicWallGroupBundle? bundle;
-        for (final item in _groups.value) {
-          if (item.group.groupId == group.groupId) {
-            bundle = item;
-            break;
-          }
-        }
-
-        if (bundle == null) {
-          return;
-        }
-
-        if (bundle.group.enabled) {
-          await _recordEvent(
-            targetType: 'group',
-            targetId: bundle.group.groupId,
-            action: 'on',
-            message: '手动操作',
-          );
-          final groupAppPath = await _resolveGroupAppPath(bundle.group);
-
-          // 更新规则的 appPath 为完整路径
-          if (groupAppPath != null && groupAppPath.isNotEmpty) {
-            final repo = AppDatabase().MagicWallSetting;
-            for (final rule in bundle.rules) {
-              final needsUpdate =
-                  rule.appPath == null ||
-                  rule.appPath!.isEmpty ||
-                  !rule.appPath!.contains('\\') && !rule.appPath!.contains('/');
-              if (needsUpdate) {
-                final updated =
-                    MagicWallRuleModel()
-                      ..id = rule.id
-                      ..ruleId = rule.ruleId
-                      ..groupId = rule.groupId
-                      ..name = rule.name
-                      ..enabled = rule.enabled
-                      ..action = rule.action
-                      ..protocol = rule.protocol
-                      ..direction = rule.direction
-                      ..appPath = groupAppPath
-                      ..remoteIp = rule.remoteIp
-                      ..localIp = rule.localIp
-                      ..remotePort = rule.remotePort
-                      ..localPort = rule.localPort
-                      ..description = rule.description
-                      ..createdAt = rule.createdAt
-                      ..updatedAt = DateTime.now().millisecondsSinceEpoch;
-                await repo.updateMagicWallRule(updated);
-              }
-            }
-          }
-
-          // 重新加载更新后的规则
-          final updatedRules = await AppDatabase().MagicWallSetting
-              .getMagicWallRulesByGroup(bundle.group.groupId);
-          for (final rule in updatedRules.where((rule) => rule.enabled)) {
-            try {
-              await rust_api.addMagicWallRule(
-                rule: _convertToRustRule(rule, fallbackAppPath: groupAppPath),
-              );
-            } catch (e) {
-              debugPrint('⚠️  添加规则失败: ${rule.name}, 错误: $e');
-            }
-          }
-        } else {
-          await _recordEvent(
-            targetType: 'group',
-            targetId: bundle.group.groupId,
-            action: 'off',
-            message: '手动操作',
-          );
-
-
-          // 使用 Set 去重，避免重复删除同一规则
-          final uniqueRuleIds = <String>{};
-          for (final rule in bundle.rules) {
-            if (uniqueRuleIds.contains(rule.ruleId)) {
-              continue;
-            }
-            uniqueRuleIds.add(rule.ruleId);
-
-            try {
-              await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-            } catch (e) {
-              debugPrint('⚠️  移除规则失败: ${rule.name}, 错误: $e');
-            }
-          }
-        }
-      }
-    } catch (e) {
-      _showError('切换规则组失败: $e');
+      await _controller.deleteRule(rule);
     }
   }
 
@@ -1159,13 +150,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (group != null) {
-      try {
-        await AppDatabase().MagicWallSetting.addMagicWallGroup(group);
-        await _loadData();
-        _showSuccess('规则组已添加');
-      } catch (e) {
-        _showError('添加规则组失败: $e');
-      }
+      await _controller.addGroup(group);
     }
   }
 
@@ -1176,13 +161,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (updated != null) {
-      try {
-        await AppDatabase().MagicWallSetting.updateMagicWallGroup(updated);
-        await _loadData();
-        _showSuccess('规则组已更新');
-      } catch (e) {
-        _showError('更新规则组失败: $e');
-      }
+      await _controller.updateGroup(updated);
     }
   }
 
@@ -1207,29 +186,7 @@ class _MagicWallPageState extends State<MagicWallPage> {
     );
 
     if (confirm == true) {
-      try {
-        MagicWallGroupBundle? bundle;
-        for (final item in _groups.value) {
-          if (item.group.groupId == group.groupId) {
-            bundle = item;
-            break;
-          }
-        }
-
-        if (_isRunning.value && bundle != null && bundle.group.enabled) {
-          for (final rule in bundle.rules) {
-            await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-          }
-        }
-
-        await AppDatabase().MagicWallSetting.deleteMagicWallGroup(
-          group.groupId,
-        );
-        await _loadData();
-        _showSuccess('规则组已删除');
-      } catch (e) {
-        _showError('删除规则组失败: $e');
-      }
+      await _controller.deleteGroup(group);
     }
   }
 
@@ -1251,9 +208,9 @@ class _MagicWallPageState extends State<MagicWallPage> {
                 ListTile(
                   leading: const Icon(Icons.playlist_add),
                   title: const Text('添加规则'),
-                  enabled: _groups.value.isNotEmpty,
+                  enabled: _controller.groups.value.isNotEmpty,
                   onTap:
-                      _groups.value.isEmpty
+                      _controller.groups.value.isEmpty
                           ? null
                           : () {
                             Navigator.pop(context);
@@ -1267,15 +224,11 @@ class _MagicWallPageState extends State<MagicWallPage> {
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
+    AppSnackBars.success(context, '成功', message);
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    AppSnackBars.error(context, '错误', message);
   }
 
   @override
@@ -1293,13 +246,18 @@ class _MagicWallPageState extends State<MagicWallPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _isRunning.value ? Icons.shield : Icons.shield_outlined,
-                      color: _isRunning.value ? Colors.green : Colors.grey,
+                      _controller.isRunning.value
+                          ? Icons.shield
+                          : Icons.shield_outlined,
+                      color:
+                          _controller.isRunning.value
+                              ? Colors.green
+                              : Colors.grey,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${_activeRulesCount.value} 条规则',
+                      '${_controller.activeRulesCount.value} 条规则',
                       style: const TextStyle(fontSize: 14),
                     ),
                   ],
@@ -1311,18 +269,25 @@ class _MagicWallPageState extends State<MagicWallPage> {
       ),
       body: Column(
         children: [
-          // 控制面板
-          _buildControlPanel(),
-
+          MagicWallControlPanel(
+            isRunning: _controller.isRunning,
+            onToggle: _controller.toggleEngine,
+          ),
           const Divider(height: 1),
-
-          // 规则列表
           Expanded(
             child: Watch((context) {
-              if (_groups.value.isEmpty) {
-                return _buildEmptyState();
-              }
-              return _buildGroupList();
+              return MagicWallGroupList(
+                groups: _controller.groups.value,
+                collapsedGroups: _collapsedGroups,
+                onToggleGroupCollapse: _toggleGroupCollapse,
+                onToggleGroup: _controller.toggleGroup,
+                onEditGroup: _editGroup,
+                onDeleteGroup: _deleteGroup,
+                onAddRule: _addRule,
+                onToggleRule: _controller.toggleRule,
+                onEditRule: _editRule,
+                onDeleteRule: _deleteRule,
+              );
             }),
           ),
         ],
@@ -1332,324 +297,5 @@ class _MagicWallPageState extends State<MagicWallPage> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  Widget _buildControlPanel() {
-    return Watch(
-      (context) => Card(
-        margin: const EdgeInsets.all(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '魔法墙引擎',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _isRunning.value ? '运行中' : '已停止',
-                          style: TextStyle(
-                            color:
-                                _isRunning.value ? Colors.green : Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: _isRunning.value,
-                    onChanged: Platform.isWindows ? (value) => _toggleEngine() : null,
-                  ),
-                ],
-              ),
-              if (!Platform.isWindows) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  '⚠️ 魔法墙仅支持 Windows 平台',
-                  style: TextStyle(fontSize: 12, color: Colors.orange),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.shield_outlined, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '还没有规则组',
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '点击右下角按钮创建规则组',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroupList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: _groups.value.length,
-      itemBuilder: (context, index) {
-        final bundle = _groups.value[index];
-        return _buildGroupCard(bundle);
-      },
-    );
-  }
-
-  Widget _buildGroupCard(MagicWallGroupBundle bundle) {
-    final group = bundle.group;
-    final rules = bundle.rules;
-    final enabledCount = rules.where((rule) => rule.enabled).length;
-    final isCollapsed = _collapsedGroups.contains(group.groupId);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          ListTile(
-            onTap: () => _toggleGroupCollapse(group.groupId),
-            leading: CircleAvatar(
-              backgroundColor: group.enabled ? Colors.blue : Colors.grey,
-              child: Icon(
-                group.enabled ? Icons.layers : Icons.layers_outlined,
-                color: Colors.white,
-              ),
-            ),
-            title: Text(
-              group.name,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: group.enabled ? null : Colors.grey,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  '进程: ${group.processName.isEmpty ? '未绑定' : group.processName}',
-                ),
-                Text(
-                  '规则: ${rules.length} 项 · 已启用 $enabledCount 项',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                if (group.autoManage)
-                  const Text(
-                    '自动监听进程',
-                    style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                  ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    isCollapsed ? Icons.expand_more : Icons.expand_less,
-                  ),
-                  onPressed: () => _toggleGroupCollapse(group.groupId),
-                ),
-                Switch(
-                  value: group.enabled,
-                  onChanged: (value) => _toggleGroup(group),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'addRule') {
-                      _addRule(groupId: group.groupId, allowGroupChange: false);
-                    } else if (value == 'edit') {
-                      _editGroup(group);
-                    } else if (value == 'delete') {
-                      _deleteGroup(group);
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(
-                          value: 'addRule',
-                          child: Row(
-                            children: [
-                              Icon(Icons.add, size: 20),
-                              SizedBox(width: 8),
-                              Text('添加规则'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('编辑规则组'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 20, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text(
-                                '删除规则组',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                ),
-              ],
-            ),
-          ),
-          if (!isCollapsed && rules.isNotEmpty) const Divider(height: 1),
-          if (!isCollapsed)
-            for (var i = 0; i < rules.length; i++) ...[
-              _buildRuleTile(group, rules[i]),
-              if (i != rules.length - 1)
-                const Divider(indent: 72, endIndent: 16, height: 1),
-            ],
-          if (!isCollapsed)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(72, 8, 16, 12),
-                child: TextButton.icon(
-                  onPressed:
-                      () => _addRule(
-                        groupId: group.groupId,
-                        allowGroupChange: false,
-                      ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('添加规则'),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRuleTile(MagicWallGroupModel group, MagicWallRuleModel rule) {
-    final activeColor =
-        rule.enabled && group.enabled ? Colors.green : Colors.grey;
-
-    return ListTile(
-      contentPadding: const EdgeInsets.only(left: 72, right: 16),
-      leading: CircleAvatar(
-        backgroundColor:
-            rule.action == 'allow' ? activeColor : Colors.red.shade400,
-        child: Icon(
-          rule.action == 'allow' ? Icons.check : Icons.block,
-          color: Colors.white,
-        ),
-      ),
-      title: Text(
-        rule.name,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: rule.enabled ? null : Colors.grey,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 4),
-          Text(_buildRuleDescription(rule)),
-          if (rule.description != null && rule.description!.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              rule.description!,
-              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-            ),
-          ],
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Switch(value: rule.enabled, onChanged: (value) => _toggleRule(rule)),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') {
-                _editRule(rule);
-              } else if (value == 'delete') {
-                _deleteRule(rule);
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('编辑'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('删除', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
-        ],
-      ),
-      isThreeLine: true,
-    );
-  }
-
-  String _buildRuleDescription(MagicWallRuleModel rule) {
-    final parts = <String>[];
-
-    parts.add(rule.action == 'allow' ? '允许' : '阻止');
-    parts.add(rule.protocol.toUpperCase());
-
-    if (rule.direction != 'both') {
-      parts.add(rule.direction == 'inbound' ? '入站' : '出站');
-    }
-
-    if (rule.remoteIp != null) {
-      parts.add('从 ${rule.remoteIp}');
-    }
-
-    if (rule.remotePort != null) {
-      parts.add('端口 ${rule.remotePort}');
-    }
-
-    return parts.join(' · ');
   }
 }

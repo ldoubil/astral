@@ -5,51 +5,48 @@ import 'package:astral/core/states/player_state.dart';
 import 'package:astral/core/states/display_state.dart';
 import 'package:astral/core/states/startup_state.dart';
 import 'package:astral/core/states/update_state.dart';
-import 'package:astral/core/states/notification_state.dart';
 import 'package:astral/core/states/window_state.dart';
 import 'package:astral/core/states/vpn_state.dart';
 import 'package:astral/core/states/app_settings_state.dart';
 import 'package:astral/core/repositories/app_settings_repository.dart';
-import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
-import 'package:astral/shared/utils/helpers/startup_url_scheme.dart';
+import 'package:astral/core/database/dao/all_settings_dao.dart';
+import 'package:astral/shared/utils/github_proxy_selector.dart';
+import 'package:astral/core/platform/startup_url_scheme.dart';
 
-/// 应用设置服务：协调多个State和AppSettingsRepository
+/// 应用设置服务：协调 State 与持久化
 class AppSettingsService {
   final PlayerState playerState;
   final DisplayState displayState;
   final StartupState startupState;
   final UpdateState updateState;
-  final NotificationState notificationState;
   final WindowState windowState;
   final VpnState vpnState;
   final AppSettingsState appSettingsState;
-  final AppSettingsRepository _repository;
+  final AppSettingsRepository _repo;
 
   AppSettingsService({
     required this.playerState,
     required this.displayState,
     required this.startupState,
     required this.updateState,
-    required this.notificationState,
     required this.windowState,
     required this.vpnState,
     required this.appSettingsState,
     required AppSettingsRepository repository,
-  }) : _repository = repository;
-
-  // ========== 初始化 ==========
+  }) : _repo = repository;
 
   Future<void> init() async {
-    final settings = await _repository.loadAll();
+    final settings = await _repo.get();
+    final listenList = await _repo.getListenList();
+    final playerName = await _repo.getPlayerName();
 
-    // 更新各个状态
-    playerState.updatePlayerName(settings.playerName);
-    playerState.setListenList(settings.listenList);
+    playerState.updatePlayerName(playerName);
+    playerState.setListenList(listenList);
 
-    displayState.setUserListSimple(settings.userMinimal);
-    displayState.setSortOption(settings.sortOption);
-    displayState.setSortOrder(settings.sortOrder);
-    displayState.setDisplayMode(settings.displayMode);
+    displayState.setUserListSimple(settings.userListSimple);
+    displayState.setSortOption(UserSortOption.fromIndex(settings.sortOption));
+    displayState.setSortOrder(UserSortOrder.fromIndex(settings.sortOrder));
+    displayState.setDisplayMode(UserDisplayMode.fromIndex(settings.displayMode));
 
     startupState.updateAll(
       startup: settings.startup,
@@ -59,15 +56,15 @@ class AppSettingsService {
 
     updateState.setBeta(settings.beta);
     updateState.setAutoCheckUpdate(settings.autoCheckUpdate);
+
     var downloadAccelerate = settings.downloadAccelerate;
     if (downloadAccelerate == 'https://gh.xmly.dev/') {
       downloadAccelerate = GitHubProxySelector.autoMode;
-      await _repository.setDownloadAccelerate(downloadAccelerate);
+      await _repo.update((s) => s.downloadAccelerate = downloadAccelerate);
     }
     updateState.setDownloadAccelerate(downloadAccelerate);
     updateState.setLatestVersion(settings.latestVersion);
 
-    appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
     appSettingsState.updateEnableConnectionNotification(
       settings.enableConnectionNotification,
     );
@@ -76,115 +73,99 @@ class AppSettingsService {
     );
     appSettingsState.updateAutoRetryOnFailure(settings.autoRetryOnFailure);
     appSettingsState.updateMaxRetryCount(settings.maxRetryCount);
-    notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
 
     windowState.setCloseMinimize(settings.closeMinimize);
-
-    vpnState.setCustomVpn(settings.customVpn);
+    vpnState.setCustomVpn(List<String>.from(settings.customVpn));
   }
-
-  // ========== 玩家设置 ==========
 
   Future<void> updatePlayerName(String name) async {
     playerState.updatePlayerName(name);
-    await _repository.setPlayerName(name);
+    await _repo.update((s) => s.playerName = name);
   }
 
   Future<void> setListenList(List<String> list) async {
     playerState.setListenList(list);
-    await _repository.setListenList(list);
+    await _repo.update((s) => s.listenList = list);
   }
 
   Future<void> addListen(String listen) async {
     playerState.addListen(listen);
-    await _repository.setListenList(playerState.listenList.value);
+    await _repo.update((s) => s.listenList = playerState.listenList.value);
   }
 
   Future<void> deleteListen(int index) async {
     playerState.removeListen(index);
-    await _repository.setListenList(playerState.listenList.value);
+    await _repo.update((s) => s.listenList = playerState.listenList.value);
   }
 
   Future<void> updateListen(int index, String listen) async {
-    await _repository.updateListenList(index, listen);
-    final updated = await _repository.getListenList();
-    playerState.setListenList(updated);
+    await _repo.update((s) {
+      s.listenList ??= List<String>.from(AllSettingsDao.defaultListenList);
+      s.listenList![index] = listen;
+    });
+    playerState.setListenList(await _repo.getListenList());
   }
 
   Future<void> setUserListSimple(bool value) async {
     displayState.setUserListSimple(value);
-    await _repository.setUserMinimal(value);
+    await _repo.update((s) => s.userListSimple = value);
   }
 
-  // ========== 排序与显示 ==========
-
-  Future<void> setSortOption(int option) async {
+  Future<void> setSortOption(UserSortOption option) async {
     displayState.setSortOption(option);
-    await _repository.setSortOption(option);
+    await _repo.update((s) => s.sortOption = option.index);
   }
 
-  Future<void> setSortOrder(int order) async {
+  Future<void> setSortOrder(UserSortOrder order) async {
     displayState.setSortOrder(order);
-    await _repository.setSortOrder(order);
+    await _repo.update((s) => s.sortOrder = order.index);
   }
 
-  Future<void> setDisplayMode(int mode) async {
+  Future<void> setDisplayMode(UserDisplayMode mode) async {
     displayState.setDisplayMode(mode);
-    await _repository.setDisplayMode(mode);
+    await _repo.update((s) => s.displayMode = mode.index);
   }
-
-  // ========== 启动设置 ==========
 
   Future<void> setStartup(bool value) async {
     startupState.setStartup(value);
-    await _repository.setStartup(value);
+    await _repo.update((s) => s.startup = value);
     await handleStartupSetting(value);
   }
 
   Future<void> setStartupMinimize(bool value) async {
     startupState.setStartupMinimize(value);
-    await _repository.setStartupMinimize(value);
+    await _repo.update((s) => s.startupMinimize = value);
   }
 
   Future<void> setStartupAutoConnect(bool value) async {
     startupState.setStartupAutoConnect(value);
-    await _repository.setStartupAutoConnect(value);
+    await _repo.update((s) => s.startupAutoConnect = value);
   }
-
-  // ========== 更新设置 ==========
 
   Future<void> setBeta(bool value) async {
     updateState.setBeta(value);
-    await _repository.setBeta(value);
+    await _repo.update((s) => s.beta = value);
   }
 
   Future<void> setAutoCheckUpdate(bool value) async {
     updateState.setAutoCheckUpdate(value);
-    await _repository.setAutoCheckUpdate(value);
+    await _repo.update((s) => s.autoCheckUpdate = value);
   }
 
   Future<void> setDownloadAccelerate(String value) async {
     updateState.setDownloadAccelerate(value);
-    await _repository.setDownloadAccelerate(value);
+    await _repo.update((s) => s.downloadAccelerate = value);
   }
 
   Future<void> updateLatestVersion(String version) async {
     updateState.setLatestVersion(version);
-    await _repository.setLatestVersion(version);
-  }
-
-  // ========== 通知设置 ==========
-
-  Future<void> updateEnableBannerCarousel(bool enable) async {
-    appSettingsState.updateEnableBannerCarousel(enable);
-    await _repository.setEnableBannerCarousel(enable);
+    await _repo.update((s) => s.latestVersion = version);
   }
 
   Future<void> updateEnableConnectionNotification(bool enable) async {
     appSettingsState.updateEnableConnectionNotification(enable);
-    await _repository.setEnableConnectionNotification(enable);
+    await _repo.update((s) => s.enableConnectionNotification = enable);
 
-    // 如果关闭了通知，立即取消可能存在的连接通知
     if (!enable && Platform.isAndroid) {
       await ServiceManager().notifications.cancelConnectionNotification();
     }
@@ -192,46 +173,36 @@ class AppSettingsService {
 
   Future<void> updateReduceAnimationUpdates(bool enable) async {
     appSettingsState.updateReduceAnimationUpdates(enable);
-    await _repository.setReduceAnimationUpdates(enable);
+    await _repo.update((s) => s.reduceAnimationUpdates = enable);
   }
 
   Future<void> updateAutoRetryOnFailure(bool enable) async {
     appSettingsState.updateAutoRetryOnFailure(enable);
-    await _repository.setAutoRetryOnFailure(enable);
+    await _repo.update((s) => s.autoRetryOnFailure = enable);
   }
 
   Future<void> updateMaxRetryCount(int count) async {
     appSettingsState.updateMaxRetryCount(count);
-    await _repository.setMaxRetryCount(count);
+    await _repo.update((s) => s.maxRetryCount = count);
   }
-
-  Future<void> updateHasShownBannerTip(bool hasShown) async {
-    notificationState.setHasShownBannerTip(hasShown);
-    await _repository.setHasShownBannerTip(hasShown);
-  }
-
-  // ========== 窗口设置 ==========
 
   Future<void> updateCloseMinimize(bool value) async {
     windowState.setCloseMinimize(value);
-    await _repository.setCloseMinimize(value);
+    await _repo.update((s) => s.closeMinimize = value);
   }
-
-  // ========== 自定义VPN ==========
 
   Future<void> addCustomVpn(String value) async {
     vpnState.addCustomVpn(value);
-    await _repository.setCustomVpn(vpnState.customVpn.value);
+    await _repo.update((s) => s.customVpn = vpnState.customVpn.value);
   }
 
   Future<void> deleteCustomVpn(int index) async {
     vpnState.removeCustomVpn(index);
-    await _repository.setCustomVpn(vpnState.customVpn.value);
+    await _repo.update((s) => s.customVpn = vpnState.customVpn.value);
   }
 
   Future<void> updateCustomVpn(int index, String value) async {
-    await _repository.updateCustomVpn(index, value);
-    final updated = await _repository.getCustomVpn();
-    vpnState.setCustomVpn(updated);
+    await _repo.update((s) => s.customVpn[index] = value);
+    vpnState.setCustomVpn(List<String>.from((await _repo.get()).customVpn));
   }
 }

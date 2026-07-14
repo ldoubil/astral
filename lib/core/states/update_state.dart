@@ -1,6 +1,6 @@
 import 'package:signals_flutter/signals_flutter.dart';
 
-import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
+import 'package:astral/shared/utils/github_proxy_selector.dart';
 
 /// 更新相关状态
 class UpdateState {

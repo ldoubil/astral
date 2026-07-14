@@ -3,6 +3,7 @@ import 'package:astral/core/constants/home_widget_keys.dart';
 import 'package:astral/core/database/app_data.dart';
 import 'package:astral/core/services/home_widget_theme_sync.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/connection_state.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter/material.dart';
 

@@ -1,18 +1,19 @@
 import 'dart:io';
 
-import 'package:astral/shared/utils/helpers/update_helper.dart';
+import 'package:astral/core/services/update_service.dart';
+import 'package:astral/shared/widgets/common/update_check_ui.dart';
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/constants/small_window_adapter.dart';
+import 'package:astral/core/platform/small_window_adapter.dart';
 import 'package:astral/features/home/pages/home_page.dart';
 import 'package:astral/features/rooms/pages/room_page.dart';
-import 'package:astral/features/explore/pages/explore_page.dart';
+import 'package:astral/features/tools/pages/tools_page.dart';
 import 'package:astral/features/servers/pages/server_page.dart';
 import 'package:astral/features/settings/pages/settings_main_page.dart';
 import 'package:astral/shared/widgets/navigation/bottom_nav.dart';
 import 'package:astral/shared/widgets/navigation/left_nav.dart';
 import 'package:astral/shared/widgets/common/status_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:astral/core/navigation.dart';
+import 'package:astral/core/ui/navigation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -46,12 +47,13 @@ class _MainScreenState extends State<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (ServiceManager().updateState.autoCheckUpdate.value ||
           ServiceManager().updateState.beta.value) {
-        final updateChecker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
+        final checker = UpdateChecker(owner: 'ldoubil', repo: 'astral');
         if (mounted) {
           Future.delayed(const Duration(milliseconds: 1000), () {
             if (mounted) {
-              updateChecker.checkForUpdates(
+              UpdateCheckUi.checkAndPresent(
                 context,
+                checker,
                 showNoUpdateMessage: false,
                 showFailureMessage: false,
               );
@@ -163,10 +165,10 @@ class _MainScreenState extends State<MainScreen>
       page: const RoomPage(),
     ),
     NavigationItem(
-      icon: Icons.explore_outlined,
-      activeIcon: Icons.explore,
-      label: '探索',
-      page: const ExplorePage(),
+      icon: Icons.build_outlined,
+      activeIcon: Icons.build,
+      label: '工具',
+      page: const ToolsPage(),
     ),
     NavigationItem(
       icon: Icons.dns_outlined,

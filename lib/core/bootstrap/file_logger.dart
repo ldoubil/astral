@@ -11,6 +11,7 @@ class FileLogger {
   final int _maxFileSize = 10 * 1024 * 1024; // 10MB
   bool _isInitialized = false;
   final _logQueue = <String>[];
+  Timer? _flushTimer;
 
   // 工厂构造函数，获取单例实例
   factory FileLogger() {
@@ -68,7 +69,8 @@ class FileLogger {
       _isInitialized = true;
 
       // 设置定时刷新（每秒）
-      Timer.periodic(const Duration(seconds: 1), (_) {
+      _flushTimer?.cancel();
+      _flushTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         _flushQueue();
       });
 

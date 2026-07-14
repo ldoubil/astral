@@ -23,49 +23,47 @@ class VpnSegmentPage extends BaseSettingsPage {
 
   @override
   Widget buildContent(BuildContext context) {
-    return Watch((context) {
-      final vpnList = ServiceManager().vpnState.customVpn.value;
+    final vpnList = ServiceManager().vpnState.customVpn.watch(context);
 
-      if (vpnList.isEmpty) {
-        return buildEmptyState(
-          context: context,
-          icon: Icons.vpn_lock,
-          title: 'No VPN segments configured',
-          actionLabel: LocaleKeys.add_vpn_segment.tr(),
-          onAction: () => _addVpnSegment(context),
-        );
-      }
-
-      return ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: vpnList.length,
-        itemBuilder: (context, index) {
-          final vpn = vpnList[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text(vpn),
-              leading: const Icon(Icons.network_wifi),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 20),
-                    tooltip: LocaleKeys.edit.tr(),
-                    onPressed: () => _editVpnSegment(context, index, vpn),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, size: 20),
-                    tooltip: LocaleKeys.delete.tr(),
-                    onPressed: () => _deleteVpnSegment(context, index, vpn),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    if (vpnList.isEmpty) {
+      return buildEmptyState(
+        context: context,
+        icon: Icons.vpn_lock,
+        title: 'No VPN segments configured',
+        actionLabel: LocaleKeys.add_vpn_segment.tr(),
+        onAction: () => _addVpnSegment(context),
       );
-    });
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: vpnList.length,
+      itemBuilder: (context, index) {
+        final vpn = vpnList[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            title: Text(vpn),
+            leading: const Icon(Icons.network_wifi),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 20),
+                  tooltip: LocaleKeys.edit.tr(),
+                  onPressed: () => _editVpnSegment(context, index, vpn),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 20),
+                  tooltip: LocaleKeys.delete.tr(),
+                  onPressed: () => _deleteVpnSegment(context, index, vpn),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _addVpnSegment(BuildContext context) async {

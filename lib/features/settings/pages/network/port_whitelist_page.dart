@@ -11,15 +11,14 @@ class PortWhitelistPage extends BaseSettingsPage {
 
   @override
   Widget buildContent(BuildContext context) {
-    return Watch((context) {
-      final tcpWhitelist = ServiceManager().networkConfigState.tcpWhitelist
-          .watch(context);
-      final udpWhitelist = ServiceManager().networkConfigState.udpWhitelist
-          .watch(context);
+    final tcpWhitelist = ServiceManager().networkConfigState.tcpWhitelist
+        .watch(context);
+    final udpWhitelist = ServiceManager().networkConfigState.udpWhitelist
+        .watch(context);
 
-      return ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
           buildSettingsCard(
             context: context,
             children: [
@@ -132,7 +131,6 @@ class PortWhitelistPage extends BaseSettingsPage {
           ),
         ],
       );
-    });
   }
 
   Future<void> _editWhitelist(

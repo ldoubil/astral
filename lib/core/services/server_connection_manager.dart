@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:astral/core/builders/server_config_builder.dart';
 import 'package:astral/core/models/network_config_share.dart';
+import 'package:astral/core/services/connection_network_monitor.dart';
+import 'package:astral/core/services/connection_status_tracker.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/connection_state.dart';
 import 'package:astral/core/services/notification_service.dart';
-import 'package:astral/shared/utils/network/ip_utils.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:flutter/foundation.dart';
@@ -18,17 +19,18 @@ import 'package:isar_community/isar.dart';
 class ServerConnectionManager {
   static ServerConnectionManager? _instance;
 
-  Timer? _statusCheckTimer;
-  Timer? _networkMonitorTimer;
-  Timer? _timeoutTimer;
-  bool _isMonitoringNetwork = false;
-  int _connectionDuration = 0;
+  final _networkMonitor = ConnectionNetworkMonitor();
+  late final ConnectionStatusTracker _statusTracker;
   int _currentRetryCount = 0; // 当前重试次数
   Completer<bool>? _connectionCompleter; // 用于取消连接的 Completer
 
   static const int connectionTimeoutSeconds = 15;
 
-  ServerConnectionManager._();
+  ServerConnectionManager._() {
+    _statusTracker = ConnectionStatusTracker();
+    _statusTracker.onTimeout = () => disconnect();
+    _statusTracker.onConnected = _handleSuccessfulConnection;
+  }
 
   /// 获取单例实例
   static ServerConnectionManager get instance {
@@ -86,9 +88,7 @@ class ServerConnectionManager {
       try {
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return null;  // 用户取消
         }
 
@@ -103,9 +103,7 @@ class ServerConnectionManager {
         final hasRoomServers = room.servers.isNotEmpty;
 
         if (enabledServers.isEmpty && !hasRoomServers) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return false;
         }
 
@@ -124,14 +122,12 @@ class ServerConnectionManager {
         await _beginConnectionProcess();
 
         // 等待连接结果
-        success = await _waitForConnectionResult();
+        success = await _statusTracker.waitForConnectionResult();
         
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
           await disconnect();
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return null;  // 用户取消
         }
         
@@ -146,9 +142,7 @@ class ServerConnectionManager {
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || _currentRetryCount >= maxRetries) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
             _connectionCompleter!.complete(false);
           }
@@ -162,9 +156,7 @@ class ServerConnectionManager {
         
         // 检查是否在断开后被取消（Completer 已被清空）
         if (_connectionCompleter == null) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return null;  // 用户取消
         }
         
@@ -172,17 +164,13 @@ class ServerConnectionManager {
         
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return null;  // 用户取消
         }
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || _currentRetryCount >= maxRetries) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
             _connectionCompleter!.complete(false);
           }
@@ -195,9 +183,7 @@ class ServerConnectionManager {
         
         // 检查是否在断开后被取消（Completer 已被清空）
         if (_connectionCompleter == null) {
-          batch(() {
-            services.connectionState.connectionState.value = CoState.idle;
-          });
+                      services.connectionState.connectionState.value = CoState.idle;
           return null;  // 用户取消
         }
       }
@@ -224,10 +210,7 @@ class ServerConnectionManager {
     // 清空重试计数
     _currentRetryCount = 0;
 
-    batch(() {
-      services.connectionState.isConnecting.value = false;
-    });
-
+    
     // 停止VPN
     if (Platform.isAndroid) {
       if (!ServiceManager().networkConfigState.noTun.value) {
@@ -237,12 +220,8 @@ class ServerConnectionManager {
     }
 
     // 取消定时器
-    _statusCheckTimer?.cancel();
-    _networkMonitorTimer?.cancel();
-    _timeoutTimer?.cancel();
-    _statusCheckTimer = null;
-    _networkMonitorTimer = null;
-    _timeoutTimer = null;
+    _statusTracker.cancelAll();
+    _networkMonitor.stop();
 
     // 关闭服务器
     await closeServer();
@@ -297,10 +276,7 @@ class ServerConnectionManager {
 
   /// 开始连接流程
   Future<void> _beginConnectionProcess() async {
-    batch(() {
-      ServiceManager().connectionState.connectionState.value =
-          CoState.connecting;
-    });
+    ServiceManager().connectionState.connectionState.value = CoState.connecting;
 
     // 显示通知（Android）
     if (Platform.isAndroid && ServiceManager().appSettingsState.enableConnectionNotification.value) {
@@ -312,92 +288,22 @@ class ServerConnectionManager {
     }
 
     // 设置超时
-    _setupConnectionTimeout();
+    _statusTracker.setupConnectionTimeout(
+      timeoutSeconds: connectionTimeoutSeconds,
+    );
 
     // 启动状态检查
-    _startConnectionStatusCheck();
-  }
-
-  /// 等待连接结果
-  Future<bool> _waitForConnectionResult() async {
-    final services = ServiceManager();
-    
-    // 等待最多30秒来确认连接状态
-    for (int i = 0; i < 30; i++) {
-      await Future.delayed(Duration(seconds: 1));
-      
-      final currentState = services.connectionState.connectionState.value;
-      if (currentState == CoState.connected) {
-        return true;
-      } else if (currentState == CoState.idle) {
-        return false;
-      }
-    }
-    
-    // 超时仍未确定状态，视为失败
-    return false;
-  }
-
-  /// 设置连接超时
-  void _setupConnectionTimeout() {
-    _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
-      if (ServiceManager().connectionState.connectionState.value ==
-          CoState.connecting) {
-        disconnect();
-      }
-    });
-  }
-
-  /// 启动连接状态检查
-  void _startConnectionStatusCheck() {
-    _statusCheckTimer = Timer.periodic(const Duration(seconds: 1), (
-      timer,
-    ) async {
-      if (ServiceManager().connectionState.connectionState.value !=
-          CoState.connecting) {
-        timer.cancel();
-        return;
-      }
-
-      final isConnected = await _checkConnectionStatus();
-      if (isConnected) {
-        timer.cancel();
-        await _handleSuccessfulConnection();
-      }
-    });
-  }
-
-  /// 检查连接状态
-  Future<bool> _checkConnectionStatus() async {
-    try {
-      final runningInfo = await getRunningInfo();
-      if (runningInfo.isEmpty) return false;
-
-      final data = jsonDecode(runningInfo);
-      if (data == null || data is! Map<String, dynamic>) return false;
-
-      final ipv4Address = _extractIpv4Address(data);
-      if (ipv4Address != "0.0.0.0" &&
-          ServiceManager().networkConfigState.ipv4.value != ipv4Address) {
-        ServiceManager().networkConfig.updateIpv4(ipv4Address);
-      }
-
-      return ipv4Address != "0.0.0.0";
-    } catch (e) {
-      return false;
-    }
+    _statusTracker.startConnectionStatusCheck();
   }
 
   /// 处理连接成功
   Future<void> _handleSuccessfulConnection() async {
-    _timeoutTimer?.cancel();
-    _timeoutTimer = null;
-    _connectionDuration = 0;
+    _statusTracker.cancelTimeout();
+    _networkMonitor.resetDuration();
 
     batch(() {
       ServiceManager().connectionState.connectionState.value =
           CoState.connected;
-      ServiceManager().connectionState.isConnecting.value = true;
       _markActiveServers();
     });
 
@@ -407,16 +313,9 @@ class ServerConnectionManager {
       try {
         final netStatus = await getNetworkStatus();
         ServiceManager().connectionState.netStatus.value = netStatus;
-        for (final node in netStatus.nodes) {
-          for (final cidr in node.proxyCidrs) {
-            if (isValidCIDR(cidr) && !proxyCidrs.contains(cidr)) {
-              proxyCidrs.add(cidr);
-            }
-          }
-        }
+        proxyCidrs = ConnectionNetworkMonitor.extractProxyCidrs();
       } catch (_) {
-        // 如果获取失败，回退到从 state 中读取
-        proxyCidrs = _extractProxyCidrs();
+        proxyCidrs = ConnectionNetworkMonitor.extractProxyCidrs();
       }
 
       await ServiceManager().vpn.start(
@@ -428,8 +327,10 @@ class ServerConnectionManager {
       if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
         await ServiceManager().notifications.showConnectionNotification(
           status: '已连接',
-          ip: _notificationDisplayIp(),
-          duration: NotificationService.formatDuration(_connectionDuration),
+          ip: ConnectionNetworkMonitor.notificationDisplayIp(),
+          duration: NotificationService.formatDuration(
+            _networkMonitor.connectionDuration,
+          ),
         );
       }
     }
@@ -438,112 +339,7 @@ class ServerConnectionManager {
       setInterfaceMetric(interfaceName: "astral", metric: 0);
     }
 
-    _startNetworkMonitoring();
-  }
-
-  /// 启动网络监控
-  void _startNetworkMonitoring() {
-    _networkMonitorTimer?.cancel();
-    _networkMonitorTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      _monitorNetworkStatus,
-    );
-  }
-
-  /// 监控网络状态
-  Future<void> _monitorNetworkStatus(Timer timer) async {
-    if (_isMonitoringNetwork) return;
-    _isMonitoringNetwork = true;
-    _connectionDuration++;
-
-    try {
-      try {
-        final runningInfo = await getRunningInfo();
-        final data = jsonDecode(runningInfo);
-        final ipv4 = _extractIpv4Address(data);
-        if (_isValidRuntimeIpv4(ipv4)) {
-          ServiceManager().networkConfig.updateIpv4(ipv4);
-        }
-      } catch (_) {
-        // Keep last known IP if runtime info cannot be read.
-      }
-
-      try {
-        final netStatus = await getNetworkStatus();
-        final previousProxyCidrs = _extractProxyCidrs();
-        batch(() {
-          ServiceManager().connectionState.netStatus.value = netStatus;
-        });
-
-        // 当 peer 子网代理路由发生变化时，刷新 Android VPN 路由。
-        if (Platform.isAndroid && !ServiceManager().networkConfigState.noTun.value) {
-          final currentProxyCidrs = _extractProxyCidrs();
-          if (currentProxyCidrs.toSet().difference(previousProxyCidrs.toSet()).isNotEmpty ||
-              previousProxyCidrs.toSet().difference(currentProxyCidrs.toSet()).isNotEmpty) {
-            await ServiceManager().vpn.start(
-              ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
-              mtu: ServiceManager().networkConfigState.mtu.value,
-              proxyCidrs: currentProxyCidrs,
-            );
-          }
-        }
-      } catch (_) {
-        // Notification updates should continue even if network stats fail.
-      }
-
-      if (Platform.isAndroid &&
-          ServiceManager().connectionState.connectionState.value ==
-              CoState.connected) {
-        final formattedDuration = NotificationService.formatDuration(_connectionDuration);
-        
-        // 更新贴片时间
-        await ServiceManager().widgets.updateDuration(formattedDuration);
-
-        if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
-          await ServiceManager().notifications.showConnectionNotification(
-            status: '已连接',
-            ip: _notificationDisplayIp(),
-            duration: formattedDuration,
-          );
-        }
-      }
-    } finally {
-      _isMonitoringNetwork = false;
-    }
-  }
-
-  /// 从网络状态中提取子网代理路由
-  List<String> _extractProxyCidrs() {
-    final netStatus = ServiceManager().connectionState.netStatus.value;
-    if (netStatus == null) return [];
-
-    final cidrs = <String>[];
-    for (final node in netStatus.nodes) {
-      for (final cidr in node.proxyCidrs) {
-        if (isValidCIDR(cidr) && !cidrs.contains(cidr)) {
-          cidrs.add(cidr);
-        }
-      }
-    }
-    return cidrs;
-  }
-
-  /// 提取IPv4地址
-  String _extractIpv4Address(Map<String, dynamic> data) {
-    final virtualIpv4 = data['my_node_info']?['virtual_ipv4'];
-    final addr =
-        virtualIpv4?.isEmpty ?? true ? 0 : virtualIpv4['address']['addr'] ?? 0;
-    return intToIp(addr);
-  }
-
-  /// Validate runtime IPv4 before applying it to state/notification.
-  bool _isValidRuntimeIpv4(String ip) {
-    return ip.isNotEmpty && ip != "0.0.0.0";
-  }
-
-  String _notificationDisplayIp() {
-    final ipv4 = ServiceManager().networkConfigState.ipv4.value;
-    return _isValidRuntimeIpv4(ipv4) ? ipv4 : '获取中...';
+    _networkMonitor.start();
   }
 
   /// Mark active servers.
@@ -566,10 +362,9 @@ class ServerConnectionManager {
 
   /// 清理资源
   void dispose() {
-    _statusCheckTimer?.cancel();
-    _networkMonitorTimer?.cancel();
-    _timeoutTimer?.cancel();
-    
+    _statusTracker.cancelAll();
+    _networkMonitor.stop();
+
     // 取消正在进行的连接（如果存在且未完成）
     if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
       _connectionCompleter!.complete(false);

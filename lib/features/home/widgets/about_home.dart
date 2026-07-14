@@ -1,9 +1,9 @@
-import 'package:astral/shared/utils/helpers/update_helper.dart';
-import 'package:astral/shared/utils/data/version_util.dart';
-import 'package:astral/shared/utils/helpers/platform_version_parser.dart';
+import 'package:astral/core/platform/app_info.dart';
+import 'package:astral/shared/utils/version_util.dart';
+import 'package:astral/shared/utils/platform_version_parser.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
-import 'package:astral/shared/widgets/common/home_box.dart';
+import 'package:astral/features/home/widgets/home_box.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';

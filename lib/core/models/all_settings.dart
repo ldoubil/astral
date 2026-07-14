@@ -1,5 +1,5 @@
 import 'package:isar_community/isar.dart';
-import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
+import 'package:astral/shared/utils/github_proxy_selector.dart';
 part 'all_settings.g.dart';
 
 @collection

@@ -135,18 +135,27 @@ abstract class BaseStatefulSettingsPageState<T extends BaseStatefulSettingsPage>
   /// 是否使用Watch包装
   bool get useWatch => true;
 
+  /// 是否显示 AppBar 标题
+  bool get showAppBarTitle => true;
+
+  /// 是否显示 AppBar（无标题、无返回、无 actions 时可关闭）
+  bool get showAppBar => true;
+
   /// 构建页面内容
   Widget buildContent(BuildContext context);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        centerTitle: true,
-        automaticallyImplyLeading: showBackButton,
-        actions: buildActions(context),
-      ),
+      appBar:
+          showAppBar
+              ? AppBar(
+                title: showAppBarTitle ? Text(title) : null,
+                centerTitle: true,
+                automaticallyImplyLeading: showBackButton,
+                actions: buildActions(context),
+              )
+              : null,
       body:
           useWatch
               ? Watch((context) => buildContent(context))

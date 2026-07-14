@@ -1,6 +1,6 @@
-﻿import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
-import 'package:astral/core/navigation.dart';
+import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/platform/small_window_adapter.dart';
+import 'package:astral/core/ui/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 

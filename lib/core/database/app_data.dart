@@ -1,17 +1,17 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:astral/core/models/all_settings.dart';
 import 'package:astral/core/models/net_config.dart';
 import 'package:astral/core/models/room.dart';
 import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/models/magic_wall_model.dart';
-import 'package:astral/core/models/converters/all_settings_converter.dart';
-import 'package:astral/core/models/converters/net_config_converter.dart';
-import 'package:astral/core/models/converters/room_converter.dart';
-import 'package:astral/core/models/converters/server_converter.dart';
-import 'package:astral/core/models/converters/magic_wall_converter.dart';
+import 'package:astral/core/database/dao/all_settings_dao.dart';
+import 'package:astral/core/database/dao/net_config_dao.dart';
+import 'package:astral/core/database/dao/room_dao.dart';
+import 'package:astral/core/database/dao/server_dao.dart';
+import 'package:astral/core/database/dao/magic_wall_dao.dart';
 import 'package:isar_community/isar.dart';
 import 'package:astral/core/models/theme_settings.dart';
-import 'package:astral/core/models/converters/theme_settings_converter.dart';
+import 'package:astral/core/database/dao/theme_settings_dao.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -22,11 +22,11 @@ class AppDatabase {
 
   late Isar isar;
   late ThemeSettingsDao themeSettings;
-  late NetConfigDao netConfigSetting;
-  late RoomCz RoomSetting;
-  late AllSettingsCz AllSettings;
-  late ServerCz ServerSetting;
-  late MagicWallModelCz MagicWallSetting;
+  late NetConfigDao netConfig;
+  late RoomDao rooms;
+  late AllSettingsDao allSettings;
+  late ServerDao servers;
+  late MagicWallDao magicWall;
   bool _initialized = false;
   bool get isInitialized => _initialized;
 
@@ -71,15 +71,15 @@ class AppDatabase {
       MagicWallEventLogModelSchema,
     ], directory: dbDir);
     themeSettings = ThemeSettingsDao(isar);
-    netConfigSetting = NetConfigDao(isar);
-    RoomSetting = RoomCz(isar);
-    AllSettings = AllSettingsCz(isar);
-    ServerSetting = ServerCz(isar);
-    MagicWallSetting = MagicWallModelCz(isar);
+    netConfig = NetConfigDao(isar);
+    rooms = RoomDao(isar);
+    allSettings = AllSettingsDao(isar);
+    servers = ServerDao(isar);
+    magicWall = MagicWallDao(isar);
 
     // 确保初始化完成
-    await RoomSetting.init();
-    await ServerSetting.init();
+    await rooms.init();
+    await servers.init();
     _initialized = true;
   }
 }

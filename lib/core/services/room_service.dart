@@ -1,62 +1,51 @@
-﻿import 'package:astral/core/states/room_state.dart';
-import 'package:astral/core/repositories/room_repository.dart';
+﻿import 'package:astral/core/database/app_data.dart';
+import 'package:astral/core/states/room_state.dart';
 import 'package:astral/core/models/room.dart';
 
-/// 房间服务：协调RoomState和RoomRepository
+/// 房间服务：协调 State 与持久化
 class RoomService {
   final RoomState state;
-  final RoomRepository _repository;
+  final AppDatabase _db;
 
-  RoomService(this.state, this._repository);
-
-  // ========== 初始化 ==========
+  RoomService(this.state, this._db);
 
   Future<void> init() async {
-    final rooms = await _repository.getAllRooms();
-    state.setRooms(rooms);
-
-    final selectedRoom = await _repository.getSelectedRoom();
-    state.selectRoom(selectedRoom);
+    state.setRooms(await _db.rooms.getAllRooms());
+    state.selectRoom(await _db.allSettings.getRoom());
   }
 
-  // ========== 业务方法 ==========
-
   Future<void> addRoom(Room room) async {
-    await _repository.addRoom(room);
+    await _db.rooms.addRoom(room);
     await _refreshRooms();
   }
 
   Future<void> deleteRoom(int id) async {
-    await _repository.deleteRoom(id);
+    await _db.rooms.deleteRoom(id);
     await _refreshRooms();
   }
 
   Future<void> updateRoom(Room room) async {
-    await _repository.updateRoom(room);
+    await _db.rooms.updateRoom(room);
     await _refreshRooms();
   }
 
   Future<void> reorderRooms(List<Room> reorderedRooms) async {
-    await _repository.updateRoomsOrder(reorderedRooms);
+    await _db.rooms.updateRoomsOrder(reorderedRooms);
     await _refreshRooms();
   }
 
   Future<void> setRoom(Room room) async {
-    await _repository.setSelectedRoom(room);
-    final selectedRoom = await _repository.getSelectedRoom();
-    state.selectRoom(selectedRoom);
+    await _db.allSettings.setSelectedRoom(room);
+    state.selectRoom(await _db.allSettings.getRoom());
   }
 
   Future<List<Room>> getAllRooms() async {
-    final rooms = await _repository.getAllRooms();
+    final rooms = await _db.rooms.getAllRooms();
     state.setRooms(rooms);
     return rooms;
   }
 
-  // ========== 内部辅助方法 ==========
-
   Future<void> _refreshRooms() async {
-    final rooms = await _repository.getAllRooms();
-    state.setRooms(rooms);
+    state.setRooms(await _db.rooms.getAllRooms());
   }
 }

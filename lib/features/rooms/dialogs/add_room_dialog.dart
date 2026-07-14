@@ -1,4 +1,4 @@
-﻿import 'package:astral/shared/utils/ui/random_name.dart';
+import 'package:astral/features/rooms/utils/random_name.dart';
 import 'package:astral/features/rooms/pages/room_page.dart';
 import 'package:flutter/material.dart';
 

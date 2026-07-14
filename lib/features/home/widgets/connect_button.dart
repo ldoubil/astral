@@ -1,14 +1,16 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:math';
-import 'package:astral/core/models/room.dart';
-import 'package:astral/core/models/server_mod.dart';
+
+import 'package:astral/core/services/connection_connect_guard.dart';
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/states/connection_state.dart';
+import 'package:astral/core/ui/app_snack_bars.dart';
+import 'package:astral/core/ui/main_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:astral/generated/locale_keys.g.dart';
 import 'package:signals_flutter/signals_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:astral/features/home/widgets/connect_button_style.dart';
+import 'package:astral/features/home/widgets/connect_npcap_guard.dart';
 
 class ConnectButton extends StatefulWidget {
   const ConnectButton({super.key});
@@ -19,9 +21,6 @@ class ConnectButton extends StatefulWidget {
 
 class _ConnectButtonState extends State<ConnectButton>
     with SingleTickerProviderStateMixin {
-  static const String _npcapTutorialUrl =
-      'https://astral.fan/quick-start/download-install/';
-
   late AnimationController _animationController;
 
   @override
@@ -31,25 +30,6 @@ class _ConnectButtonState extends State<ConnectButton>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
-    // 初始化服务
-    if (Platform.isAndroid) {
-      final services = ServiceManager();
-      services.notifications.initialize();
-
-      // 监听VPN事件（NO-TUN 模式下不使用 VpnService）
-      services.vpn.plugin?.onVpnServiceStarted.listen((data) {
-        if (services.networkConfigState.noTun.value) return;
-        services.vpn.configureTunFd(data['fd']);
-      });
-    }
-
-    // 自动连接
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ServiceManager().startupState.startupAutoConnect.value) {
-        _handleConnect();
-      }
-    });
   }
 
   @override
@@ -60,155 +40,38 @@ class _ConnectButtonState extends State<ConnectButton>
 
   /// 处理连接请求
   Future<void> _handleConnect() async {
-    final rom = ServiceManager().roomState.selectedRoom.value;
-    if (rom == null) return;
+    if (!ConnectionConnectGuard.hasConnectTarget()) {
+      if (!mounted) return;
+      AppSnackBars.show(
+        context,
+        title: LocaleKeys.add_server_first.tr(),
+        message: '',
+        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+        icon: Icons.dns_outlined,
+        action: SnackBarAction(
+          label: LocaleKeys.go_add.tr(),
+          textColor: Colors.white,
+          onPressed: () {
+            ServiceManager().uiState.goTo(MainTab.servers);
+          },
+        ),
+      );
+      return;
+    }
 
-    // 检查服务器配置
-    final enabledServers =
-        ServiceManager().serverState.servers.value
-            .where((server) => server.enable)
-            .toList();
-    final hasRoomServers = rom.servers.isNotEmpty;
-
-    if (enabledServers.isEmpty && !hasRoomServers) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(LocaleKeys.add_server_first.tr()),
-            action: SnackBarAction(
-              label: LocaleKeys.go_add.tr(),
-              onPressed: () {
-                ServiceManager().uiState.selectedIndex.set(2);
-              },
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+    if (!await ConnectionConnectGuard.isNpcapReady()) {
+      if (!mounted) return;
+      final shouldOpenTutorial = await showNpcapRequiredDialog(context);
+      if (shouldOpenTutorial == true && mounted) {
+        await openNpcapTutorial(context);
       }
       return;
     }
 
-    // Windows + FakeTCP: 检查 Npcap 驱动
-    if (Platform.isWindows && _containsFaketcp(rom, enabledServers)) {
-      final hasNpcap = await _hasNpcapDriver();
-      if (!hasNpcap) {
-        if (!mounted) return;
-        final shouldOpenTutorial = await _showNpcapRequiredDialog();
-        if (shouldOpenTutorial == true) {
-          await _openNpcapTutorial();
-        }
-        return;
-      }
-    }
-
-    // 调用连接管理器（手动连接）
     final success = await ServiceManager().connection.connect(isManual: true);
-    
-    // 只有当返回 false（失败）时才显示提示，null（取消）不显示
+
     if (success == false && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('连接失败'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  bool _containsFaketcp(Room room, List<ServerMod> enabledServers) {
-    final roomHasFaketcp = room.servers.any(
-      (url) => url.toLowerCase().trim().startsWith('faketcp://'),
-    );
-    final globalHasFaketcp = enabledServers.any(
-      (server) =>
-          server.faketcp == true ||
-          server.url.toLowerCase().trim().startsWith('faketcp://'),
-    );
-    return roomHasFaketcp || globalHasFaketcp;
-  }
-
-  Future<bool> _hasNpcapDriver() async {
-    final winDir = Platform.environment['WINDIR'] ?? r'C:\Windows';
-    final candidates = <String>[
-      '$winDir\\System32\\Npcap\\wpcap.dll',
-      '$winDir\\SysWOW64\\Npcap\\wpcap.dll',
-      '$winDir\\System32\\drivers\\npcap.sys',
-      r'C:\Program Files\Npcap\NPFInstall.exe',
-      r'C:\Program Files (x86)\Npcap\NPFInstall.exe',
-    ];
-
-    for (final path in candidates) {
-      if (await File(path).exists()) {
-        return true;
-      }
-    }
-
-    // 注册表检查（官方安装通常会写入）
-    for (final key in const [
-      r'HKLM\SOFTWARE\Npcap',
-      r'HKLM\SOFTWARE\WOW6432Node\Npcap',
-    ]) {
-      try {
-        final result = await Process.run('reg', ['query', key]);
-        if (result.exitCode == 0) {
-          return true;
-        }
-      } catch (_) {
-        // 忽略查询异常
-      }
-    }
-
-    // 服务配置检查：必须能匹配到 Npcap 关键字，避免误判其他同名/兼容驱动
-    for (final service in const ['npcap', 'npf']) {
-      try {
-        final result = await Process.run('sc', ['qc', service]);
-        final output = '${result.stdout}\n${result.stderr}'.toLowerCase();
-        if (result.exitCode == 0 &&
-            (output.contains('npcap') ||
-                output.contains(r'\npcap') ||
-                output.contains('npcap packet driver'))) {
-          return true;
-        }
-      } catch (_) {
-        // 忽略命令不可用等异常，按未安装处理
-      }
-    }
-
-    return false;
-  }
-
-  Future<bool?> _showNpcapRequiredDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('需要 Npcap 驱动'),
-            content: const Text(
-              '检测到当前连接包含 FakeTCP 服务器。\n'
-              'Windows 需要先安装 Npcap 驱动后才能使用 FakeTCP。\n\n'
-              '是否前往 astral.fan 查看安装教程？',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('查看教程'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Future<void> _openNpcapTutorial() async {
-    final uri = Uri.parse(_npcapTutorialUrl);
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法打开教程页面，请手动访问 astral.fan')),
-      );
+      AppSnackBars.error(context, '连接失败', '请检查网络与服务器配置后重试');
     }
   }
 
@@ -227,71 +90,6 @@ class _ConnectButtonState extends State<ConnectButton>
       await ServiceManager().connection.cancelConnection();
     } else if (state == CoState.connected) {
       await _handleDisconnect();
-    }
-  }
-
-  Widget _getButtonIcon(CoState state) {
-    switch (state) {
-      case CoState.idle:
-        return Icon(
-          Icons.power_settings_new_rounded,
-          key: const ValueKey('idle_icon'),
-        );
-      case CoState.connecting:
-        return AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Transform.rotate(
-              angle: _animationController.value * 2 * pi,
-              child: const Icon(
-                Icons.close_rounded, // 取消图标
-                key: ValueKey('connecting_icon'),
-              ),
-            );
-          },
-        );
-      case CoState.connected:
-        return Icon(Icons.link_rounded, key: const ValueKey('connected_icon'));
-    }
-  }
-
-  Widget _getButtonLabel(CoState state) {
-    final String text;
-    switch (state) {
-      case CoState.idle:
-        text = '连接';
-      case CoState.connecting:
-        text = '点击取消'; // 提示用户可以取消
-      case CoState.connected:
-        text = '已连接';
-    }
-
-    return Text(
-      text,
-      key: ValueKey('label_$state'),
-      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-    );
-  }
-
-  Color _getButtonColor(CoState state, ColorScheme colorScheme) {
-    switch (state) {
-      case CoState.idle:
-        return colorScheme.primary;
-      case CoState.connecting:
-        return colorScheme.error; // 使用错误色表示可以取消
-      case CoState.connected:
-        return colorScheme.tertiary;
-    }
-  }
-
-  Color _getButtonForegroundColor(CoState state, ColorScheme colorScheme) {
-    switch (state) {
-      case CoState.idle:
-        return colorScheme.onPrimary;
-      case CoState.connecting:
-        return colorScheme.onError; // 白色文字
-      case CoState.connected:
-        return colorScheme.onTertiary;
     }
   }
 
@@ -407,19 +205,22 @@ class _ConnectButtonState extends State<ConnectButton>
                           // ),
                         );
                       },
-                      child: _getButtonIcon(connectionState),
+                      child: connectButtonIcon(
+                        connectionState,
+                        _animationController,
+                      ),
                     ),
                     label: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       switchInCurve: Curves.easeOutQuad,
                       switchOutCurve: Curves.easeInQuad,
-                      child: _getButtonLabel(connectionState),
+                      child: connectButtonLabel(connectionState),
                     ),
-                    backgroundColor: _getButtonColor(
+                    backgroundColor: connectButtonColor(
                       connectionState,
                       colorScheme,
                     ),
-                    foregroundColor: _getButtonForegroundColor(
+                    foregroundColor: connectButtonForegroundColor(
                       connectionState,
                       colorScheme,
                     ),

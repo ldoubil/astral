@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:astral/src/rust/api/utils.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:astral/shared/utils/helpers/update_helper.dart';
-import 'package:astral/shared/utils/helpers/startup_url_scheme.dart';
+import 'package:astral/core/platform/app_info.dart';
+import 'package:astral/core/platform/startup_url_scheme.dart';
 import 'package:astral/core/bootstrap/log_capture.dart';
 import 'package:astral/core/bootstrap/file_logger.dart';
 import 'package:astral/core/bootstrap/global_error_handler.dart';
 import 'package:astral/core/database/app_data.dart';
-import 'package:astral/core/constants/window_manager.dart';
+import 'package:astral/core/platform/window_manager.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/app_links/app_link_registry.dart';
 import 'package:flutter/foundation.dart';
@@ -146,14 +146,7 @@ void _runApp() {
     EasyLocalization(
       supportedLocales: const [
         Locale('zh'),
-        Locale('zh', 'TW'),
         Locale('en'),
-        Locale('ja'),
-        Locale('ko'),
-        Locale('ru'),
-        Locale('fr'),
-        Locale('de'),
-        Locale('es'),
       ],
       path: 'assets/translations',
       fallbackLocale: const Locale('zh'),

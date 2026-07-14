@@ -1,3 +1,4 @@
+import 'package:astral/core/ui/app_snack_bars.dart';
 import 'package:astral/src/rust/api/nat_test.dart';
 import 'package:flutter/material.dart';
 
@@ -53,10 +54,14 @@ class _NatTestPageState extends State<NatTestPage> {
         setState(() {
           _isTestingNat = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('NAT 检测失败: $e'),
-            action: SnackBarAction(label: '重试', onPressed: _testNetwork),
+        AppSnackBars.error(
+          context,
+          'NAT 检测失败',
+          '$e',
+          action: SnackBarAction(
+            label: '重试',
+            textColor: Colors.white,
+            onPressed: _testNetwork,
           ),
         );
       }
