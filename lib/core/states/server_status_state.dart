@@ -26,10 +26,10 @@ class ServerStatusState {
   void startPeriodicCheck(List<ServerMod> servers, Duration interval) {
     _checkTimer?.cancel();
     _checkTimer = Timer.periodic(interval, (_) {
-      checkServersStatus(servers);
+      _checkServersStatus(servers);
     });
     // 立即执行一次检查
-    checkServersStatus(servers);
+    _checkServersStatus(servers);
   }
 
   // 停止定期检查
@@ -39,7 +39,7 @@ class ServerStatusState {
   }
 
   // 检查所有服务器状态
-  Future<void> checkServersStatus(List<ServerMod> servers) async {
+  Future<void> _checkServersStatus(List<ServerMod> servers) async {
     final Map<Id, ServerStatus> newStatuses = {};
     final activeIds = activeServerIds.value;
 
@@ -74,12 +74,6 @@ class ServerStatusState {
     activeServerIds.value = serverIds;
   }
 
-  // 获取服务器状态
-  ServerStatus getServerStatus(Id serverId) {
-    return serverStatuses.value[serverId] ?? ServerStatus.unknown;
-  }
-
-  // 清理资源
   void dispose() {
     stopPeriodicCheck();
   }

@@ -5,8 +5,6 @@ import 'package:astral/core/builders/server_config_builder.dart';
 import 'package:astral/core/models/network_config_share.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/services/notification_service.dart';
-import 'package:astral/core/services/widget_service.dart';
-import 'package:astral/core/services/vpn_manager.dart';
 import 'package:astral/shared/utils/network/ip_utils.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/src/rust/api/hops.dart';
@@ -38,15 +36,8 @@ class ServerConnectionManager {
     return _instance!;
   }
 
-  /// 获取连接时长
-  int get connectionDuration => _connectionDuration;
-
-  /// 获取当前重试次数
-  int get currentRetryCount => _currentRetryCount;
-
   /// 取消当前连接（包括重试）
   Future<void> cancelConnection() async {
-    debugPrint('🚫 用户取消连接');
     
     // 完成 Completer（如果存在且未完成）
     if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
@@ -73,7 +64,6 @@ class ServerConnectionManager {
     // 如果是手动连接，清空重试次数
     if (isManual) {
       _currentRetryCount = 0;
-      debugPrint('👤 手动连接，清空重试次数');
     }
 
     // 创建 Completer 用于取消
@@ -89,7 +79,6 @@ class ServerConnectionManager {
       _currentRetryCount++;
       
       if (_currentRetryCount > 1) {
-        debugPrint('🔄 第 $_currentRetryCount 次尝试连接...');
         // 等待一段时间再重试
         await Future.delayed(Duration(seconds: 2));
       }
@@ -97,7 +86,6 @@ class ServerConnectionManager {
       try {
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
-          debugPrint('⚠️ 连接已被取消');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -115,7 +103,6 @@ class ServerConnectionManager {
         final hasRoomServers = room.servers.isNotEmpty;
 
         if (enabledServers.isEmpty && !hasRoomServers) {
-          debugPrint('⚠️ 没有可用的服务器');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -124,10 +111,10 @@ class ServerConnectionManager {
 
         // 准备VPN（Android，NO-TUN 模式下由 Clash 等工具接管）
         if (Platform.isAndroid && !services.networkConfigState.noTun.value) {
-          await NotificationService.instance.initialize();
-          await VpnManager.instance.prepare();
+          await ServiceManager().notifications.initialize();
+          await ServiceManager().vpn.prepare();
         } else if (Platform.isAndroid) {
-          await NotificationService.instance.initialize();
+          await ServiceManager().notifications.initialize();
         }
 
         // 初始化服务器
@@ -141,7 +128,6 @@ class ServerConnectionManager {
         
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
-          debugPrint('⚠️ 连接已被取消');
           await disconnect();
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
@@ -160,7 +146,6 @@ class ServerConnectionManager {
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || _currentRetryCount >= maxRetries) {
-          debugPrint('❌ 连接失败，已达到最大重试次数 ($_currentRetryCount/$maxRetries)');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -171,14 +156,12 @@ class ServerConnectionManager {
           return false;
         }
         
-        debugPrint('⚠️ 连接失败，准备重试...');
         
         // 断开当前失败的连接
         await disconnect();
         
         // 检查是否在断开后被取消（Completer 已被清空）
         if (_connectionCompleter == null) {
-          debugPrint('⚠️ 连接已被取消，停止重试');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -186,11 +169,9 @@ class ServerConnectionManager {
         }
         
       } catch (e) {
-        debugPrint('❌ 连接异常: $e');
         
         // 检查是否被取消
         if (_connectionCompleter != null && _connectionCompleter!.isCompleted) {
-          debugPrint('⚠️ 连接已被取消');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -199,7 +180,6 @@ class ServerConnectionManager {
         
         // 如果连接失败且不需要重试，则退出
         if (!autoRetry || _currentRetryCount >= maxRetries) {
-          debugPrint('❌ 连接异常，已达到最大重试次数 ($_currentRetryCount/$maxRetries)');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -215,7 +195,6 @@ class ServerConnectionManager {
         
         // 检查是否在断开后被取消（Completer 已被清空）
         if (_connectionCompleter == null) {
-          debugPrint('⚠️ 连接已被取消，停止重试');
           batch(() {
             services.connectionState.connectionState.value = CoState.idle;
           });
@@ -252,9 +231,9 @@ class ServerConnectionManager {
     // 停止VPN
     if (Platform.isAndroid) {
       if (!ServiceManager().networkConfigState.noTun.value) {
-        await VpnManager.instance.stop();
+        await ServiceManager().vpn.stop();
       }
-      await NotificationService.instance.cancelConnectionNotification();
+      await ServiceManager().notifications.cancelConnectionNotification();
     }
 
     // 取消定时器
@@ -284,7 +263,6 @@ class ServerConnectionManager {
     if (room.networkConfigJson.isNotEmpty) {
       try {
         roomConfig = NetworkConfigShare.fromJsonString(room.networkConfigJson);
-        debugPrint('🔧 检测到房间配置，将临时覆盖默认设置');
       } catch (e) {
         debugPrint('⚠️ 解析房间配置失败: $e');
       }
@@ -299,7 +277,6 @@ class ServerConnectionManager {
             .withServers(room, services.serverState.servers.value)
             .withListeners(services.playerState.listenList.value)
             .withCidrs(services.vpnState.customVpn.value)
-            .withForwards(services.firewallState.connections.value)
             .withFlags()
             .build();
 
@@ -327,7 +304,7 @@ class ServerConnectionManager {
 
     // 显示通知（Android）
     if (Platform.isAndroid && ServiceManager().appSettingsState.enableConnectionNotification.value) {
-      await NotificationService.instance.showConnectionNotification(
+      await ServiceManager().notifications.showConnectionNotification(
         status: '连接中',
         ip: '正在获取...',
         duration: '00:00',
@@ -366,7 +343,6 @@ class ServerConnectionManager {
     _timeoutTimer = Timer(Duration(seconds: connectionTimeoutSeconds), () {
       if (ServiceManager().connectionState.connectionState.value ==
           CoState.connecting) {
-        debugPrint('⏱️ 连接超时');
         disconnect();
       }
     });
@@ -443,14 +419,14 @@ class ServerConnectionManager {
         proxyCidrs = _extractProxyCidrs();
       }
 
-      await VpnManager.instance.start(
+      await ServiceManager().vpn.start(
         ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
         mtu: ServiceManager().networkConfigState.mtu.value,
         proxyCidrs: proxyCidrs,
       );
 
       if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
-        await NotificationService.instance.showConnectionNotification(
+        await ServiceManager().notifications.showConnectionNotification(
           status: '已连接',
           ip: _notificationDisplayIp(),
           duration: NotificationService.formatDuration(_connectionDuration),
@@ -504,7 +480,7 @@ class ServerConnectionManager {
           final currentProxyCidrs = _extractProxyCidrs();
           if (currentProxyCidrs.toSet().difference(previousProxyCidrs.toSet()).isNotEmpty ||
               previousProxyCidrs.toSet().difference(currentProxyCidrs.toSet()).isNotEmpty) {
-            await VpnManager.instance.start(
+            await ServiceManager().vpn.start(
               ipv4Addr: ServiceManager().networkConfigState.ipv4.value,
               mtu: ServiceManager().networkConfigState.mtu.value,
               proxyCidrs: currentProxyCidrs,
@@ -521,10 +497,10 @@ class ServerConnectionManager {
         final formattedDuration = NotificationService.formatDuration(_connectionDuration);
         
         // 更新贴片时间
-        await WidgetService.instance.updateDuration(formattedDuration);
+        await ServiceManager().widgets.updateDuration(formattedDuration);
 
         if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
-          await NotificationService.instance.showConnectionNotification(
+          await ServiceManager().notifications.showConnectionNotification(
             status: '已连接',
             ip: _notificationDisplayIp(),
             duration: formattedDuration,

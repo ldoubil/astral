@@ -1,6 +1,6 @@
 ﻿import 'dart:math';
 import 'package:isar_community/isar.dart';
-import 'package:astral/core/models/room.dart'; // 添加 Room 模型的导入
+import 'package:astral/core/models/room.dart';
 
 class RoomCz {
   final Isar _isar;
@@ -45,11 +45,6 @@ class RoomCz {
     });
   }
 
-  // 根据ID获取房间
-  Future<Room?> getRoomById(int id) async {
-    return await _isar.rooms.get(id);
-  }
-
   // 获取所有房间（按排序字段排序）
   Future<List<Room>> getAllRooms() async {
     return await _isar.rooms.where().sortBySortOrder().findAll();
@@ -66,26 +61,6 @@ class RoomCz {
   Future<bool> deleteRoom(int id) async {
     return await _isar.writeTxn(() async {
       return await _isar.rooms.delete(id);
-    });
-  }
-
-  // 根据标签查询房间（按排序字段排序）
-  Future<List<Room>> getRoomsByTag(String tag) async {
-    return await _isar.rooms
-        .filter()
-        .tagsElementEqualTo(tag)
-        .sortBySortOrder()
-        .findAll();
-  }
-
-  // 更新房间排序
-  Future<void> updateRoomOrder(int roomId, int newOrder) async {
-    await _isar.writeTxn(() async {
-      final room = await _isar.rooms.get(roomId);
-      if (room != null) {
-        room.sortOrder = newOrder;
-        await _isar.rooms.put(room);
-      }
     });
   }
 

@@ -1,9 +1,7 @@
 import 'package:astral/core/models/server_mod.dart';
 import 'package:astral/core/models/network_config_share.dart';
-import 'package:astral/core/models/forwarding.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/src/rust/api/simple.dart';
-import 'package:flutter/foundation.dart';
 
 /// 服务器配置构建器
 ///
@@ -11,7 +9,6 @@ import 'package:flutter/foundation.dart';
 /// 1. 默认配置为底层
 /// 2. 通过链式调用逐层修改
 /// 3. 房间配置可临时覆盖默认配置（不修改持久化）
-/// 4. 每步都有日志记录
 class ServerConfigBuilder {
   final ServiceManager _services;
   final List<String> _logs = [];
@@ -25,18 +22,15 @@ class ServerConfigBuilder {
   List<String> _serverUrls = [];
   List<String> _listenerUrls = [];
   List<String> _cidrs = [];
-  List<Forward> _forwards = [];
+  final List<Forward> _forwards = [];
   FlagsC? _flags;
 
   // 房间配置（临时覆盖）
   NetworkConfigShare? _roomConfig;
 
-  ServerConfigBuilder(this._services) {
-    _log('📦 初始化服务器配置构建器');
-  }
+  ServerConfigBuilder(this._services);
 
   void _log(String message) {
-    debugPrint('🔧 $message');
     _logs.add(message);
   }
 
@@ -157,51 +151,9 @@ class ServerConfigBuilder {
     return this;
   }
 
-  /// 构建端口转发规则
-  ServerConfigBuilder withForwards(List<ForwardingConnection> groups) {
-    final forwards = <Forward>[];
-
-    for (var group in groups.where((g) => g.enabled)) {
-      for (var conn in group.connections) {
-        if (conn.proto == 'all') {
-          // ALL协议展开为TCP和UDP
-          forwards.add(
-            Forward(
-              bindAddr: conn.bindAddr,
-              dstAddr: conn.dstAddr,
-              proto: 'tcp',
-            ),
-          );
-          forwards.add(
-            Forward(
-              bindAddr: conn.bindAddr,
-              dstAddr: conn.dstAddr,
-              proto: 'udp',
-            ),
-          );
-        } else {
-          forwards.add(
-            Forward(
-              bindAddr: conn.bindAddr,
-              dstAddr: conn.dstAddr,
-              proto: conn.proto,
-            ),
-          );
-        }
-      }
-    }
-
-    _forwards = forwards;
-    if (forwards.isNotEmpty) {
-      _log('🔀 端口转发 (${forwards.length} 条规则)');
-    }
-    return this;
-  }
-
   /// 构建运行时标志（支持房间配置覆盖）
   ServerConfigBuilder withFlags() {
     final nc = _services.networkConfigState;
-    final vpn = _services.vpnState;
     final rc = _roomConfig; // 房间配置
 
     // 应用房间配置的DHCP覆盖
@@ -236,9 +188,9 @@ class ServerConfigBuilder {
       enableKcpProxy: rc?.enableKcpProxy ?? nc.enableKcpProxy.value,
       disableKcpInput: nc.disableKcpInput.value,
       disableRelayKcp: false,
-      proxyForwardBySystem: vpn.proxyForwardBySystem.value,
-      acceptDns: vpn.acceptDns.value,
-      privateMode: vpn.privateMode.value,
+      proxyForwardBySystem: nc.proxyForwardBySystem.value,
+      acceptDns: nc.acceptDns.value,
+      privateMode: nc.privateMode.value,
       enableQuicProxy: nc.enableQuicProxy.value,
       disableQuicInput: nc.disableQuicInput.value,
       disableSymHolePunching:

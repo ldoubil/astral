@@ -38,15 +38,6 @@ class AllSettingsCz {
         needsUpdate = true;
       }
 
-      const currentSettingsSchemaVersion = 1;
-      if (settings.settingsSchemaVersion < currentSettingsSchemaVersion) {
-        if (settings.settingsSchemaVersion < 1) {
-          settings.enableServerRecommendation = true;
-        }
-        settings.settingsSchemaVersion = currentSettingsSchemaVersion;
-        needsUpdate = true;
-      }
-
       if (needsUpdate) {
         await _isar.writeTxn(() async {
           await _isar.allSettings.put(settings!);
@@ -70,23 +61,6 @@ class AllSettingsCz {
   Future<bool> getEnableBannerCarousel() async {
     AllSettings? settings = await _isar.allSettings.get(1);
     return settings?.enableBannerCarousel ?? true;
-  }
-
-  /// 设置探索页服务器推荐开关
-  Future<void> setEnableServerRecommendation(bool enable) async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    if (settings != null) {
-      settings.enableServerRecommendation = enable;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(settings);
-      });
-    }
-  }
-
-  /// 获取探索页服务器推荐开关
-  Future<bool> getEnableServerRecommendation() async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    return settings?.enableServerRecommendation ?? true;
   }
 
   /// 设置连接状态通知开关
@@ -214,28 +188,6 @@ class AllSettingsCz {
     }
   }
 
-  // 删除监听列表
-  Future<void> deleteListenList(int index) async {
-    AllSettings? config = await _isar.allSettings.get(1);
-    if (config != null) {
-      config.listenList!.removeAt(index);
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(config);
-      });
-    }
-  }
-
-  // 添加监听列表
-  Future<void> addListenList(String listen) async {
-    AllSettings? config = await _isar.allSettings.get(1);
-    if (config != null) {
-      config.listenList!.add(listen);
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(config);
-      });
-    }
-  }
-
   // 修改监听列表
   Future<void> updateListenList(int index, String listen) async {
     AllSettings? config = await _isar.allSettings.get(1);
@@ -263,11 +215,6 @@ class AllSettingsCz {
     AllSettings? config = await _isar.allSettings.get(1);
     if (config?.room == null) return null;
     return await _isar.rooms.get(config!.room!);
-  }
-
-  // 获取所有设置
-  Future<AllSettings?> getAllSettings() async {
-    return await _isar.allSettings.get(1);
   }
 
   // 设定玩家名称
@@ -472,40 +419,6 @@ class AllSettingsCz {
   Future<String> getDownloadAccelerate() async {
     AllSettings? settings = await _isar.allSettings.get(1);
     return settings?.downloadAccelerate ?? AllSettings().downloadAccelerate;
-  }
-
-  /// 设置服务器排序字段
-  Future<void> setServerSortField(String field) async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    if (settings != null) {
-      settings.serverSortField = field;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(settings);
-      });
-    }
-  }
-
-  /// 获取服务器排序字段
-  Future<String> getServerSortField() async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    return settings?.serverSortField ?? AllSettings().serverSortField;
-  }
-
-  /// 获取用户ID
-  Future<String?> getUserId() async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    return settings?.userId;
-  }
-
-  /// 设置用户ID
-  Future<void> setUserId(String userId) async {
-    AllSettings? settings = await _isar.allSettings.get(1);
-    if (settings != null) {
-      settings.userId = userId;
-      await _isar.writeTxn(() async {
-        await _isar.allSettings.put(settings);
-      });
-    }
   }
 
   /// 设置最新版本号

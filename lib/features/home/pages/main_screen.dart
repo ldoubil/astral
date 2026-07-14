@@ -6,6 +6,7 @@ import 'package:astral/core/constants/small_window_adapter.dart';
 import 'package:astral/features/home/pages/home_page.dart';
 import 'package:astral/features/rooms/pages/room_page.dart';
 import 'package:astral/features/explore/pages/explore_page.dart';
+import 'package:astral/features/servers/pages/server_page.dart';
 import 'package:astral/features/settings/pages/settings_main_page.dart';
 import 'package:astral/shared/widgets/navigation/bottom_nav.dart';
 import 'package:astral/shared/widgets/navigation/left_nav.dart';
@@ -166,6 +167,12 @@ class _MainScreenState extends State<MainScreen>
       activeIcon: Icons.explore,
       label: '探索',
       page: const ExplorePage(),
+    ),
+    NavigationItem(
+      icon: Icons.dns_outlined,
+      activeIcon: Icons.dns,
+      label: LocaleKeys.nav_server.tr(),
+      page: const ServersPage(),
     ),
     NavigationItem(
       icon: Icons.settings_outlined,

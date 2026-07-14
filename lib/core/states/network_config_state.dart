@@ -7,7 +7,6 @@ class NetworkConfigState {
   final hostname = signal('');
   final instanceName = signal('default');
   final ipv4 = signal('');
-  final ipv6 = signal('');
   final dhcp = signal(true);
   final autoSetMTU = signal(true);
 
@@ -62,49 +61,7 @@ class NetworkConfigState {
 
   void updateIpv4(String value) => ipv4.value = value;
   void updateDhcp(bool value) => dhcp.value = value;
-  void updateNetworkName(String value) => networkName.value = value;
-  void updateNetworkSecret(String value) => networkSecret.value = value;
-  void updateHostname(String value) => hostname.value = value;
-  void updateInstanceName(String value) => instanceName.value = value;
   void updateEnableEncryption(bool value) => enableEncryption.value = value;
   void updateMtu(int value) => mtu.value = value;
-  void updateMultiThread(bool value) => multiThread.value = value;
   void updateLatencyFirst(bool value) => latencyFirst.value = value;
-  void updateEnableExitNode(bool value) => enableExitNode.value = value;
-
-  // 列表操作
-  void addListener(String listener) {
-    final list = List<String>.from(listeners.value);
-    list.add(listener);
-    listeners.value = list;
-  }
-
-  void removeListener(int index) {
-    final list = List<String>.from(listeners.value);
-    list.removeAt(index);
-    listeners.value = list;
-  }
-
-  void addCidrProxy(String cidr) {
-    final list = List<String>.from(cidrproxy.value);
-    list.add(cidr);
-    cidrproxy.value = list;
-  }
-
-  void removeCidrProxy(int index) {
-    final list = List<String>.from(cidrproxy.value);
-    list.removeAt(index);
-    cidrproxy.value = list;
-  }
-
-  // Computed Signal 示例
-  late final isConfigured = computed(() {
-    return ipv4.value.isNotEmpty &&
-        networkName.value.isNotEmpty &&
-        networkSecret.value.isNotEmpty;
-  });
-
-  late final displayIp = computed(() {
-    return dhcp.value ? 'DHCP (自动)' : ipv4.value;
-  });
 }

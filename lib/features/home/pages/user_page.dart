@@ -6,7 +6,7 @@ import 'package:astral/shared/widgets/cards/mini_user_card.dart';
 import 'package:astral/shared/widgets/common/network_topology.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:astral/shared/widgets/common/room_settings_sheet.dart';
+import 'package:astral/features/rooms/widgets/room_settings_sheet.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 class UserPage extends StatefulWidget {

@@ -47,10 +47,6 @@ class RoomService {
     state.selectRoom(selectedRoom);
   }
 
-  Future<Room?> getRoomById(int id) async {
-    return await _repository.getRoomById(id);
-  }
-
   Future<List<Room>> getAllRooms() async {
     final rooms = await _repository.getAllRooms();
     state.setRooms(rooms);

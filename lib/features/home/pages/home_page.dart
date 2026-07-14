@@ -1,11 +1,11 @@
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/shared/widgets/common/home/about_home.dart';
-import 'package:astral/shared/widgets/common/home/banner_carousel.dart';
-import 'package:astral/shared/widgets/common/home/servers_home.dart';
-import 'package:astral/shared/widgets/common/home/user_ip.dart';
-import 'package:astral/shared/widgets/common/home/connect_button.dart';
-import 'package:astral/shared/widgets/common/home/hitokoto_card.dart';
-import 'package:astral/shared/widgets/common/home/quick_network_config.dart';
+import 'package:astral/features/home/widgets/about_home.dart';
+import 'package:astral/features/home/widgets/banner_carousel.dart';
+import 'package:astral/features/home/widgets/servers_home.dart';
+import 'package:astral/features/home/widgets/user_ip.dart';
+import 'package:astral/features/home/widgets/connect_button.dart';
+import 'package:astral/features/home/widgets/hitokoto_card.dart';
+import 'package:astral/features/home/widgets/quick_network_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -65,9 +65,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           UserIpBox(),
                           QuickNetworkConfig(),
-                          // TrafficStats(),
                           if (hasEnabledServers) ServersHome(),
-                          // UdpLog(),
                           AboutHome(),
                           HitokotoCard(),
                           // 底部空白保护，使内容能滚动得更深

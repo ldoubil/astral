@@ -1,10 +1,7 @@
 ﻿import 'dart:convert';
 import 'package:astral/core/models/room.dart';
 import 'dart:io' show gzip;
-import 'package:astral/core/app_s/file_logger.dart';
-import 'package:flutter/foundation.dart';
-
-const String encryptionSecret = '这就是密钥';
+import 'package:astral/core/bootstrap/file_logger.dart';
 
 /// 简单的分享链接生成方式
 /// 格式：base64url(gzip(json)) - 简洁且易于导入
@@ -30,15 +27,6 @@ String encryptRoomWithJWT(Room room, {bool includeNetworkConfig = false}) {
     };
 
     final String jsonString = jsonEncode(roomData);
-
-    // Debug 打印 JSON 数据
-    debugPrint('【房间分享】原始房间数据 JSON:');
-    debugPrint(jsonEncode(roomData));
-    debugPrint('【房间分享】服务器列表: ${room.servers}');
-    debugPrint('【房间分享】自定义参数: ${room.customParam}');
-    if (includeNetworkConfig && room.networkConfigJson.isNotEmpty) {
-      debugPrint('【房间分享】携带网络配置: ${room.networkConfigJson}');
-    }
 
     final List<int> compressed = gzip.encode(utf8.encode(jsonString));
     String encoded = base64Url.encode(compressed);
@@ -72,7 +60,6 @@ Room? decryptRoomFromJWT(String token) {
     String networkConfigJson = '';
     if (roomData.containsKey('net') && roomData['net'] != null) {
       networkConfigJson = jsonEncode(roomData['net']);
-      debugPrint('【房间导入】包含网络配置: $networkConfigJson');
     }
 
     return Room(
@@ -87,52 +74,6 @@ Room? decryptRoomFromJWT(String token) {
       customParam: roomData['c'] ?? '',
       // 新增：网络配置字段
       networkConfigJson: networkConfigJson,
-    );
-  } catch (e) {
-    FileLogger().warning('解密房间信息失败: $e');
-    return null;
-  }
-}
-
-/// 将房间对象加密为密文
-String encryptRoom(Room room) {
-  final Map<String, dynamic> roomMap = {
-    'n': room.name,
-    'e': room.encrypted ? 1 : 0,
-    'rn': room.roomName,
-    'p': room.password,
-    'mk': room.messageKey,
-  };
-
-  final String jsonString = jsonEncode(roomMap);
-  final List<int> compressedData = gzip.encode(utf8.encode(jsonString));
-  String encoded = base64Url.encode(compressedData);
-  encoded = encoded.replaceAll('=', '');
-
-  return encoded;
-}
-
-/// 将密文解密为房间对象
-Room? decryptRoom(String encryptedString) {
-  try {
-    String paddedString = encryptedString;
-    final int remainder = encryptedString.length % 4;
-    if (remainder != 0) {
-      paddedString = encryptedString + ('=' * (4 - remainder));
-    }
-
-    final List<int> compressedData = base64Url.decode(paddedString);
-    final List<int> decompressedData = gzip.decode(compressedData);
-    final String jsonString = utf8.decode(decompressedData);
-    final Map<String, dynamic> roomMap = jsonDecode(jsonString);
-
-    return Room(
-      name: roomMap['n'] ?? '',
-      encrypted: (roomMap['e'] as int?) == 1 ? true : false,
-      roomName: roomMap['rn'] ?? '',
-      password: roomMap['p'] ?? '',
-      tags: [],
-      messageKey: roomMap['mk'] ?? '',
     );
   } catch (e) {
     FileLogger().warning('解密房间信息失败: $e');

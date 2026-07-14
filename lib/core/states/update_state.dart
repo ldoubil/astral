@@ -42,14 +42,6 @@ class UpdateState {
     latestVersion.value = version;
   }
 
-  void toggleBeta() {
-    beta.value = !beta.value;
-  }
-
-  void toggleAutoCheckUpdate() {
-    autoCheckUpdate.value = !autoCheckUpdate.value;
-  }
-
   /// 仅表示已经拿到可用版本号，不代表一定高于当前版本
   late final hasNewVersion = computed(() {
     final version = latestVersion.value;

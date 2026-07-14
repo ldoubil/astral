@@ -81,11 +81,6 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
               icon: Icon(Icons.language, size: 16),
               tooltip: LocaleKeys.language.tr(),
               onSelected: (Locale locale) {
-                String langCode =
-                    locale.countryCode != null
-                        ? '${locale.languageCode}_${locale.countryCode}'
-                        : locale.languageCode;
-                ServiceManager().theme.updateLanguage(langCode);
                 context.setLocale(locale);
               },
               itemBuilder:
@@ -280,11 +275,6 @@ class StatusBar extends StatelessWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.language, size: 20),
               tooltip: LocaleKeys.language.tr(),
               onSelected: (Locale locale) {
-                String langCode =
-                    locale.countryCode != null
-                        ? '${locale.languageCode}_${locale.countryCode}'
-                        : locale.languageCode;
-                ServiceManager().theme.updateLanguage(langCode);
                 context.setLocale(locale);
               },
               itemBuilder:

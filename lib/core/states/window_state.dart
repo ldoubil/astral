@@ -9,8 +9,4 @@ class WindowState {
   void setCloseMinimize(bool value) {
     closeMinimize.value = value;
   }
-
-  void toggleCloseMinimize() {
-    closeMinimize.value = !closeMinimize.value;
-  }
 }

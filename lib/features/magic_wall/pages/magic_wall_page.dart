@@ -6,16 +6,10 @@ import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:astral/src/rust/api/magic_wall.dart' as rust_api;
-import 'package:isar_community/isar.dart';
+import 'package:astral/features/magic_wall/models/magic_wall_group_bundle.dart';
+import 'package:astral/features/magic_wall/dialogs/magic_wall_group_dialog.dart';
+import 'package:astral/features/magic_wall/dialogs/magic_wall_rule_dialog.dart';
 
-class MagicWallGroupBundle {
-  MagicWallGroupBundle({required this.group, required this.rules});
-
-  final MagicWallGroupModel group;
-  final List<MagicWallRuleModel> rules;
-}
-
-/// 魔法墙主页面
 class MagicWallPage extends StatefulWidget {
   const MagicWallPage({super.key});
 
@@ -565,14 +559,11 @@ class _MagicWallPageState extends State<MagicWallPage> {
     final updatedRules = await AppDatabase().MagicWallSetting
         .getMagicWallRulesByGroup(group.groupId);
 
-    debugPrint('📊 组 ${group.name} 共有 ${updatedRules.length} 条规则');
 
     // 使用 Set 去重，避免重复添加
     final addedRuleIds = <String>{};
     for (final rule in updatedRules.where((rule) => rule.enabled)) {
-      debugPrint('🔍 检查规则: ${rule.name} (${rule.ruleId})');
       if (addedRuleIds.contains(rule.ruleId)) {
-        debugPrint('⚠️  跳过重复添加规则: ${rule.name} (${rule.ruleId})');
         continue;
       }
       addedRuleIds.add(rule.ruleId);
@@ -581,7 +572,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
         await rust_api.addMagicWallRule(
           rule: _convertToRustRule(rule, fallbackAppPath: executablePath),
         );
-        debugPrint('✅ 进程启动，规则已添加: ${rule.name}');
       } catch (e) {
         debugPrint('⚠️  添加规则失败: ${rule.name}, 错误: $e');
         // 如果规则已存在，忽略错误继续
@@ -613,14 +603,12 @@ class _MagicWallPageState extends State<MagicWallPage> {
     final uniqueRuleIds = <String>{};
     for (final rule in rules) {
       if (uniqueRuleIds.contains(rule.ruleId)) {
-        debugPrint('⚠️  跳过重复的规则: ${rule.name} (${rule.ruleId})');
         continue;
       }
       uniqueRuleIds.add(rule.ruleId);
 
       try {
         await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-        debugPrint('✅ 进程停止，规则已移除: ${rule.name}');
       } catch (e) {
         debugPrint('⚠️  移除规则失败: ${rule.name}, 错误: $e');
         // 继续移除其他规则
@@ -872,7 +860,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
                 fallbackAppPath: groupAppPath,
               ),
             );
-            debugPrint('✅ 新规则已添加到防火墙: ${updatedRule.name}');
           } catch (e) {
             debugPrint('⚠️  添加规则到防火墙失败: ${updatedRule.name}, 错误: $e');
             rethrow;
@@ -948,9 +935,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
               await rust_api.removeMagicWallRule(
                 ruleId: updatedRuleWithPath.ruleId,
               );
-              debugPrint(
-                '✅ 规则已移除: ${updatedRuleWithPath.name} (${updatedRuleWithPath.ruleId})',
-              );
             } catch (e) {
               debugPrint('⚠️  移除规则失败: ${updatedRuleWithPath.name}, 错误: $e');
             }
@@ -994,7 +978,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
         if (_isRunning.value && rule.enabled && isGroupEnabled) {
           try {
             await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-            debugPrint('✅ 规则已从防火墙删除: ${rule.name}');
           } catch (e) {
             debugPrint('⚠️  从防火墙删除规则失败: ${rule.name}, 错误: $e');
             // 继续删除数据库记录
@@ -1057,7 +1040,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
         } else {
           try {
             await rust_api.removeMagicWallRule(ruleId: updatedRule.ruleId);
-            debugPrint('✅ 规则已移除: ${updatedRule.name} (${updatedRule.ruleId})');
           } catch (e) {
             debugPrint('⚠️  移除规则失败: ${updatedRule.name}, 错误: $e');
             // 即使删除失败也继续，可能规则已经不存在了
@@ -1136,7 +1118,6 @@ class _MagicWallPageState extends State<MagicWallPage> {
               await rust_api.addMagicWallRule(
                 rule: _convertToRustRule(rule, fallbackAppPath: groupAppPath),
               );
-              debugPrint('✅ 组启用，规则已添加: ${rule.name}');
             } catch (e) {
               debugPrint('⚠️  添加规则失败: ${rule.name}, 错误: $e');
             }
@@ -1149,21 +1130,17 @@ class _MagicWallPageState extends State<MagicWallPage> {
             message: '手动操作',
           );
 
-          debugPrint('📊 组 ${bundle.group.name} 共有 ${bundle.rules.length} 条规则');
 
           // 使用 Set 去重，避免重复删除同一规则
           final uniqueRuleIds = <String>{};
           for (final rule in bundle.rules) {
-            debugPrint('🔍 检查删除规则: ${rule.name} (${rule.ruleId})');
             if (uniqueRuleIds.contains(rule.ruleId)) {
-              debugPrint('⚠️  跳过重复的规则: ${rule.name} (${rule.ruleId})');
               continue;
             }
             uniqueRuleIds.add(rule.ruleId);
 
             try {
               await rust_api.removeMagicWallRule(ruleId: rule.ruleId);
-              debugPrint('✅ 组禁用，规则已移除: ${rule.name}');
             } catch (e) {
               debugPrint('⚠️  移除规则失败: ${rule.name}, 错误: $e');
             }
@@ -1674,423 +1651,5 @@ class _MagicWallPageState extends State<MagicWallPage> {
     }
 
     return parts.join(' · ');
-  }
-}
-
-/// 规则组编辑对话框
-class MagicWallGroupDialog extends StatefulWidget {
-  final MagicWallGroupModel? group;
-
-  const MagicWallGroupDialog({super.key, this.group});
-
-  @override
-  State<MagicWallGroupDialog> createState() => _MagicWallGroupDialogState();
-}
-
-class _MagicWallGroupDialogState extends State<MagicWallGroupDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _processController;
-  late bool _autoManage;
-  late bool _enabled;
-
-  @override
-  void initState() {
-    super.initState();
-    final group = widget.group;
-    _nameController = TextEditingController(text: group?.name ?? '');
-    _processController = TextEditingController(text: group?.processName ?? '');
-    _autoManage = group?.autoManage ?? true;
-    _enabled = group?.enabled ?? false;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _processController.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final name = _nameController.text.trim();
-    final process = _processController.text.trim();
-
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入规则组名称')));
-      return;
-    }
-
-    if (_autoManage && process.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('启用自动监听时需填写进程名称')));
-      return;
-    }
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final group =
-        MagicWallGroupModel()
-          ..id = widget.group?.id ?? Isar.autoIncrement
-          ..groupId = widget.group?.groupId ?? const Uuid().v4()
-          ..name = name
-          ..processName = process
-          ..autoManage = _autoManage
-          ..enabled = _enabled
-          ..createdAt = widget.group?.createdAt ?? now
-          ..updatedAt = now;
-
-    Navigator.pop(context, group);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.group == null ? '添加规则组' : '编辑规则组'),
-      content: SingleChildScrollView(
-        child: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: '规则组名称 *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.layers),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _processController,
-                decoration: const InputDecoration(
-                  labelText: '绑定进程名称',
-                  hintText: '如: game.exe',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.memory),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('自动监听进程'),
-                subtitle: const Text('进程启动启用规则组, 进程结束关闭规则组'),
-                value: _autoManage,
-                onChanged: (value) => setState(() => _autoManage = value),
-              ),
-              SwitchListTile(
-                title: const Text('启用规则组'),
-                value: _enabled,
-                onChanged: (value) => setState(() => _enabled = value),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        ElevatedButton(onPressed: _save, child: const Text('保存')),
-      ],
-    );
-  }
-}
-
-/// 规则编辑对话框
-class MagicWallRuleDialog extends StatefulWidget {
-  final MagicWallRuleModel? rule;
-  final List<MagicWallGroupModel> groups;
-  final String? selectedGroupId;
-  final bool allowGroupChange;
-
-  const MagicWallRuleDialog({
-    super.key,
-    this.rule,
-    required this.groups,
-    this.selectedGroupId,
-    this.allowGroupChange = true,
-  });
-
-  @override
-  State<MagicWallRuleDialog> createState() => _MagicWallRuleDialogState();
-}
-
-class _MagicWallRuleDialogState extends State<MagicWallRuleDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _remoteIpController;
-  late TextEditingController _localIpController;
-  late TextEditingController _remotePortController;
-  late TextEditingController _localPortController;
-
-  late String _action;
-  late String _protocol;
-  late String _direction;
-  late bool _enabled;
-  late String _groupId;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final rule = widget.rule;
-    _nameController = TextEditingController(text: rule?.name ?? '');
-    _remoteIpController = TextEditingController(text: rule?.remoteIp ?? '');
-    _localIpController = TextEditingController(text: rule?.localIp ?? '');
-    _remotePortController = TextEditingController(text: rule?.remotePort ?? '');
-    _localPortController = TextEditingController(text: rule?.localPort ?? '');
-
-    _action = rule?.action ?? 'block';
-    _protocol = rule?.protocol ?? 'both';
-    _direction = rule?.direction ?? 'both';
-    _enabled = rule?.enabled ?? true;
-    _groupId =
-        rule?.groupId ??
-        widget.selectedGroupId ??
-        (widget.groups.isNotEmpty ? widget.groups.first.groupId : '');
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _remoteIpController.dispose();
-    _localIpController.dispose();
-    _remotePortController.dispose();
-    _localPortController.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入规则名称')));
-      return;
-    }
-
-    if (_groupId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请选择规则组')));
-      return;
-    }
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final existingAppPath = widget.rule?.appPath;
-
-    final rule =
-        MagicWallRuleModel()
-          ..id = widget.rule?.id ?? Isar.autoIncrement
-          ..ruleId = widget.rule?.ruleId ?? const Uuid().v4()
-          ..groupId = _groupId
-          ..name = _nameController.text.trim()
-          ..enabled = _enabled
-          ..action = _action
-          ..protocol = _protocol
-          ..direction = _direction
-          ..appPath =
-              existingAppPath != null && existingAppPath.isNotEmpty
-                  ? existingAppPath
-                  : null
-          ..remoteIp =
-              _remoteIpController.text.trim().isEmpty
-                  ? null
-                  : _remoteIpController.text.trim()
-          ..localIp =
-              _localIpController.text.trim().isEmpty
-                  ? null
-                  : _localIpController.text.trim()
-          ..remotePort =
-              _remotePortController.text.trim().isEmpty
-                  ? null
-                  : _remotePortController.text.trim()
-          ..localPort =
-              _localPortController.text.trim().isEmpty
-                  ? null
-                  : _localPortController.text.trim()
-          ..createdAt = widget.rule?.createdAt ?? now
-          ..updatedAt = now
-          ..priority = widget.rule?.priority ?? 0;
-
-    Navigator.pop(context, rule);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.rule == null ? '添加规则' : '编辑规则'),
-      content: SingleChildScrollView(
-        child: SizedBox(
-          width: 500,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.groups.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  initialValue:
-                      _groupId.isEmpty ? widget.groups.first.groupId : _groupId,
-                  decoration: const InputDecoration(
-                    labelText: '所属规则组',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.layers),
-                  ),
-                  items:
-                      widget.groups
-                          .map(
-                            (group) => DropdownMenuItem(
-                              value: group.groupId,
-                              child: Text(group.name),
-                            ),
-                          )
-                          .toList(),
-                  onChanged:
-                      widget.allowGroupChange
-                          ? (value) => setState(() => _groupId = value ?? '')
-                          : null,
-                ),
-                const SizedBox(height: 16),
-              ],
-              // 规则名称
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: '规则名称 *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.label),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 基本配置：动作、协议、方向
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _action,
-                      decoration: const InputDecoration(
-                        labelText: '动作',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'allow', child: Text('允许')),
-                        DropdownMenuItem(value: 'block', child: Text('阻止')),
-                      ],
-                      onChanged: (value) => setState(() => _action = value!),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _protocol,
-                      decoration: const InputDecoration(
-                        labelText: '协议',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'tcp', child: Text('TCP')),
-                        DropdownMenuItem(value: 'udp', child: Text('UDP')),
-                        DropdownMenuItem(value: 'both', child: Text('TCP+UDP')),
-                        DropdownMenuItem(value: 'any', child: Text('任意')),
-                      ],
-                      onChanged: (value) => setState(() => _protocol = value!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // 方向
-              DropdownButtonFormField<String>(
-                initialValue: _direction,
-                decoration: const InputDecoration(
-                  labelText: '方向',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.swap_horiz),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'inbound', child: Text('⬇️ 入站')),
-                  DropdownMenuItem(value: 'outbound', child: Text('⬆️ 出站')),
-                  DropdownMenuItem(value: 'both', child: Text('↕️ 双向')),
-                ],
-                onChanged: (value) => setState(() => _direction = value!),
-              ),
-              const SizedBox(height: 16),
-
-              // 远程配置
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _remoteIpController,
-                      decoration: const InputDecoration(
-                        labelText: '远程 IP（可选）',
-                        hintText: '192.168.1.1 或 192.168.0.0/16',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _remotePortController,
-                      decoration: const InputDecoration(
-                        labelText: '远程端口（可选）',
-                        hintText: '80 或 8000-9000',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // 本地配置
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _localIpController,
-                      decoration: const InputDecoration(
-                        labelText: '本地 IP（可选）',
-                        hintText: '192.168.1.1 或 192.168.0.0/16',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _localPortController,
-                      decoration: const InputDecoration(
-                        labelText: '本地端口（可选）',
-                        hintText: '80 或 8000-9000',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              SwitchListTile(
-                title: const Text('启用规则'),
-                value: _enabled,
-                onChanged: (value) => setState(() => _enabled = value),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        ElevatedButton(onPressed: _save, child: const Text('保存')),
-      ],
-    );
   }
 }

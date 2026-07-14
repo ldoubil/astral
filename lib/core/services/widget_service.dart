@@ -3,7 +3,6 @@ import 'package:astral/core/constants/home_widget_keys.dart';
 import 'package:astral/core/database/app_data.dart';
 import 'package:astral/core/services/home_widget_theme_sync.dart';
 import 'package:astral/core/services/service_manager.dart';
-import 'package:astral/core/services/server_connection_manager.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -16,13 +15,13 @@ Future<void> homeWidgetBackgroundCallback(Uri? uri) async {
   if (uri != null && uri.scheme == 'astral' && uri.host == 'toggle_connection') {
     final state = services.connectionState.connectionState.value;
     if (state == CoState.idle) {
-      await ServerConnectionManager.instance.connect(isManual: false);
+      await services.connection.connect(isManual: false);
     } else if (state == CoState.connected) {
-      await ServerConnectionManager.instance.disconnect();
+      await services.connection.disconnect();
     }
   }
 
-  await WidgetService.instance.syncAll();
+  await services.widgets.syncAll();
 }
 
 Future<void> _ensureWidgetRuntimeReady() async {
@@ -56,11 +55,12 @@ class WidgetService {
       if (uri != null &&
           uri.scheme == 'astral' &&
           uri.host == 'toggle_connection') {
-        final state = ServiceManager().connectionState.connectionState.value;
+        final services = ServiceManager();
+        final state = services.connectionState.connectionState.value;
         if (state == CoState.idle) {
-          ServerConnectionManager.instance.connect(isManual: false);
+          services.connection.connect(isManual: false);
         } else if (state == CoState.connected) {
-          ServerConnectionManager.instance.disconnect();
+          services.connection.disconnect();
         }
       }
     });

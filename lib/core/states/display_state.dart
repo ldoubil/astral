@@ -30,12 +30,4 @@ class DisplayState {
   void setUserListSimple(bool value) {
     userListSimple.value = value;
   }
-
-  void toggleSortOrder() {
-    sortOrder.value = sortOrder.value == 0 ? 1 : 0;
-  }
-
-  // Computed Signal 示例
-  late final isSorted = computed(() => sortOption.value != 0);
-  late final isAscending = computed(() => sortOrder.value == 0);
 }

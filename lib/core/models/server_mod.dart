@@ -8,7 +8,7 @@ class ServerMod {
   String name = ""; // 服务器名
   String url = ""; // 服务器地址
   // 是否启用
-  bool enable = true;
+  bool enable = false;
   // tcp 开启
   bool tcp = true;
   bool faketcp = false;

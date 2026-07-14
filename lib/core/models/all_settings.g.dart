@@ -63,76 +63,71 @@ const AllSettingsSchema = CollectionSchema(
       name: r'enableConnectionNotification',
       type: IsarType.bool,
     ),
-    r'enableServerRecommendation': PropertySchema(
-      id: 10,
-      name: r'enableServerRecommendation',
-      type: IsarType.bool,
-    ),
     r'hasShownBannerTip': PropertySchema(
-      id: 11,
+      id: 10,
       name: r'hasShownBannerTip',
       type: IsarType.bool,
     ),
     r'latestVersion': PropertySchema(
-      id: 12,
+      id: 11,
       name: r'latestVersion',
       type: IsarType.string,
     ),
     r'listenList': PropertySchema(
-      id: 13,
+      id: 12,
       name: r'listenList',
       type: IsarType.stringList,
     ),
     r'maxRetryCount': PropertySchema(
-      id: 14,
+      id: 13,
       name: r'maxRetryCount',
       type: IsarType.long,
     ),
     r'playerName': PropertySchema(
-      id: 15,
+      id: 14,
       name: r'playerName',
       type: IsarType.string,
     ),
     r'reduceAnimationUpdates': PropertySchema(
-      id: 16,
+      id: 15,
       name: r'reduceAnimationUpdates',
       type: IsarType.bool,
     ),
-    r'room': PropertySchema(id: 17, name: r'room', type: IsarType.long),
+    r'room': PropertySchema(id: 16, name: r'room', type: IsarType.long),
     r'serverSortField': PropertySchema(
-      id: 18,
+      id: 17,
       name: r'serverSortField',
       type: IsarType.string,
     ),
     r'settingsSchemaVersion': PropertySchema(
-      id: 19,
+      id: 18,
       name: r'settingsSchemaVersion',
       type: IsarType.long,
     ),
     r'sortOption': PropertySchema(
-      id: 20,
+      id: 19,
       name: r'sortOption',
       type: IsarType.long,
     ),
     r'sortOrder': PropertySchema(
-      id: 21,
+      id: 20,
       name: r'sortOrder',
       type: IsarType.long,
     ),
-    r'startup': PropertySchema(id: 22, name: r'startup', type: IsarType.bool),
+    r'startup': PropertySchema(id: 21, name: r'startup', type: IsarType.bool),
     r'startupAutoConnect': PropertySchema(
-      id: 23,
+      id: 22,
       name: r'startupAutoConnect',
       type: IsarType.bool,
     ),
     r'startupMinimize': PropertySchema(
-      id: 24,
+      id: 23,
       name: r'startupMinimize',
       type: IsarType.bool,
     ),
-    r'userId': PropertySchema(id: 25, name: r'userId', type: IsarType.string),
+    r'userId': PropertySchema(id: 24, name: r'userId', type: IsarType.string),
     r'userListSimple': PropertySchema(
-      id: 26,
+      id: 25,
       name: r'userListSimple',
       type: IsarType.bool,
     ),
@@ -217,23 +212,22 @@ void _allSettingsSerialize(
   writer.writeString(offsets[7], object.downloadAccelerate);
   writer.writeBool(offsets[8], object.enableBannerCarousel);
   writer.writeBool(offsets[9], object.enableConnectionNotification);
-  writer.writeBool(offsets[10], object.enableServerRecommendation);
-  writer.writeBool(offsets[11], object.hasShownBannerTip);
-  writer.writeString(offsets[12], object.latestVersion);
-  writer.writeStringList(offsets[13], object.listenList);
-  writer.writeLong(offsets[14], object.maxRetryCount);
-  writer.writeString(offsets[15], object.playerName);
-  writer.writeBool(offsets[16], object.reduceAnimationUpdates);
-  writer.writeLong(offsets[17], object.room);
-  writer.writeString(offsets[18], object.serverSortField);
-  writer.writeLong(offsets[19], object.settingsSchemaVersion);
-  writer.writeLong(offsets[20], object.sortOption);
-  writer.writeLong(offsets[21], object.sortOrder);
-  writer.writeBool(offsets[22], object.startup);
-  writer.writeBool(offsets[23], object.startupAutoConnect);
-  writer.writeBool(offsets[24], object.startupMinimize);
-  writer.writeString(offsets[25], object.userId);
-  writer.writeBool(offsets[26], object.userListSimple);
+  writer.writeBool(offsets[10], object.hasShownBannerTip);
+  writer.writeString(offsets[11], object.latestVersion);
+  writer.writeStringList(offsets[12], object.listenList);
+  writer.writeLong(offsets[13], object.maxRetryCount);
+  writer.writeString(offsets[14], object.playerName);
+  writer.writeBool(offsets[15], object.reduceAnimationUpdates);
+  writer.writeLong(offsets[16], object.room);
+  writer.writeString(offsets[17], object.serverSortField);
+  writer.writeLong(offsets[18], object.settingsSchemaVersion);
+  writer.writeLong(offsets[19], object.sortOption);
+  writer.writeLong(offsets[20], object.sortOrder);
+  writer.writeBool(offsets[21], object.startup);
+  writer.writeBool(offsets[22], object.startupAutoConnect);
+  writer.writeBool(offsets[23], object.startupMinimize);
+  writer.writeString(offsets[24], object.userId);
+  writer.writeBool(offsets[25], object.userListSimple);
 }
 
 AllSettings _allSettingsDeserialize(
@@ -253,24 +247,23 @@ AllSettings _allSettingsDeserialize(
   object.downloadAccelerate = reader.readString(offsets[7]);
   object.enableBannerCarousel = reader.readBool(offsets[8]);
   object.enableConnectionNotification = reader.readBool(offsets[9]);
-  object.enableServerRecommendation = reader.readBool(offsets[10]);
-  object.hasShownBannerTip = reader.readBool(offsets[11]);
+  object.hasShownBannerTip = reader.readBool(offsets[10]);
   object.id = id;
-  object.latestVersion = reader.readStringOrNull(offsets[12]);
-  object.listenList = reader.readStringList(offsets[13]);
-  object.maxRetryCount = reader.readLong(offsets[14]);
-  object.playerName = reader.readStringOrNull(offsets[15]);
-  object.reduceAnimationUpdates = reader.readBool(offsets[16]);
-  object.room = reader.readLongOrNull(offsets[17]);
-  object.serverSortField = reader.readString(offsets[18]);
-  object.settingsSchemaVersion = reader.readLong(offsets[19]);
-  object.sortOption = reader.readLong(offsets[20]);
-  object.sortOrder = reader.readLong(offsets[21]);
-  object.startup = reader.readBool(offsets[22]);
-  object.startupAutoConnect = reader.readBool(offsets[23]);
-  object.startupMinimize = reader.readBool(offsets[24]);
-  object.userId = reader.readStringOrNull(offsets[25]);
-  object.userListSimple = reader.readBool(offsets[26]);
+  object.latestVersion = reader.readStringOrNull(offsets[11]);
+  object.listenList = reader.readStringList(offsets[12]);
+  object.maxRetryCount = reader.readLong(offsets[13]);
+  object.playerName = reader.readStringOrNull(offsets[14]);
+  object.reduceAnimationUpdates = reader.readBool(offsets[15]);
+  object.room = reader.readLongOrNull(offsets[16]);
+  object.serverSortField = reader.readString(offsets[17]);
+  object.settingsSchemaVersion = reader.readLong(offsets[18]);
+  object.sortOption = reader.readLong(offsets[19]);
+  object.sortOrder = reader.readLong(offsets[20]);
+  object.startup = reader.readBool(offsets[21]);
+  object.startupAutoConnect = reader.readBool(offsets[22]);
+  object.startupMinimize = reader.readBool(offsets[23]);
+  object.userId = reader.readStringOrNull(offsets[24]);
+  object.userListSimple = reader.readBool(offsets[25]);
   return object;
 }
 
@@ -304,36 +297,34 @@ P _allSettingsDeserializeProp<P>(
     case 10:
       return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readStringOrNull(offset)) as P;
-    case 13:
       return (reader.readStringList(offset)) as P;
-    case 14:
+    case 13:
       return (reader.readLong(offset)) as P;
-    case 15:
+    case 14:
       return (reader.readStringOrNull(offset)) as P;
-    case 16:
+    case 15:
       return (reader.readBool(offset)) as P;
-    case 17:
+    case 16:
       return (reader.readLongOrNull(offset)) as P;
-    case 18:
+    case 17:
       return (reader.readString(offset)) as P;
+    case 18:
+      return (reader.readLong(offset)) as P;
     case 19:
       return (reader.readLong(offset)) as P;
     case 20:
       return (reader.readLong(offset)) as P;
     case 21:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 22:
       return (reader.readBool(offset)) as P;
     case 23:
       return (reader.readBool(offset)) as P;
     case 24:
-      return (reader.readBool(offset)) as P;
-    case 25:
       return (reader.readStringOrNull(offset)) as P;
-    case 26:
+    case 25:
       return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -894,18 +885,6 @@ extension AllSettingsQueryFilter
       return query.addFilterCondition(
         FilterCondition.equalTo(
           property: r'enableConnectionNotification',
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterFilterCondition>
-  enableServerRecommendationEqualTo(bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        FilterCondition.equalTo(
-          property: r'enableServerRecommendation',
           value: value,
         ),
       );
@@ -2291,20 +2270,6 @@ extension AllSettingsQuerySortBy
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByEnableServerRecommendation() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableServerRecommendation', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  sortByEnableServerRecommendationDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableServerRecommendation', Sort.desc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
   sortByHasShownBannerTip() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasShownBannerTip', Sort.asc);
@@ -2619,20 +2584,6 @@ extension AllSettingsQuerySortThenBy
   }
 
   QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByEnableServerRecommendation() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableServerRecommendation', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
-  thenByEnableServerRecommendationDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableServerRecommendation', Sort.desc);
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QAfterSortBy>
   thenByHasShownBannerTip() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasShownBannerTip', Sort.asc);
@@ -2909,13 +2860,6 @@ extension AllSettingsQueryWhereDistinct
   }
 
   QueryBuilder<AllSettings, AllSettings, QDistinct>
-  distinctByEnableServerRecommendation() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'enableServerRecommendation');
-    });
-  }
-
-  QueryBuilder<AllSettings, AllSettings, QDistinct>
   distinctByHasShownBannerTip() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hasShownBannerTip');
@@ -3101,13 +3045,6 @@ extension AllSettingsQueryProperty
   enableConnectionNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'enableConnectionNotification');
-    });
-  }
-
-  QueryBuilder<AllSettings, bool, QQueryOperations>
-  enableServerRecommendationProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'enableServerRecommendation');
     });
   }
 

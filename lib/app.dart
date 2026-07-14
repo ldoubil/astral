@@ -1,5 +1,4 @@
-﻿import 'package:astral/shared/utils/network/astral_udp.dart';
-import 'package:astral/core/constants/small_window_adapter.dart'; // 导入小窗口适配器
+﻿import 'package:astral/core/constants/small_window_adapter.dart';
 import 'package:astral/shared/widgets/common/home_widget_refresh_binder.dart';
 import 'package:astral/features/home/pages/main_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,8 +18,6 @@ class _KevinAppState extends State<KevinApp> {
   @override
   void initState() {
     super.initState();
-    getIpv4AndIpV6Addresses();
-    // 初始化链接服务
   }
 
   @override
@@ -40,7 +37,6 @@ class _KevinAppState extends State<KevinApp> {
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,
-        // Insert this line
         builder: (BuildContext context, Widget? child) {
           // 处理 MediaQuery 异常问题，特别是小米澎湃系统和安卓小窗口
           MediaQueryData mediaQuery = MediaQuery.of(context);

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:astral/core/services/widget_service.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -50,7 +49,7 @@ class _HomeWidgetRefreshBinderState extends State<HomeWidgetRefreshBinder>
   void _scheduleSync() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      WidgetService.instance.syncAll();
+      ServiceManager().widgets.syncAll();
     });
   }
 

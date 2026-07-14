@@ -1,3 +1,4 @@
+import 'package:astral/core/services/service_manager.dart';
 import 'dart:io';
 
 import 'package:astral/core/states/player_state.dart';
@@ -7,13 +8,10 @@ import 'package:astral/core/states/update_state.dart';
 import 'package:astral/core/states/notification_state.dart';
 import 'package:astral/core/states/window_state.dart';
 import 'package:astral/core/states/vpn_state.dart';
-import 'package:astral/core/states/firewall_state.dart';
 import 'package:astral/core/states/app_settings_state.dart';
 import 'package:astral/core/repositories/app_settings_repository.dart';
-import 'package:astral/core/services/notification_service.dart';
 import 'package:astral/shared/utils/helpers/github_proxy_selector.dart';
-import 'package:astral/shared/utils/helpers/regex_patterns.dart';
-import 'package:astral/src/rust/api/hops.dart';
+import 'package:astral/shared/utils/helpers/startup_url_scheme.dart';
 
 /// 应用设置服务：协调多个State和AppSettingsRepository
 class AppSettingsService {
@@ -24,7 +22,6 @@ class AppSettingsService {
   final NotificationState notificationState;
   final WindowState windowState;
   final VpnState vpnState;
-  final FirewallState firewallState;
   final AppSettingsState appSettingsState;
   final AppSettingsRepository _repository;
 
@@ -36,7 +33,6 @@ class AppSettingsService {
     required this.notificationState,
     required this.windowState,
     required this.vpnState,
-    required this.firewallState,
     required this.appSettingsState,
     required AppSettingsRepository repository,
   }) : _repository = repository;
@@ -72,11 +68,12 @@ class AppSettingsService {
     updateState.setLatestVersion(settings.latestVersion);
 
     appSettingsState.updateEnableBannerCarousel(settings.enableBannerCarousel);
-    appSettingsState.updateEnableServerRecommendation(
-      settings.enableServerRecommendation,
+    appSettingsState.updateEnableConnectionNotification(
+      settings.enableConnectionNotification,
     );
-    appSettingsState.updateEnableConnectionNotification(settings.enableConnectionNotification);
-    appSettingsState.updateReduceAnimationUpdates(settings.reduceAnimationUpdates);
+    appSettingsState.updateReduceAnimationUpdates(
+      settings.reduceAnimationUpdates,
+    );
     appSettingsState.updateAutoRetryOnFailure(settings.autoRetryOnFailure);
     appSettingsState.updateMaxRetryCount(settings.maxRetryCount);
     notificationState.setHasShownBannerTip(settings.hasShownBannerTip);
@@ -84,8 +81,6 @@ class AppSettingsService {
     windowState.setCloseMinimize(settings.closeMinimize);
 
     vpnState.setCustomVpn(settings.customVpn);
-
-    firewallState.setAutoSetMTU(settings.autoSetMTU);
   }
 
   // ========== 玩家设置 ==========
@@ -117,7 +112,7 @@ class AppSettingsService {
   }
 
   Future<void> setUserListSimple(bool value) async {
-    displayState.setUserListSimple(value); // 修复：应该更新displayState而不是playerState
+    displayState.setUserListSimple(value);
     await _repository.setUserMinimal(value);
   }
 
@@ -185,18 +180,13 @@ class AppSettingsService {
     await _repository.setEnableBannerCarousel(enable);
   }
 
-  Future<void> updateEnableServerRecommendation(bool enable) async {
-    appSettingsState.updateEnableServerRecommendation(enable);
-    await _repository.setEnableServerRecommendation(enable);
-  }
-
   Future<void> updateEnableConnectionNotification(bool enable) async {
     appSettingsState.updateEnableConnectionNotification(enable);
     await _repository.setEnableConnectionNotification(enable);
-    
+
     // 如果关闭了通知，立即取消可能存在的连接通知
     if (!enable && Platform.isAndroid) {
-      await NotificationService.instance.cancelConnectionNotification();
+      await ServiceManager().notifications.cancelConnectionNotification();
     }
   }
 
@@ -243,18 +233,5 @@ class AppSettingsService {
     await _repository.updateCustomVpn(index, value);
     final updated = await _repository.getCustomVpn();
     vpnState.setCustomVpn(updated);
-  }
-
-  // ========== MTU设置 ==========
-
-  Future<void> setAutoSetMTU(bool value) async {
-    firewallState.setAutoSetMTU(value);
-    await _repository.setAutoSetMTU(value);
-    await setInterfaceMetric(interfaceName: "astral", metric: 0);
-  }
-
-  Future<void> updateListenListFromDb() async {
-    final list = await _repository.getListenList();
-    playerState.setListenList(list);
   }
 }

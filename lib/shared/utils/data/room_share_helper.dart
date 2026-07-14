@@ -157,61 +157,6 @@ $roomSummary$shareOptions
     }
   }
 
-  /// 使用系统分享功能分享房间
-  ///
-  /// [context] 上下文
-  /// [room] 要分享的房间对象
-  static Future<void> shareRoom(BuildContext context, Room room) async {
-    try {
-      final shareText = generateShareText(room);
-
-      // 由于没有share_plus包，直接复制到剪贴板并提示用户
-      await Clipboard.setData(ClipboardData(text: shareText));
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '已复制分享信息',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const Text(
-                        '请粘贴到其他应用分享给好友',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.blue[700],
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('分享失败: ${e.toString()}'),
-            backgroundColor: Colors.red[700],
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
   /// 显示房间分享对话框
   /// 支持选择是否携带服务器列表和网络配置
   ///
@@ -917,8 +862,6 @@ $roomSummary$shareOptions
         // 选中房间
         await ServiceManager().room.setRoom(room);
       });
-
-      debugPrint('已跳转到房间页面并选中房间: ${room.name}');
     } catch (e) {
       debugPrint('跳转到房间页面失败: $e');
       if (context != null && context.mounted) {

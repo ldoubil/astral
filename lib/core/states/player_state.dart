@@ -28,12 +28,4 @@ class PlayerState {
     list.removeAt(index);
     listenList.value = list;
   }
-
-  void updateListen(int index, String listen) {
-    final list = List<String>.from(listenList.value);
-    if (index >= 0 && index < list.length) {
-      list[index] = listen;
-      listenList.value = list;
-    }
-  }
 }

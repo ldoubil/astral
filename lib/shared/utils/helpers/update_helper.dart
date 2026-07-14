@@ -69,8 +69,6 @@ class UpdateChecker {
         return;
       }
 
-      debugPrint('当前版本: $currentVersion');
-      debugPrint('服务器版本: $latestVersion');
 
       // 保存最新版本号到数据库
       await ServiceManager().appSettings.updateLatestVersion(latestVersion);
@@ -237,11 +235,14 @@ class UpdateChecker {
     bool isLatestVersion = false,
     Map<String, dynamic>? releaseInfo,
   }) {
+    // 必须捕获外层页面 context：builder 里的 context 会在 pop 后失效，
+    // 导致「GitHub下载」点了没反应（启动自动检查尤其明显）。
+    final parentContext = context;
     showDialog(
-      context: context,
+      context: parentContext,
       barrierDismissible: false,
       builder:
-          (context) => _UpdateDialog(
+          (dialogContext) => _UpdateDialog(
             version: version,
             releaseNotes: releaseNotes,
             downloadUrl: downloadUrl,
@@ -249,10 +250,12 @@ class UpdateChecker {
             releaseInfo: releaseInfo,
             onDownload:
                 releaseInfo != null
-                    ? () => _handleDownload(context, releaseInfo)
+                    ? () => _handleDownload(parentContext, releaseInfo)
                     : null,
             onNetDiskDownload:
-                releaseInfo != null ? () => openNetDiskDownload(context) : null,
+                releaseInfo != null
+                    ? () => openNetDiskDownload(parentContext)
+                    : null,
           ),
     );
   }
@@ -285,7 +288,6 @@ class UpdateChecker {
     }
 
     final acceleratedUrl = GitHubProxySelector.buildProxiedUrl(prefix, rawUrl);
-    debugPrint('下载加速前缀: $prefix');
     return acceleratedUrl;
   }
 
@@ -294,6 +296,8 @@ class UpdateChecker {
     BuildContext context,
     Map<String, dynamic> releaseInfo,
   ) async {
+    if (!context.mounted) return;
+
     if (Platform.isAndroid) {
       // Android 平台显示架构选择对话框
       _showArchitectureSelectionDialog(context, releaseInfo);
@@ -309,7 +313,6 @@ class UpdateChecker {
 
       final acceleratedUrl = await _resolveAcceleratedUrl(downloadUrl);
       if (!context.mounted) return;
-      debugPrint('下载链接: $acceleratedUrl');
 
       final fileName = _getPlatformFileName();
       if (fileName.isEmpty) {
@@ -343,6 +346,7 @@ class UpdateChecker {
     BuildContext context,
     Map<String, dynamic> releaseInfo,
   ) {
+    final parentContext = context;
     final architectures = [
       {
         'name': 'ARM64 (推荐)',
@@ -357,9 +361,9 @@ class UpdateChecker {
     ];
 
     showDialog(
-      context: context,
+      context: parentContext,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('选择设备架构'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -370,8 +374,14 @@ class UpdateChecker {
                           title: Text(arch['name']!),
                           subtitle: Text(arch['desc']!),
                           onTap: () {
-                            Navigator.of(context).pop();
-                            _startDownload(context, releaseInfo, arch['file']!);
+                            Navigator.of(dialogContext).pop();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _startDownload(
+                                parentContext,
+                                releaseInfo,
+                                arch['file']!,
+                              );
+                            });
                           },
                         ),
                       )
@@ -379,7 +389,7 @@ class UpdateChecker {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('取消'),
               ),
             ],
@@ -393,6 +403,8 @@ class UpdateChecker {
     Map<String, dynamic> releaseInfo,
     String fileName,
   ) async {
+    if (!context.mounted) return;
+
     final downloadUrl = _getDownloadUrlForFile(releaseInfo, fileName);
     if (downloadUrl == null) {
       ScaffoldMessenger.of(
@@ -403,7 +415,6 @@ class UpdateChecker {
 
     final acceleratedUrl = await _resolveAcceleratedUrl(downloadUrl);
     if (!context.mounted) return;
-    debugPrint('下载链接: $acceleratedUrl');
 
     // 显示下载进度对话框
     showDialog(
@@ -533,46 +544,6 @@ class UpdateChecker {
     }
   }
 
-  /// 公开的网盘下载测试方法
-  Future<void> showUpdateDialogForTesting(BuildContext context) async {
-    try {
-      // 获取最新的 release 信息
-      final releaseInfo = await _fetchLatestRelease(
-        includePrereleases: ServiceManager().updateState.beta.value,
-      );
-
-      if (!context.mounted) return;
-
-      if (releaseInfo == null) {
-        _showUpdateDialog(
-          context,
-          '获取更新信息失败',
-          '无法获取版本信息',
-          'https://github.com/$owner/$repo/releases',
-          isLatestVersion: true,
-        );
-        return;
-      }
-
-      // 直接显示更新对话框（模拟有新版本）
-      _showUpdateDialog(
-        context,
-        releaseInfo['tag_name'],
-        releaseInfo['body'] ?? '测试下载功能',
-        releaseInfo['html_url'],
-        releaseInfo: releaseInfo,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      _showUpdateDialog(
-        context,
-        '获取更新信息失败',
-        '发生错误: $e',
-        'https://github.com/$owner/$repo/releases',
-        isLatestVersion: true,
-      );
-    }
-  }
 
   /// 公开的网盘下载入口，供设置页面直接调用
   Future<void> openNetDiskDownload(BuildContext context) async {
@@ -601,27 +572,6 @@ class AppInfoUtil {
     return _packageInfo?.version ?? '';
   }
 
-  /// 获取应用构建号 (例如: 1)
-  static String getBuildNumber() {
-    return _packageInfo?.buildNumber ?? '';
-  }
-
-  /// 获取完整版本号 (例如: 1.0.0+1)
-  static String getFullVersion() {
-    final version = getVersion();
-    final buildNumber = getBuildNumber();
-    return '$version+$buildNumber';
-  }
-
-  /// 获取应用名称
-  static String getAppName() {
-    return _packageInfo?.appName ?? '';
-  }
-
-  /// 获取包名
-  static String getPackageName() {
-    return _packageInfo?.packageName ?? '';
-  }
 }
 
 /// 更新对话框组件
@@ -668,7 +618,10 @@ class _UpdateDialog extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              onNetDiskDownload!();
+              // 等弹窗完成卸载后再用外层 context 打开下载，避免 deactivated context
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onNetDiskDownload!();
+              });
             },
             child: const Text('网盘下载'),
           ),
@@ -676,7 +629,9 @@ class _UpdateDialog extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              onDownload!();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                onDownload!();
+              });
             },
             child: const Text('GitHub下载'),
           ),

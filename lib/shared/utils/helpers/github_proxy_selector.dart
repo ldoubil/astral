@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// GitHub 下载加速镜像选择与测速。
@@ -95,13 +94,9 @@ class GitHubProxySelector {
     if (best != null) {
       _cachedPrefix = best.prefix;
       _cachedAt = DateTime.now();
-      debugPrint(
-        'GitHub 代理测速完成: ${best.prefix} (${best.latency.inMilliseconds}ms)',
-      );
       return best.prefix;
     }
 
-    debugPrint('GitHub 代理测速失败，将尝试直连 GitHub');
     return null;
   }
 
@@ -132,9 +127,8 @@ class GitHubProxySelector {
         latency: stopwatch.elapsed,
         success: false,
       );
-    } catch (e) {
+    } catch (_) {
       stopwatch.stop();
-      debugPrint('GitHub 代理测速失败 $normalized: $e');
       return ProbeResult(
         prefix: normalized,
         latency: stopwatch.elapsed,

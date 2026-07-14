@@ -9,7 +9,6 @@ import 'package:astral/features/settings/pages/general/startup_page.dart';
 import 'package:astral/features/settings/pages/general/software_settings_page.dart';
 import 'package:astral/features/settings/pages/general/update_settings_page.dart';
 import 'package:astral/features/settings/pages/general/logs_page.dart';
-import 'package:astral/features/settings/pages/server_settings_page.dart';
 
 class SettingsMainPage extends StatelessWidget {
   const SettingsMainPage({super.key});
@@ -20,20 +19,6 @@ class SettingsMainPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // 服务器设置分组
-          _buildSectionHeader(context, '服务器管理'),
-          const SizedBox(height: 8),
-
-          _buildSettingsCard(
-            context,
-            icon: Icons.dns,
-            title: '服务器列表',
-            subtitle: '管理和配置服务器',
-            onTap: () => _navigateToPage(context, const ServerSettingsPage()),
-          ),
-
-          const SizedBox(height: 24),
-
           // 网络设置分组
           _buildSectionHeader(context, LocaleKeys.network_settings.tr()),
           const SizedBox(height: 8),

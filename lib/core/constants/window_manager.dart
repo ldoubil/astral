@@ -1,4 +1,4 @@
-﻿import 'package:astral/shared/utils/helpers/regex_patterns.dart';
+﻿import 'package:astral/shared/utils/helpers/startup_url_scheme.dart';
 import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';

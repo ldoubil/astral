@@ -34,11 +34,6 @@ class ServerService {
     await _refreshServers();
   }
 
-  Future<void> deleteServerById(int id) async {
-    await _repository.deleteServerById(id);
-    await _refreshServers();
-  }
-
   Future<void> updateServer(ServerMod server) async {
     await _repository.updateServer(server);
     await _refreshServers();
@@ -55,18 +50,10 @@ class ServerService {
     await _refreshServers();
   }
 
-  Future<ServerMod?> getServerById(int id) async {
-    return await _repository.getServerById(id);
-  }
-
   Future<List<ServerMod>> getAllServers() async {
     final servers = await _repository.getAllServers();
     state.setServers(servers);
     return servers;
-  }
-
-  Future<List<ServerMod>> getEnabledServers() async {
-    return await _repository.getEnabledServers();
   }
 
   // ========== 内部辅助方法 ==========

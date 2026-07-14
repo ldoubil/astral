@@ -4,14 +4,14 @@ import 'package:astral/core/models/theme_settings.dart';
 
 /// 主题设置仓库类
 /// 负责管理和持久化主题相关的设置
-class ThemeSettingsRepository {
+class ThemeSettingsDao {
   /// Isar数据库实例
   final Isar _isar;
 
   /// 构造函数
   /// @param _isar Isar数据库实例
   /// 创建实例时自动初始化数据
-  ThemeSettingsRepository(this._isar) {
+  ThemeSettingsDao(this._isar) {
     init();
   }
 
@@ -65,3 +65,4 @@ class ThemeSettingsRepository {
     return settings?.themeModeValue ?? ThemeMode.system;
   }
 }
+

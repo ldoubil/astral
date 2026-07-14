@@ -67,9 +67,6 @@ class AllSettings {
   /// 启用轮播图
   bool enableBannerCarousel = true;
 
-  /// 探索页服务器推荐
-  bool enableServerRecommendation = true;
-
   /// 启用连接状态栏通知
   bool enableConnectionNotification = true;
 
