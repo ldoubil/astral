@@ -19,7 +19,12 @@ import 'package:path/path.dart' as p;
 import 'package:astral/src/rust/frb_generated.dart';
 import 'package:astral/app.dart';
 
-void main() async {
+void main(List<String> args) async {
+  // 检测是否为自动启动
+  if (args.contains('--autostart')) {
+    isAutostart = true;
+  }
+
   // 初始化文件日志系统（Release 模式下不会创建文件）
   await FileLogger().init();
   GlobalErrorHandler.initialize();

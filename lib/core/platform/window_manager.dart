@@ -33,8 +33,9 @@ class WindowManagerUtils {
 
       // 等待窗口准备就绪并显示
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
-        // 如果 startupMinimize 为 true，则最小化窗口
-        if (ServiceManager().startupState.startupMinimize.value) {
+        // 自动启动时始终隐藏窗口（系统启动时无桌面会话）
+        if (isAutostart ||
+            ServiceManager().startupState.startupMinimize.value) {
           ServiceManager().uiState.setBackground(true);
           await windowManager.hide();
         } else {

@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-const _startupRunKey =
-    'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
-const _startupValueName = 'Astral';
+const _taskName = 'Astral';
+
+/// 由 main.dart 在启动时设置，标记当前是否为自动启动
+bool isAutostart = false;
 
 Future<void> _removeLegacyStartupShortcut() async {
   if (!Platform.isWindows) return;
@@ -23,6 +24,21 @@ Future<void> _removeLegacyStartupShortcut() async {
   }
 }
 
+/// 移除旧的注册表 Run 键（如果存在），迁移到 Task Scheduler 方案
+Future<void> _removeLegacyRegistryRun() async {
+  try {
+    await Process.run('reg', [
+      'delete',
+      'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run',
+      '/v',
+      'Astral',
+      '/f',
+    ]);
+  } catch (_) {
+    // 旧键可能不存在，忽略错误
+  }
+}
+
 Future<void> handleStartupSetting(bool enable) async {
   if (!Platform.isWindows) return;
 
@@ -30,32 +46,34 @@ Future<void> handleStartupSetting(bool enable) async {
   final command = '"$executablePath" --autostart';
 
   await _removeLegacyStartupShortcut();
+  await _removeLegacyRegistryRun();
 
   if (enable) {
-    final result = await Process.run('reg', [
-      'add',
-      _startupRunKey,
-      '/v',
-      _startupValueName,
-      '/t',
-      'REG_SZ',
-      '/d',
+    // 使用 Task Scheduler ONSTART 触发器，系统启动时即运行（登录前）
+    final result = await Process.run('schtasks', [
+      '/create',
+      '/tn',
+      _taskName,
+      '/tr',
       command,
+      '/sc',
+      'ONSTART',
+      '/rl',
+      'HIGHEST',
       '/f',
     ]);
     if (result.exitCode != 0 && kDebugMode) {
-      debugPrint('Failed to register startup: ${result.stderr}');
+      debugPrint('Failed to register startup task: ${result.stderr}');
     }
   } else {
-    final result = await Process.run('reg', [
-      'delete',
-      _startupRunKey,
-      '/v',
-      _startupValueName,
+    final result = await Process.run('schtasks', [
+      '/delete',
+      '/tn',
+      _taskName,
       '/f',
     ]);
     if (result.exitCode != 0 && kDebugMode) {
-      debugPrint('Failed to unregister startup: ${result.stderr}');
+      debugPrint('Failed to remove startup task: ${result.stderr}');
     }
   }
 }
