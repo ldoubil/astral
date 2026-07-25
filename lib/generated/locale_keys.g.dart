@@ -22,6 +22,10 @@ abstract class  LocaleKeys {
   static const about = 'about';
   static const software_version = 'software_version';
   static const kernel_version = 'kernel_version';
+  static const select_room_first = 'select_room_first';
+  static const go_select_room = 'go_select_room';
+  static const enable_server_first = 'enable_server_first';
+  static const go_enable = 'go_enable';
   static const add_server_first = 'add_server_first';
   static const go_add = 'go_add';
   static const current_servers = 'current_servers';

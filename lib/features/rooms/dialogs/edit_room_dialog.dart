@@ -23,7 +23,7 @@ Future<void> showEditRoomDialog(
               ),
               const SizedBox(height: 16),
               const Text(
-                '此房间包含自定义服务器配置',
+                '此房间含有自定义参数',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),

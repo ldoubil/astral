@@ -40,20 +40,39 @@ class _ConnectButtonState extends State<ConnectButton>
 
   /// 处理连接请求
   Future<void> _handleConnect() async {
-    if (!ConnectionConnectGuard.hasConnectTarget()) {
+    final targetIssue = ConnectionConnectGuard.connectTargetIssue();
+    if (targetIssue != null) {
       if (!mounted) return;
+      final (title, actionLabel, icon, tab) = switch (targetIssue) {
+        ConnectTargetIssue.noRoom => (
+          LocaleKeys.select_room_first.tr(),
+          LocaleKeys.go_select_room.tr(),
+          Icons.meeting_room_outlined,
+          MainTab.room,
+        ),
+        ConnectTargetIssue.noneEnabled => (
+          LocaleKeys.enable_server_first.tr(),
+          LocaleKeys.go_enable.tr(),
+          Icons.toggle_on_outlined,
+          MainTab.servers,
+        ),
+        ConnectTargetIssue.noServers => (
+          LocaleKeys.add_server_first.tr(),
+          LocaleKeys.go_add.tr(),
+          Icons.dns_outlined,
+          MainTab.servers,
+        ),
+      };
       AppSnackBars.show(
         context,
-        title: LocaleKeys.add_server_first.tr(),
+        title: title,
         message: '',
         backgroundColor: Theme.of(context).colorScheme.inverseSurface,
-        icon: Icons.dns_outlined,
+        icon: icon,
         action: SnackBarAction(
-          label: LocaleKeys.go_add.tr(),
+          label: actionLabel,
           textColor: Colors.white,
-          onPressed: () {
-            ServiceManager().uiState.goTo(MainTab.servers);
-          },
+          onPressed: () => ServiceManager().uiState.goTo(tab),
         ),
       );
       return;
@@ -71,7 +90,7 @@ class _ConnectButtonState extends State<ConnectButton>
     final success = await ServiceManager().connection.connect(isManual: true);
 
     if (success == false && mounted) {
-      AppSnackBars.error(context, '连接失败', '请检查网络与服务器配置后重试');
+      AppSnackBars.error(context, '连接失败', '请检查网络后重试，并确认房间与服务器配置无误');
     }
   }
 

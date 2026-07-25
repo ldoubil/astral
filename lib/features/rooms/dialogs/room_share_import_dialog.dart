@@ -53,8 +53,8 @@ class RoomShareImportDialogs {
         return false;
       }
 
-      if (!RoomShareCodec.isValidShareCode(shareCode)) {
-        AppSnackBars.error(context, '分享码格式错误', '分享码格式不正确，请检查是否完整');
+      if (shareCode.length < 10) {
+        AppSnackBars.error(context, '分享码格式错误', '分享码过短或不完整，请检查是否复制完整');
         return false;
       }
 
@@ -62,8 +62,8 @@ class RoomShareImportDialogs {
       if (room == null) {
         AppSnackBars.error(
           context,
-          '分享码无效',
-          '无法解析房间信息，请检查分享码是否正确或已过期',
+          '分享码解析失败',
+          '无法解析房间信息，可能是分享码已过期或损坏',
         );
         return false;
       }
