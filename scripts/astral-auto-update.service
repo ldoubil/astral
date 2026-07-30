@@ -1,0 +1,17 @@
+[Unit]
+Description=Astral Auto Update Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# ExecStart 需要替换为实际的 astral-manager.sh 路径
+# 例如: ExecStart=/home/USER/astral/scripts/astral-manager.sh update
+ExecStart=/usr/local/bin/astral-manager.sh update
+# User 需要替换为实际用户名
+User=liaozip
+StandardOutput=append:/home/%i/.astral/astral-manager.log
+StandardError=append:/home/%i/.astral/astral-manager.log
+
+[Install]
+WantedBy=multi-user.target

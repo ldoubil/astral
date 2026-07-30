@@ -30,6 +30,43 @@ Astral 是一个基于 EasyTier 的跨平台网络应用，提供简单易用的
 
 > 详细的安装和使用指南请参考我们的[项目文档](#)
 
+### 自动化安装（推荐）
+
+使用 `astral-manager.sh` 脚本一键安装、更新和管理 Astral：
+
+```bash
+# 克隆仓库
+git clone https://github.com/ldoubil/astral.git
+cd astral/scripts
+chmod +x astral-manager.sh
+
+# 一键全量配置（安装 + 免密sudo + 开机自启 + 自动更新 + 仓库跟踪）
+bash astral-manager.sh install && \
+bash astral-manager.sh setup-sudoers && \
+bash astral-manager.sh enable-autostart && \
+bash astral-manager.sh enable-autoupdate && \
+bash astral-manager.sh track-repo
+```
+
+<details>
+<summary>📖 更多命令</summary>
+
+| 命令 | 说明 |
+|------|------|
+| `bash astral-manager.sh install` | 安装最新版本 |
+| `bash astral-manager.sh update` | 检查并更新到最新版 |
+| `bash astral-manager.sh check` | 仅检查是否有新版本 |
+| `bash astral-manager.sh uninstall` | 卸载 Astral |
+| `bash astral-manager.sh status` | 显示完整状态 |
+| `bash astral-manager.sh track-repo` | 克隆仓库源码并配置 git 跟踪 |
+| `bash astral-manager.sh setup-sudoers` | 配置免密 sudo |
+| `bash astral-manager.sh enable-autostart` | 配置开机自启 |
+| `bash astral-manager.sh enable-autoupdate` | 启用定时自动更新 |
+
+完整文档请参考 [ASTRAL_MANAGER_README.md](ASTRAL_MANAGER_README.md)
+
+</details>
+
 ## 🛠️ 技术栈
 
 - **前端**: Flutter (Dart)
