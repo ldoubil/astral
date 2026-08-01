@@ -1,0 +1,108 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # 每天北京时间 10:00 (UTC 02:00) 自动检查上游更新
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # 支持手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/ldoubil/astral.git
+          git fetch upstream --prune
+
+      - name: Check for upstream updates
+        id: check
+        run: |
+          LOCAL_HEAD=$(git rev-parse HEAD)
+          UPSTREAM_HEAD=$(git rev-parse upstream/main)
+
+          echo "Fork HEAD:     $LOCAL_HEAD"
+          echo "Upstream HEAD: $UPSTREAM_HEAD"
+
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "No upstream updates to sync (fork is up to date or ahead)"
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+          else
+            COUNT=$(git rev-list HEAD..upstream/main --count)
+            echo "Upstream has $COUNT new commit(s) to sync"
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "commit_count=$COUNT" >> $GITHUB_OUTPUT
+
+            echo "### New upstream commits:" >> $GITHUB_STEP_SUMMARY
+            git log HEAD..upstream/main --oneline --no-decorate >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Attempt clean merge
+        id: merge
+        if: steps.check.outputs.has_updates == 'true'
+        continue-on-error: true
+        run: |
+          git merge upstream/main --no-edit --no-ff
+          echo "merge_status=clean" >> $GITHUB_OUTPUT
+
+      - name: Resolve conflicts (prefer fork customizations)
+        if: steps.check.outputs.has_updates == 'true' && steps.merge.outcome == 'failure'
+        run: |
+          # Abort the failed merge
+          git merge --abort 2>/dev/null || true
+
+          # Retry with -X ours strategy: on conflicts, keep fork's version
+          # This preserves custom files like README.md, astral-manager scripts, etc.
+          git merge -X ours upstream/main --no-edit --no-ff
+
+          # List any files that had conflicts resolved
+          CONFLICTED=$(git diff --name-only --diff-filter=U HEAD~1 HEAD 2>/dev/null || true)
+          if [ -n "$CONFLICTED" ]; then
+            echo "::warning::Merge conflicts auto-resolved (preferred fork's version) for:"
+            echo "$CONFLICTED" | while read -r f; do
+              echo "  - $f"
+            done
+            echo ""
+            echo "### Conflicts auto-resolved (kept fork's version):" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$CONFLICTED" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "Please review these files manually." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "merge_status=conflict-resolved" >> $GITHUB_OUTPUT
+
+      - name: Push to fork
+        if: steps.check.outputs.has_updates == 'true'
+        run: |
+          git push origin main
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## Fork Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check.outputs.has_updates }}" = "true" ]; then
+            echo "- **Upstream commits synced:** ${{ steps.check.outputs.commit_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Merge strategy:** ${{ steps.merge.outputs.merge_status || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status:** Pushed to liaozip/astral:main" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status:** No updates needed (fork is up to date)" >> $GITHUB_STEP_SUMMARY
+          fi

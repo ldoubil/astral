@@ -1,0 +1,11 @@
+[Unit]
+Description=Astral Daily Auto Update Timer
+
+[Timer]
+# 每天凌晨 3:00 执行，允许随机延迟 5 分钟以避免峰值负载
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
