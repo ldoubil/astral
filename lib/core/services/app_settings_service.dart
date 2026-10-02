@@ -1,4 +1,6 @@
 import 'package:astral/core/services/service_manager.dart';
+import 'package:astral/core/services/connection_network_monitor.dart';
+import 'package:astral/core/states/connection_state.dart';
 import 'dart:io';
 
 import 'package:astral/core/states/player_state.dart';
@@ -193,8 +195,33 @@ class AppSettingsService {
     appSettingsState.updateEnableConnectionNotification(enable);
     await _repo.update((s) => s.enableConnectionNotification = enable);
 
-    if (!enable && Platform.isAndroid) {
-      await ServiceManager().notifications.cancelConnectionNotification();
+    if (!Platform.isAndroid) return;
+
+    final services = ServiceManager();
+    if (services.networkConfigState.noTun.value) {
+      if (!enable) {
+        await services.notifications.cancelConnectionNotification();
+      } else if (services.connectionState.connectionState.value ==
+          CoState.connected) {
+        // 时长会在下一次网络监控轮询（约1秒）时刷新
+        await services.notifications.showConnectionNotification(
+          status: '已连接',
+          ip: ConnectionNetworkMonitor.notificationDisplayIp(),
+          duration: '00:00',
+        );
+      }
+    } else {
+      // TUN 模式：通知归原生服务管理
+      if (!enable) {
+        await services.vpn.plugin?.removeNotification();
+      } else {
+        // 时长会在下一次网络监控轮询（约1秒）时刷新
+        await services.vpn.plugin?.showNotification(
+          status: '已连接',
+          ip: ConnectionNetworkMonitor.notificationDisplayIp(),
+          duration: '00:00',
+        );
+      }
     }
   }
 

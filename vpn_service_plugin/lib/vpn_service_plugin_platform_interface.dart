@@ -24,11 +24,36 @@ abstract class VpnServicePluginPlatform extends PlatformInterface {
     String? dns,
     List<String>? disallowedApplications,
     int? mtu,
+    bool notificationsEnabled = true,
   }) {
     throw UnimplementedError('startVpn() 未实现.');
   }
 
   Future<void> stopVpn() {
     throw UnimplementedError('stopVpn() 未实现.');
+  }
+
+  Future<void> updateNotification({
+    required String status,
+    required String ip,
+    required String duration,
+  }) {
+    throw UnimplementedError('updateNotification() 未实现.');
+  }
+
+  Future<void> removeNotification() {
+    throw UnimplementedError('removeNotification() 未实现.');
+  }
+
+  Future<void> startForeground({bool notificationsEnabled = true}) {
+    throw UnimplementedError('startForeground() 未实现.');
+  }
+
+  Future<void> showNotification({
+    required String status,
+    required String ip,
+    required String duration,
+  }) {
+    throw UnimplementedError('showNotification() 未实现.');
   }
 }

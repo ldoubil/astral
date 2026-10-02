@@ -3,6 +3,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:astral/core/services/service_manager.dart';
 
 /// 连接状态通知服务（仅Android）
+///
+/// - TUN 模式：连接通知由原生 TauriVpnService 作为前台通知托管，
+///   服务/进程销毁时通知由系统一并移除，避免杀进程后残留“连接中”。
+/// - NO-TUN 模式：没有 VPN 服务，退回 flutter_local_notifications 普通通知。
 class NotificationService {
   static NotificationService? _instance;
   final FlutterLocalNotificationsPlugin? _plugin;
@@ -16,6 +20,11 @@ class NotificationService {
     _instance ??= NotificationService._();
     return _instance!;
   }
+
+  /// TUN 模式下通知归原生 VpnService 管理
+  bool get _nativeManaged =>
+      Platform.isAndroid &&
+      !ServiceManager().networkConfigState.noTun.value;
 
   /// 初始化通知服务
   Future<void> initialize() async {
@@ -38,6 +47,33 @@ class NotificationService {
   /// [ip] IP地址
   /// [duration] 连接时长
   Future<void> showConnectionNotification({
+    required String status,
+    required String ip,
+    required String duration,
+  }) async {
+    if (!Platform.isAndroid) return;
+
+    if (_nativeManaged) {
+      final plugin = ServiceManager().vpn.plugin;
+      if (plugin == null) return;
+      // 连接中阶段服务尚未启动，原生会在启动时自行显示“连接中”，
+      // 这里只处理服务已存在时的更新（已连接后的每秒刷新走不到这里的连接中分支）。
+      await plugin.updateNotification(
+        status: status,
+        ip: ip,
+        duration: duration,
+      );
+      return;
+    }
+
+    await _showFlutterNotification(
+      status: status,
+      ip: ip,
+      duration: duration,
+    );
+  }
+
+  Future<void> _showFlutterNotification({
     required String status,
     required String ip,
     required String duration,
@@ -76,6 +112,13 @@ class NotificationService {
 
   /// 取消连接状态通知
   Future<void> cancelConnectionNotification() async {
+    if (!Platform.isAndroid) return;
+
+    if (_nativeManaged) {
+      // TUN 模式：服务停止时前台通知由系统移除，无需单独取消
+      return;
+    }
+
     final plugin = _plugin;
     if (plugin == null) return;
     await plugin.cancel(_connectionNotificationId);

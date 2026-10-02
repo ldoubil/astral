@@ -3,6 +3,7 @@ package com.plugin.vpn_service_plugin
 import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
+import android.os.Build
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -27,7 +28,7 @@ class VpnServicePlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "vpn_service")
         channel.setMethodCallHandler(this)
-        
+
         // 初始化事件通道
         eventChannel = EventChannel(binding.binaryMessenger, "vpn_service_events")
         eventChannel.setStreamHandler(object : EventChannel.StreamHandler {
@@ -60,11 +61,9 @@ class VpnServicePlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.success(mapOf<String, Any>())
                 }
             }
-            // 启动VPN服务
+            // 启动VPN服务（仅建立TUN；通知由保活服务负责）
             "startVpn" -> {
                 val args = call.arguments<Map<String, Any>>()
-                // 停止现有VPN服务
-                TauriVpnService.self?.onRevoke()
 
                 val intent = VpnService.prepare(activity)
                 if (intent != null) {
@@ -73,34 +72,38 @@ class VpnServicePlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                 } else {
                     // 配置并启动VPN服务
                     val serviceIntent = Intent(activity, TauriVpnService::class.java)
-                    
+
                     // 处理IPv4地址
                     serviceIntent.putExtra("IPV4_ADDR", args?.get("ipv4Addr") as? String)
-                    
+
                     // 处理路由列表 - 从List<Dynamic>转换为Array<String>
                     val routesList = args?.get("routes") as? List<*>
                     if (routesList != null) {
                         val routesArray = routesList.filterIsInstance<String>().toTypedArray()
                         serviceIntent.putExtra("ROUTES", routesArray)
                     }
-                    
+
                     // 处理DNS
                     serviceIntent.putExtra("DNS", args?.get("dns") as? String)
-                    
-                    // 处理不允许的应用列表 - 从List<Dynamic>转换为Array<String>
+
+                    // 处理不允许的应用列表
                     val disallowedAppsList = args?.get("disallowedApplications") as? List<*>
                     if (disallowedAppsList != null) {
                         val disallowedAppsArray = disallowedAppsList.filterIsInstance<String>().toTypedArray()
                         serviceIntent.putExtra("DISALLOWED_APPLICATIONS", disallowedAppsArray)
                     }
-                    
+
                     // 处理MTU
                     val mtu = args?.get("mtu")
                     if (mtu is Int) {
                         serviceIntent.putExtra("MTU", mtu)
                     }
 
-                    activity.startService(serviceIntent)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        activity.startForegroundService(serviceIntent)
+                    } else {
+                        activity.startService(serviceIntent)
+                    }
                     result.success(mapOf<String, Any>())
                 }
             }
@@ -108,10 +111,75 @@ class VpnServicePlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             "stopVpn" -> {
                 TauriVpnService.self?.onRevoke()
                 activity.stopService(Intent(activity, TauriVpnService::class.java))
+                // 同时停止保活服务，移除连接通知
+                stopKeepAlive()
+                result.success(mapOf<String, Any>())
+            }
+            // 启动保活服务（连接中阶段）
+            "startForeground" -> {
+                val enabled = (call.arguments<Map<String, Any>>()?.get("notificationsEnabled") as? Boolean) ?: true
+                startKeepAlive(
+                    status = "连接中",
+                    ip = "正在获取...",
+                    duration = "00:00",
+                    showContent = enabled,
+                )
+                result.success(mapOf<String, Any>())
+            }
+            // 更新连接通知内容
+            "updateNotification" -> {
+                val args = call.arguments<Map<String, Any>>()
+                AstralKeepAliveService.instance?.update(
+                    (args?.get("status") as? String) ?: "",
+                    (args?.get("ip") as? String) ?: "",
+                    (args?.get("duration") as? String) ?: "",
+                )
+                result.success(mapOf<String, Any>())
+            }
+            // 移除连接通知内容（设置中关闭）
+            "removeNotification" -> {
+                AstralKeepAliveService.instance?.hideContent()
+                result.success(mapOf<String, Any>())
+            }
+            // 重新显示连接通知（设置中开启）
+            "showNotification" -> {
+                val args = call.arguments<Map<String, Any>>()
+                AstralKeepAliveService.instance?.showContentAgain(
+                    (args?.get("status") as? String) ?: "已连接",
+                    (args?.get("ip") as? String) ?: "",
+                    (args?.get("duration") as? String) ?: "00:00",
+                )
                 result.success(mapOf<String, Any>())
             }
             else -> result.notImplemented()
         }
+    }
+
+    private fun startKeepAlive(
+        status: String,
+        ip: String,
+        duration: String,
+        showContent: Boolean,
+    ) {
+        val intent = Intent(activity, AstralKeepAliveService::class.java).apply {
+            action = AstralKeepAliveService.ACTION_START
+            putExtra(AstralKeepAliveService.EXTRA_STATUS, status)
+            putExtra(AstralKeepAliveService.EXTRA_IP, ip)
+            putExtra(AstralKeepAliveService.EXTRA_DURATION, duration)
+            putExtra(AstralKeepAliveService.EXTRA_SHOW_CONTENT, showContent)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity.startForegroundService(intent)
+        } else {
+            activity.startService(intent)
+        }
+    }
+
+    private fun stopKeepAlive() {
+        val intent = Intent(activity, AstralKeepAliveService::class.java).apply {
+            action = AstralKeepAliveService.ACTION_STOP
+        }
+        activity.startService(intent)
     }
 
     // 插件从Flutter引擎分离时调用

@@ -6,7 +6,6 @@ import 'package:astral/core/services/connection_network_monitor.dart';
 import 'package:astral/core/services/connection_status_tracker.dart';
 import 'package:astral/core/services/service_manager.dart';
 import 'package:astral/core/states/connection_state.dart';
-import 'package:astral/core/services/notification_service.dart';
 import 'package:astral/src/rust/api/simple.dart';
 import 'package:astral/src/rust/api/hops.dart';
 import 'package:flutter/foundation.dart';
@@ -114,7 +113,6 @@ class ServerConnectionManager {
         } else if (Platform.isAndroid) {
           await ServiceManager().notifications.initialize();
         }
-
         // 初始化服务器
         await _initializeServer(room);
 
@@ -214,9 +212,12 @@ class ServerConnectionManager {
     // 停止VPN
     if (Platform.isAndroid) {
       if (!ServiceManager().networkConfigState.noTun.value) {
+        // 停止服务时前台通知由系统一并移除
         await ServiceManager().vpn.stop();
+      } else {
+        // NO-TUN 模式：撤销普通通知
+        await ServiceManager().notifications.cancelConnectionNotification();
       }
-      await ServiceManager().notifications.cancelConnectionNotification();
     }
 
     // 取消定时器
@@ -279,12 +280,21 @@ class ServerConnectionManager {
     ServiceManager().connectionState.connectionState.value = CoState.connecting;
 
     // 显示通知（Android）
-    if (Platform.isAndroid && ServiceManager().appSettingsState.enableConnectionNotification.value) {
-      await ServiceManager().notifications.showConnectionNotification(
-        status: '连接中',
-        ip: '正在获取...',
-        duration: '00:00',
-      );
+    if (Platform.isAndroid) {
+      if (!ServiceManager().networkConfigState.noTun.value) {
+        // TUN 模式：立即以前台服务形式启动并显示“连接中”，
+        // 即使随后进程被杀，通知也随服务一起被系统移除。
+        await ServiceManager().vpn.beginForeground();
+      } else if (ServiceManager()
+          .appSettingsState
+          .enableConnectionNotification
+          .value) {
+        await ServiceManager().notifications.showConnectionNotification(
+          status: '连接中',
+          ip: '正在获取...',
+          duration: '00:00',
+        );
+      }
     }
 
     // 设置超时
@@ -324,15 +334,7 @@ class ServerConnectionManager {
         proxyCidrs: proxyCidrs,
       );
 
-      if (ServiceManager().appSettingsState.enableConnectionNotification.value) {
-        await ServiceManager().notifications.showConnectionNotification(
-          status: '已连接',
-          ip: ConnectionNetworkMonitor.notificationDisplayIp(),
-          duration: NotificationService.formatDuration(
-            _networkMonitor.connectionDuration,
-          ),
-        );
-      }
+      // 通知已在原生服务建立接口时更新为“已连接”，后续每秒刷新由网络监控负责
     }
 
     if (Platform.isWindows) {

@@ -49,6 +49,18 @@ class VpnManager {
     await plugin.prepareVpn();
   }
 
+  /// 仅启动前台服务（连接中阶段展示通知/保活，不建立VPN接口）
+  Future<void> beginForeground() async {
+    final plugin = _plugin;
+    if (plugin == null) return;
+    await plugin.startForeground(
+      notificationsEnabled: ServiceManager()
+          .appSettingsState
+          .enableConnectionNotification
+          .value,
+    );
+  }
+
   /// 启动 VPN 服务
   Future<void> start({
     required String ipv4Addr,
@@ -80,6 +92,10 @@ class VpnManager {
       mtu: mtu,
       routes: routes,
       disallowedApplications: disallowedApplications,
+      notificationsEnabled: ServiceManager()
+          .appSettingsState
+          .enableConnectionNotification
+          .value,
     );
   }
 
